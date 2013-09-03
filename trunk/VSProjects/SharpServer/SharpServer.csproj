@@ -70,6 +70,8 @@
     <Compile Include="HAML\Grammar.cs" />
     <Compile Include="HAML\Compiling\HeadInfo.cs" />
     <Compile Include="HAML\Compiling\RValues.cs" />
+    <Compile Include="Networking\HttpRequestParser.cs" />
+    <Compile Include="Networking\HttpRequest.cs" />
     <Compile Include="Output.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -85,6 +87,7 @@
       <Name>010.Irony.2010</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
