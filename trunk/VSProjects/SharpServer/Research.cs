@@ -7,10 +7,69 @@ using System.Threading.Tasks;
 using System.Linq.Expressions;
 using System.Diagnostics;
 
+using System.Net;
+
+using Irony.Ast;
+using Irony.Parsing;
+
+using SharpServer.Networking;
+using SharpServer.Compiling;
+
 namespace SharpServer
 {
     static class Research
     {
+
+        internal static void RunServer()
+        {
+            initialize();
+            var config=new NetworkConfiguration(4000,IPAddress.Any);
+
+            var outOfService =  ResponseHandlerProvider.GetHandler(
+                    "haml",
+                    TestRender()
+                    );
+
+            var server = new HttpServer(config,outOfService);
+            server.Start();
+            Console.ReadKey();
+        }
+
+        internal static void RunCompiling()
+        {
+            initialize();
+
+            ResponseHandler handler = null;
+            var response = new Response(null,null);
+
+            var w = Stopwatch.StartNew();
+            handler = ResponseHandlerProvider.GetHandler(
+                    "haml",
+                    TestRender()
+                    );
+
+            if (handler != null)
+            {
+                handler(response);
+            }
+
+            w.Stop();
+
+            Console.WriteLine("Time elapsed: {0}ms", w.ElapsedMilliseconds);
+            Console.WriteLine(response.GetResult());
+            Console.ReadKey();
+        }
+
+        static void initialize()
+        {
+            var hamlGrammar = new HAML.Grammar();
+            var lang = new LanguageData(hamlGrammar);
+            var parser = new Parser(lang);
+
+            var hamlChain = new LanguageToolChain("haml", parser, HAML.Compiler.Compile);
+
+            ResponseHandlerProvider.Register(hamlChain);
+        }
 
         internal static string Test1()
         {
@@ -66,33 +125,5 @@ namespace SharpServer
             return Expression.Lambda<ResponseHandler>(viewBlock, param).Compile();
         }
 
-        static void benchMark()
-        {
-            var view = generateHandler();
-
-            var LOOP_COUNT = 100000;
-
-            var response = new Response();
-            //omitting initialization
-            directWrite(response);
-
-            var w = Stopwatch.StartNew();
-            for (int i = 0; i < LOOP_COUNT; ++i)
-                directWrite(response);
-            w.Stop();
-
-            Console.WriteLine("Direct write: {0}ms", w.ElapsedMilliseconds);
-
-            response = new Response();
-            //omitting initialization
-            view(response);
-
-            w = Stopwatch.StartNew();
-            for (int i = 0; i < LOOP_COUNT; ++i)
-                view(response);
-            w.Stop();
-
-            Console.WriteLine("Generated write: {0}ms", w.ElapsedMilliseconds);
-        }
     }
 }
