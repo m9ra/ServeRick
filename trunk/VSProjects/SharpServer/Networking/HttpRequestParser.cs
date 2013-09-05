@@ -11,6 +11,7 @@ namespace SharpServer.Networking
     public class HttpRequestParser
     {
         #region Private members
+
         /// <summary>
         /// Storage for header name incrementing        
         /// </summary>

@@ -73,6 +73,7 @@
     <Compile Include="HttpServer.cs" />
     <Compile Include="Memory\DataBuffer.cs" />
     <Compile Include="Memory\BufferProvider.cs" />
+    <Compile Include="Memory\MemoryConfiguration.cs" />
     <Compile Include="Networking\Accepter.cs" />
     <Compile Include="Networking\Client.cs" />
     <Compile Include="Networking\Downloader.cs" />
@@ -85,7 +86,7 @@
     <Compile Include="Research.cs" />
     <Compile Include="Response.cs" />
     <Compile Include="Responsing\ResponseProcessor.cs" />
-    <Compile Include="Responsing\ResponseWork.cs" />
+    <Compile Include="Responsing\ResponseWorkItem.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

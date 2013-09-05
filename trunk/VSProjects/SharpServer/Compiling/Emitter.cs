@@ -16,10 +16,13 @@ namespace SharpServer.Compiling
     {
         private static readonly Type ResponseType = typeof(Response);
         private static readonly MethodInfo WriteMethod = ResponseType.GetMethod("Write");
+
+        private static readonly MethodInfo ConvertBytesMethod = typeof(Emitter).GetMethod("ConvertBytes",BindingFlags.Static | BindingFlags.NonPublic);
         
         private readonly ParameterExpression _param = Expression.Parameter(ResponseType);
         private readonly List<Expression> _statements = new List<Expression>();
-
+        private readonly StringBuilder _staticWrites = new StringBuilder();
+        
 
         private static readonly Dictionary<string, MethodInfo> _helperMethods = new Dictionary<string, MethodInfo>();
 
@@ -34,6 +37,12 @@ namespace SharpServer.Compiling
             }
         }
 
+        internal static byte[] ConvertBytes(string data)
+        {
+            return Encoding.UTF8.GetBytes(data);
+        }
+
+
         #region API for emitting statements
 
         /// <summary>
@@ -41,9 +50,8 @@ namespace SharpServer.Compiling
         /// </summary>
         /// <param name="data">Static data written to stream</param>
         public void StaticWrite(string data)
-        {            
-            var dataHTML = Expression.Constant(data);
-            emitWrite(dataHTML);
+        {               
+            _staticWrites.Append(data);
         }
 
         /// <summary>
@@ -52,7 +60,9 @@ namespace SharpServer.Compiling
         /// <param name="expression">Expression which output will be send to output</param>
         public void Write(Expression expression)
         {
-            emitWrite(expression);
+            var bytesProvider = Expression.Call(null, ConvertBytesMethod, expression);
+
+            emitWrite(bytesProvider);
         }
 
         public Expression Call(string methodName, Expression[] args)
@@ -73,8 +83,14 @@ namespace SharpServer.Compiling
         /// <returns>Compiled response handler</returns>
         internal ResponseHandler GetResult()
         {
+            finalizeEmitting();
             var viewBlock = Expression.Block(_statements.ToArray());
             return Expression.Lambda<ResponseHandler>(viewBlock, _param).Compile();
+        }
+
+        internal void finalizeEmitting()
+        {
+            emitStaticWrites();
         }
 
         #region Private utilites
@@ -86,13 +102,27 @@ namespace SharpServer.Compiling
 
         private void emitWrite(Expression data)
         {
-            var write = Expression.Call(_param, WriteMethod, data);
+            emitStaticWrites();
 
+            var write = Expression.Call(_param, WriteMethod, data);            
             emit(write);
         }
 
-        private MethodInfo getMethod(string name)
+        private void emitStaticWrites()
         {
+            if (_staticWrites.Length == 0)
+                return;
+
+            var data = ConvertBytes(_staticWrites.ToString());
+
+            var dataHTML = Expression.Constant(data);
+            _staticWrites.Clear();
+
+            emitWrite(dataHTML);
+        }
+
+        private MethodInfo getMethod(string name)
+        {            
             return _helperMethods[name];
         }
 

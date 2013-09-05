@@ -10,11 +10,14 @@ using SharpServer.Memory;
 
 namespace SharpServer.Networking
 {
-
+    /// <summary>
+    /// Delegate for handling events when client is successfully accepted
+    /// </summary>
+    /// <param name="client">Client that has been accepted</param>
     internal delegate void OnClientAccepted(Client client);
 
     /// <summary>
-    /// Provides client accepting services for server.  
+    /// Provides client accepting services for server
     /// </summary>
     class Accepter
     {
@@ -59,10 +62,13 @@ namespace SharpServer.Networking
         /// </summary>
         internal void Run()
         {
-            _listener.Start();
+            _listener.Start(1024);
             acceptClient();
         }
 
+        /// <summary>
+        /// Begin accepting clients
+        /// </summary>
         private void acceptClient()
         {
             _listener.BeginAcceptTcpClient(_acceptClient, null);            

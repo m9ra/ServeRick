@@ -23,7 +23,9 @@ namespace SharpServer.Memory
         /// </summary>
         private bool _isRecycled = false;
 
-
+        /// <summary>
+        /// Storage of buffer, that can be used until buffer is recycled
+        /// </summary>
         internal byte[] Storage
         {
             get

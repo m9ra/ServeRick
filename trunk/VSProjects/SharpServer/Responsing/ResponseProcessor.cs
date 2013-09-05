@@ -12,31 +12,20 @@ namespace SharpServer.Responsing
 {
     class ResponseProcessor
     {
-        readonly Queue<ResponseWork> _toProcess = new Queue<ResponseWork>();
+        readonly Queue<ResponseWorkItem> _toProcess = new Queue<ResponseWorkItem>();
 
         readonly object _L_toProcess = new object();
 
-        //TODO only for testing purposes
-        readonly ResponseHandler _outOfServicePage;
         readonly Thread _executionThread;
 
 
-        internal ResponseProcessor(ResponseHandler outOfServicePage)
+        internal ResponseProcessor()
         {
-            _outOfServicePage = outOfServicePage;
             _executionThread = new Thread(_run);
             _executionThread.Start();
         }
 
-        internal void MakeResponse(Client client)
-        {
-            var work = new ResponseWork(client, _outOfServicePage);
-            client.Response = new Response(client,this);
-
-            EnqueueWork(work);
-        }
-
-        internal void EnqueueWork(ResponseWork work)
+        internal void EnqueueWork(ResponseWorkItem work)
         {
             lock (_L_toProcess)
             {
@@ -50,7 +39,7 @@ namespace SharpServer.Responsing
         {
             for (; ; )
             {
-                ResponseWork work;
+                ResponseWorkItem work;
                 lock (_L_toProcess)
                 {
                     if (_toProcess.Count == 0)
@@ -64,7 +53,5 @@ namespace SharpServer.Responsing
                 response.RunWork(work);
             }
         }
-
-
     }
 }

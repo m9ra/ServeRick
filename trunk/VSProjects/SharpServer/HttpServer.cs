@@ -10,41 +10,69 @@ using SharpServer.Responsing;
 
 namespace SharpServer
 {
+    /// <summary>
+    /// Accept, download request and create response via ReponseProcessors from/to clients
+    /// </summary>
     class HttpServer
     {
+        /// <summary>
+        /// Accepter used for accepting clients
+        /// </summary>
         readonly Accepter _accepter;
+
+        /// <summary>
+        /// Provides downloading requests
+        /// </summary>
         readonly Downloader _downloader;
 
         /// <summary>
-        /// TODO:There will be multiple processors
+        /// TODO: There will be multiple processors
         /// </summary>
         readonly ResponseProcessor _processor;
 
-        internal HttpServer(NetworkConfiguration configuration,ResponseHandler outOfServicePage)
+        /// <summary>
+        /// TODO: There will be controller based rendering
+        /// </summary>
+        readonly static ResponseHandler _page = Research.CompilePageHandler();
+
+        internal HttpServer(NetworkConfiguration networkConfiguration, MemoryConfiguration memoryConfiguration)
         {
-            var provider = new BufferProvider(4096, 10000000);
-            _accepter = new Accepter(configuration, provider, acceptClient);
-            _downloader = new Downloader(configuration, onHeadCompleted);
-            _processor = new ResponseProcessor(outOfServicePage);
+            var provider = new BufferProvider(memoryConfiguration.ClientBufferSize, memoryConfiguration.MaximalClientMemoryUsage);
+
+            _accepter = new Accepter(networkConfiguration, provider, _acceptClient);
+            _downloader = new Downloader(_onHeadCompleted);
+            _processor = new ResponseProcessor();
         }
 
+        /// <summary>
+        /// Start server, listening on configured port
+        /// </summary>
         internal void Start()
         {
             _accepter.Run();
         }
 
-        private void acceptClient(Client client)
+        /// <summary>
+        /// Callback for accepting clients
+        /// </summary>
+        /// <param name="client">Accepted client</param>
+        private void _acceptClient(Client client)
         {
             //TODO maybe register all clients, but disconnecting needs locking
             _downloader.DownloadHead(client);
         }
 
-        private void onHeadCompleted(Client client)
+        /// <summary>
+        /// Callback for on head completed event
+        /// </summary>
+        /// <param name="client">Client which head has been downloaded</param>
+        private void _onHeadCompleted(Client client)
         {
             //Send to response processor
             //TODO selecting processor according to session data
 
-            _processor.MakeResponse(client);
+            client.Response = new Response(client, _processor);
+            client.Response.Render(_page);            
         }
     }
 }

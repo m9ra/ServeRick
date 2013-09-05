@@ -14,6 +14,7 @@ using Irony.Parsing;
 
 using SharpServer.Networking;
 using SharpServer.Compiling;
+using SharpServer.Memory;
 
 namespace SharpServer
 {
@@ -23,14 +24,10 @@ namespace SharpServer
         internal static void RunServer()
         {
             initialize();
-            var config=new NetworkConfiguration(4000,IPAddress.Any);
+            var netConfig = new NetworkConfiguration(4000, IPAddress.Any);
+            var memConfig = new MemoryConfiguration(4096, 2 << 20);
 
-            var outOfService =  ResponseHandlerProvider.GetHandler(
-                    "haml",
-                    TestRender()
-                    );
-
-            var server = new HttpServer(config,outOfService);
+            var server = new HttpServer(netConfig, memConfig);
             server.Start();
             Console.ReadKey();
         }
@@ -40,12 +37,12 @@ namespace SharpServer
             initialize();
 
             ResponseHandler handler = null;
-            var response = new Response(null,null);
+            var response = new Response(null, null);
 
             var w = Stopwatch.StartNew();
             handler = ResponseHandlerProvider.GetHandler(
                     "haml",
-                    TestRender()
+                    PageSource()
                     );
 
             if (handler != null)
@@ -80,25 +77,32 @@ namespace SharpServer
         %p= print_information
     .right.column
         = render :partial => sidebar
-
 ";
         }
 
-        internal static string TestRender()
+        internal static string PageSource()
         {
             return @"
-#test
-    = print ""hello world!""
+%html
+    %head
+        %title Testing of HAML compilation
+    %body
+        #test
+            = print ""hello world!""
+        .long
+            Some extra loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong context
 ";
         }
 
-
-        static void directWrite(Response response)
+        internal static ResponseHandler CompilePageHandler()
         {
-            response.Write("<div class='test'>");
-            response.Write(DateTime.Now.ToString());
-            response.Write("</div>");
+            return ResponseHandlerProvider.GetHandler(
+                     "haml",
+                     PageSource()
+                     );
         }
+
+
 
         static ResponseHandler generateHandler()
         {
