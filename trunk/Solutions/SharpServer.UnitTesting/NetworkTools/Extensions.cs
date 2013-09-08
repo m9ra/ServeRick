@@ -18,16 +18,12 @@ namespace SharpServer.UnitTesting.NetworkTools
 
             var requestBytes=Encoding.ASCII.GetBytes(requestData);
             parser.AppendData(requestBytes,requestBytes.Length);
-            var request = parser.GetRequest();
+            var request = parser.Request;
 
             Assert.IsFalse(request.ContainsError,"Spurious error detected in error free request");
             Assert.IsTrue(request.IsHeadComplete,"Request head parsing hasn't been completed");
             Assert.IsTrue(request.IsComplete,"Request parsing hasn't been completed");
 
-            
-            
-
-            
             var testCase = new HeaderParsingCase(requestData, request);
 
             return testCase.H(headerName,headerValue);

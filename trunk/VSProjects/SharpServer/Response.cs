@@ -19,6 +19,11 @@ namespace SharpServer
         private readonly Client _client;
         private readonly ResponseProcessor _processor;
 
+
+        private bool _headersSent = false;
+        private string _statusLine = "HTTP/1.1 200 OK";
+        private readonly Dictionary<string, string> _responseHeaders=new Dictionary<string,string>();
+
         /// <summary>
         /// TODO this is for debug only
         /// </summary>
@@ -32,6 +37,10 @@ namespace SharpServer
         {
             _client = client;
             _processor = processor;
+
+            _responseHeaders["Server"] = "SharpServer";
+            _responseHeaders["Content-Type"] = "text/html; charset=utf-8";
+            _responseHeaders["Cache-Control"] = "max-age=0, private, must-revalidate";
         }
 
         /// <summary>
@@ -42,6 +51,7 @@ namespace SharpServer
         {
             if (data == null || data.Length == 0)
                 return;
+
             _toSend.Enqueue(data);
         }
 
@@ -57,11 +67,23 @@ namespace SharpServer
             sendQueue();
         }
 
+        internal void Render(ResponseHandler page)
+        {
+            _currentWork = new ResponseWorkItem(_client, page);
+            _processor.EnqueueWork(_currentWork);
+        }
+
         /// <summary>
         /// Non blocking single threaded queue send
         /// </summary>
         private void sendQueue()
         {
+            if (!_headersSent)
+            {
+                sendHeaders();
+                return;
+            }
+
             if (_toSend.Count == 0)
             {
                 //there is no other work
@@ -71,14 +93,24 @@ namespace SharpServer
                 return;
             }
 
-            var data = _toSend.Dequeue();            
+            var data = _toSend.Dequeue();
             _client.Send(data, sendQueue);
         }
 
-        internal void Render(ResponseHandler page)
+        private void sendHeaders()
         {
-            _currentWork = new ResponseWorkItem(_client, page);
-            _processor.EnqueueWork(_currentWork);
+            _headersSent = true;
+
+            var builder = new StringBuilder();
+            builder.AppendLine(_statusLine);
+            foreach (var pair in _responseHeaders)
+            {
+                builder.AppendFormat("{0}: {1}" + Environment.NewLine, pair.Key, pair.Value);
+            }
+
+            builder.AppendLine();
+            var bytes=Encoding.ASCII.GetBytes(builder.ToString());
+            _client.Send(bytes, sendQueue);
         }
     }
 }

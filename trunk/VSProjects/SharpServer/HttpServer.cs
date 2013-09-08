@@ -26,22 +26,23 @@ namespace SharpServer
         readonly Downloader _downloader;
 
         /// <summary>
+        /// Manager of available controllers
+        /// </summary>
+        readonly ControllerManager _controllers;
+
+        /// <summary>
         /// TODO: There will be multiple processors
         /// </summary>
         readonly ResponseProcessor _processor;
 
-        /// <summary>
-        /// TODO: There will be controller based rendering
-        /// </summary>
-        readonly static ResponseHandler _page = Research.CompilePageHandler();
-
-        internal HttpServer(NetworkConfiguration networkConfiguration, MemoryConfiguration memoryConfiguration)
+        internal HttpServer(ControllerManager controllers, NetworkConfiguration networkConfiguration, MemoryConfiguration memoryConfiguration)
         {
             var provider = new BufferProvider(memoryConfiguration.ClientBufferSize, memoryConfiguration.MaximalClientMemoryUsage);
 
             _accepter = new Accepter(networkConfiguration, provider, _acceptClient);
             _downloader = new Downloader(_onHeadCompleted);
             _processor = new ResponseProcessor();
+            _controllers = controllers;
         }
 
         /// <summary>
@@ -72,7 +73,7 @@ namespace SharpServer
             //TODO selecting processor according to session data
 
             client.Response = new Response(client, _processor);
-            client.Response.Render(_page);            
+            _controllers.Handle(client);
         }
     }
 }

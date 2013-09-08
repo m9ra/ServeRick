@@ -27,23 +27,23 @@ namespace SharpServer.Networking
         /// <remarks>First line has no header name, so we are not reading name when started</remarks>
         /// </summary>
         private bool _isReadingName = false;
-        
-        /// <summary>
-        /// Here are stored parsed headers
-        /// </summary>
-        private HttpRequest _request;
 
         #endregion
 
         /// <summary>
         /// Determine that all data has been recieved
         /// </summary>
-        public bool IsComplete { get { return _request!=null && _request.IsComplete; } }
+        public bool IsComplete { get { return Request!=null && Request.IsComplete; } }
 
         /// <summary>
         /// Determine that all data for headers has been recieved
         /// </summary>
-        public bool IsHeadComplete { get { return _request != null && _request.IsHeadComplete; } }
+        public bool IsHeadComplete { get { return Request != null && Request.IsHeadComplete; } }
+
+        /// <summary>
+        /// Parsed request
+        /// </summary>
+        public HttpRequest Request { get; private set; }
        
         /// <summary>
         /// Add data recieved from client. 
@@ -66,21 +66,8 @@ namespace SharpServer.Networking
             if (processedDataLength < inputLength)
             {
                 var dataLength=inputLength-processedDataLength;
-                _request.AppendContentData(processedDataLength,dataLength, buffer);
+                Request.AppendContentData(processedDataLength,dataLength, buffer);
             }
-        }
-
-        /// <summary>
-        /// Get parsed request from recieved data
-        /// </summary>
-        /// <returns>Parsed request</returns>
-        public HttpRequest GetRequest()
-        {
-            if (_request == null)
-            {
-                throw new NotSupportedException("Cannot get request until first header is recieved");
-            }
-            return _request;
         }
 
         #region Completitions handlers
@@ -94,12 +81,12 @@ namespace SharpServer.Networking
             {
                 //first header doesn't have name
                 var toks = _value.ToString().Split(' ');
-                _request = new HttpRequest(toks[0], toks[1], toks[2]);
+                Request = new HttpRequest(toks[0], toks[1], toks[2]);
             }
             else
             {
                 //usual headers
-                _request.SetHeader(_name.ToString(), _value.ToString());
+                Request.SetHeader(_name.ToString(), _value.ToString());
             }
 
             _name.Clear();
@@ -114,17 +101,17 @@ namespace SharpServer.Networking
         {
             //resolve encoding
             string encoding;
-            _request.TryGetHeader("Content-Encoding", out encoding, "ascii");
+            Request.TryGetHeader("Content-Encoding", out encoding, "ascii");
 
             //resolve content length
             int contentLength = 0;
             string contentLengthString;
-            if (_request.TryGetHeader("Content-length", out contentLengthString))
+            if (Request.TryGetHeader("Content-length", out contentLengthString))
             {
                 contentLength = int.Parse(contentLengthString);
             }
 
-            _request.CompleteHead(encoding, contentLength);            
+            Request.CompleteHead(encoding, contentLength);            
         }
 
         #endregion
@@ -198,7 +185,7 @@ namespace SharpServer.Networking
 
         private void newLineHeadChar()
         {
-            if (_name.Length == 0 && _request!=null)
+            if (_name.Length == 0 && Request!=null)
             {
                 //end of headers section 
                 //(request hasn't been created yet and last header doesn't have name)

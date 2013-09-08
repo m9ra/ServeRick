@@ -66,6 +66,7 @@
     <Compile Include="Compiling\Helpers.cs" />
     <Compile Include="Compiling\LanguageToolChain.cs" />
     <Compile Include="Compiling\ResponseHandlerProvider.cs" />
+    <Compile Include="ControllerManager.cs" />
     <Compile Include="HAML\Compiler.cs" />
     <Compile Include="HAML\Grammar.cs" />
     <Compile Include="HAML\Compiling\HeadInfo.cs" />

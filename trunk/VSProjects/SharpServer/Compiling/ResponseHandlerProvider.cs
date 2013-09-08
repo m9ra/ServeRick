@@ -21,8 +21,6 @@ namespace SharpServer.Compiling
             var toolChain= _toolChains[language];
 
             var tree=toolChain.Parser.Parse(source);
-            
-
             Output.DisplayTree(tree);
 
             if (tree.Root != null)
@@ -37,6 +35,5 @@ namespace SharpServer.Compiling
                 return null;
             }
         }
-
     }
 }

@@ -26,8 +26,9 @@ namespace SharpServer
             initialize();
             var netConfig = new NetworkConfiguration(4000, IPAddress.Any);
             var memConfig = new MemoryConfiguration(4096, 2 << 20);
+            var controllers = new ControllerManager();
 
-            var server = new HttpServer(netConfig, memConfig);
+            var server = new HttpServer(controllers, netConfig, memConfig);
             server.Start();
             Console.ReadKey();
         }
