@@ -5,7 +5,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpServer", "..\VSProject
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "010.Irony.2010", "..\ExternalSources\Irony\010.Irony.2010.csproj", "{D81F5C91-D7DB-46E5-BC99-49488FB6814C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpServer.UnitTesting", "SharpServer.UnitTesting\SharpServer.UnitTesting.csproj", "{0303F157-69BC-47DA-AFBC-F65CC0D3618E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpServer.UnitTesting", "..\VSProjects\SharpServer.UnitTesting\SharpServer.UnitTesting.csproj", "{0303F157-69BC-47DA-AFBC-F65CC0D3618E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
