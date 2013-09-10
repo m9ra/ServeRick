@@ -44,7 +44,12 @@ namespace SharpServer.Networking
         /// Parsed request
         /// </summary>
         public HttpRequest Request { get; private set; }
-       
+
+        /// <summary>
+        /// How many bytes has been recieved
+        /// </summary>
+        public int RecievedBytes { get; private set; }
+
         /// <summary>
         /// Add data recieved from client. 
         /// </summary>
@@ -54,6 +59,8 @@ namespace SharpServer.Networking
             if (buffer == null)
                 //there is nothing to add
                 return;
+
+            RecievedBytes += inputLength;
 
             int processedDataLength = 0;
             if (!IsHeadComplete)

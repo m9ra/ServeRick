@@ -35,7 +35,7 @@ namespace SharpServer.Networking
         {
             client.Recieve(_processHead);
         }
-                
+
         /// <summary>
         /// Callback for head downloading
         /// </summary>
@@ -44,10 +44,19 @@ namespace SharpServer.Networking
         /// <param name="dataLength">Length of recieved data</param>
         private void _processHead(Client client, byte[] data, int dataLength)
         {
+            Log.Trace("Downloader._processHead client: {0}, dataLength: {1}", client, dataLength);
+
             client.Parser.AppendData(data, dataLength);
             if (client.Parser.IsHeadComplete)
             {
                 _onHeadCompleted(client);
+                return;
+            }
+
+            if (dataLength == 0)
+            {
+                Log.Notice("Downloader._onHeadCompleted {0},  recieved {1}B, incomplete header: {2}B", client, dataLength, client.Parser.RecievedBytes);
+                client.Close();
                 return;
             }
 

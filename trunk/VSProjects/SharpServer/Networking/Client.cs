@@ -63,6 +63,8 @@ namespace SharpServer.Networking
         /// <param name="maxBytesRecieve">Maximum bytes that can be recieved</param>
         internal void Recieve(RecieveHandler handler, int maxBytesRecieve = int.MaxValue)
         {
+            Log.Trace("Client.Recieve {0}", this);
+
             //limit maximum bytes that can be recieved according to buffer storage size
             if (maxBytesRecieve > _buffer.Storage.Length)
                 maxBytesRecieve = _buffer.Storage.Length;
@@ -70,7 +72,7 @@ namespace SharpServer.Networking
             SocketError error;
             _socket.Client.BeginReceive(_buffer.Storage, 0, maxBytesRecieve, SocketFlags.None, out error, _onRecieved, handler);
 
-            checkError(error);
+            checkError("Client.Recieve", error);
         }
 
         /// <summary>
@@ -80,10 +82,12 @@ namespace SharpServer.Networking
         /// <param name="sendHandler">Handler that is called after data are sended</param>
         internal void Send(byte[] dataStorage, SendHandler sendHandler)
         {
+            Log.Trace("Client.Send {0}", this);
+
             SocketError error;
             _socket.Client.BeginSend(dataStorage, 0, dataStorage.Length, SocketFlags.None, out error, _onSended, sendHandler);
 
-            checkError(error);
+            checkError("Client.Send", error);
         }
 
         /// <summary>
@@ -100,10 +104,16 @@ namespace SharpServer.Networking
 
         private void _onRecieved(IAsyncResult result)
         {
+            Log.Trace("Client._onRecieved {0}", this);
+
             SocketError error;
             var dataLength = _socket.Client.EndReceive(result, out error);
 
-            checkError(error);
+            if (checkError("Client._onRecieved", error))
+            {
+                //On error we stop processing                
+                return;
+            }
 
             var handler = result.AsyncState as RecieveHandler;
             handler(this, _buffer.Storage, dataLength);
@@ -111,12 +121,18 @@ namespace SharpServer.Networking
 
         private void _onSended(IAsyncResult result)
         {
+            Log.Trace("Client._onRecieved {0}", this);
+
             SocketError error;
             var dataLength = _socket.Client.EndSend(result, out error);
 
             //TODO why could sending be parted ?
 
-            checkError(error);
+            if (checkError("Client._onSended", error))
+            {
+                //On error we stop processing
+                return;
+            }
 
             var handler = result.AsyncState as SendHandler;
             handler();
@@ -144,23 +160,29 @@ namespace SharpServer.Networking
         /// Check error from socket operation
         /// </summary>
         /// <param name="error">Error object</param>
-        private void checkError(SocketError error)
+        private bool checkError(string checkingMethod, SocketError error)
         {
             switch (error)
             {
                 case SocketError.Success:
                     //socket operation has been successfull
-                    break;
+                    return false;
                 case SocketError.NotSocket:
                 case SocketError.ConnectionReset:
                 case SocketError.ConnectionAborted:
                 case SocketError.Shutdown:
                     //client has unexpectedly disconnected
+                    Log.Error(checkingMethod + " {0} failed with {1}", this, error);
                     onDisconnected();
-                    break;
+                    return true;
                 default:
-                    throw new NotImplementedException("Socket error: "+error);
+                    throw new NotImplementedException("Socket error: " + error);
             }
+        }
+
+        public override string ToString()
+        {
+            return "Client: " + GetHashCode();
         }
 
         #endregion

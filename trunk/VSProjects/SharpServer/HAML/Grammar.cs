@@ -21,7 +21,7 @@ namespace SharpServer.HAML
             var statement = generateStatementGrammar();
             generateTemplateGrammar(statement);
 
-            MarkPunctuation("=", ".", "#", "%");
+            MarkPunctuation("=", ".", "#", "%");            
             this.LanguageFlags = LanguageFlags.NewLineBeforeEOF;
         }
 
@@ -102,7 +102,7 @@ namespace SharpServer.HAML
 
             var identifier = new RegexBasedTerminal("identifier", "[a-zA-Z][a-zA-Z01-9]*");
 
-            var rawOutput = new RegexBasedTerminal("rawOutput", "[^\\r]+");
+            var rawOutput = new RegexBasedTerminal("rawOutput", "[^\\r\\n]+");
             rawOutput.Priority = TerminalPriority.Low;
 
             #endregion

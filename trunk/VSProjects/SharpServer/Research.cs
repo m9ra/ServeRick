@@ -20,23 +20,8 @@ namespace SharpServer
 {
     static class Research
     {
-
-        internal static void RunServer()
-        {
-            initialize();
-            var netConfig = new NetworkConfiguration(4000, IPAddress.Any);
-            var memConfig = new MemoryConfiguration(4096, 2 << 20);
-            var controllers = new ControllerManager();
-
-            var server = new HttpServer(controllers, netConfig, memConfig);
-            server.Start();
-            Console.ReadKey();
-        }
-
         internal static void RunCompiling()
         {
-            initialize();
-
             ResponseHandler handler = null;
             var response = new Response(null, null);
 
@@ -58,16 +43,7 @@ namespace SharpServer
             Console.ReadKey();
         }
 
-        static void initialize()
-        {
-            var hamlGrammar = new HAML.Grammar();
-            var lang = new LanguageData(hamlGrammar);
-            var parser = new Parser(lang);
 
-            var hamlChain = new LanguageToolChain("haml", parser, HAML.Compiler.Compile);
-
-            ResponseHandlerProvider.Register(hamlChain);
-        }
 
         internal static string Test1()
         {

@@ -67,14 +67,17 @@
     <Compile Include="Compiling\LanguageToolChain.cs" />
     <Compile Include="Compiling\ResponseHandlerProvider.cs" />
     <Compile Include="ControllerManager.cs" />
+    <Compile Include="SimpleControllerManager.cs" />
     <Compile Include="HAML\Compiler.cs" />
     <Compile Include="HAML\Grammar.cs" />
     <Compile Include="HAML\Compiling\HeadInfo.cs" />
     <Compile Include="HAML\Compiling\RValues.cs" />
     <Compile Include="HttpServer.cs" />
+    <Compile Include="Log.cs" />
     <Compile Include="Memory\DataBuffer.cs" />
     <Compile Include="Memory\BufferProvider.cs" />
     <Compile Include="Memory\MemoryConfiguration.cs" />
+    <Compile Include="NarioShop.cs" />
     <Compile Include="Networking\Accepter.cs" />
     <Compile Include="Networking\Client.cs" />
     <Compile Include="Networking\Downloader.cs" />

@@ -39,8 +39,19 @@ namespace SharpServer
             _processor = processor;
 
             _responseHeaders["Server"] = "SharpServer";
-            _responseHeaders["Content-Type"] = "text/html; charset=utf-8";
+            
             _responseHeaders["Cache-Control"] = "max-age=0, private, must-revalidate";
+            SetContentType("text/html; charset=utf-8"); //default content type
+        }
+
+        internal void SetContentType(string mime)
+        {
+            _responseHeaders["Content-Type"] = mime;
+        }
+
+        internal void SetLength(int contentLength)
+        {
+            _responseHeaders["Content-Length"] = contentLength.ToString();
         }
 
         /// <summary>
@@ -112,5 +123,7 @@ namespace SharpServer
             var bytes=Encoding.ASCII.GetBytes(builder.ToString());
             _client.Send(bytes, sendQueue);
         }
+
+
     }
 }

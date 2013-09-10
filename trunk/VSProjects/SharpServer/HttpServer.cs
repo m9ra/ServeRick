@@ -60,6 +60,7 @@ namespace SharpServer
         private void _acceptClient(Client client)
         {
             //TODO maybe register all clients, but disconnecting needs locking
+            Log.Trace("HttpServer._onClientAccept {0}", client);
             _downloader.DownloadHead(client);
         }
 
@@ -71,6 +72,8 @@ namespace SharpServer
         {
             //Send to response processor
             //TODO selecting processor according to session data
+
+            Log.Trace("HttpServer._onHeadCompleted {0}", client);
 
             client.Response = new Response(client, _processor);
             _controllers.Handle(client);
