@@ -13,7 +13,7 @@ namespace SharpServer.HAML.Compiling
     abstract class RValue
     {
         protected readonly Emitter E;
-        internal abstract Expression ToExpression();
+        internal abstract Instruction ToInstruction();
 
         internal RValue(Emitter emitter)
         {
@@ -34,15 +34,15 @@ namespace SharpServer.HAML.Compiling
             Args = args;
         }
 
-        internal override Expression ToExpression()
+        internal override Instruction ToInstruction()
         {
-            var argExprs = new List<Expression>();
+            var argExprs = new List<Instruction>();
             foreach (var arg in Args)
             {
-                argExprs.Add(arg.ToExpression());
+                argExprs.Add(arg.ToInstruction());
             }
 
-            return E.Call(CallName, argExprs.ToArray());            
+            return E.Call(CallName, argExprs.ToArray());
         }
     }
 
@@ -56,9 +56,102 @@ namespace SharpServer.HAML.Compiling
         }
 
 
-        internal override Expression ToExpression()
+        internal override Instruction ToInstruction()
         {
             return E.Constant(Literal);
+        }
+    }
+
+    class HashValue : RValue
+    {
+        internal readonly IEnumerable<RValue> Pairs;
+
+        internal HashValue(IEnumerable<RValue> pairs, Emitter emitter)
+            : base(emitter)
+        {
+            Pairs = pairs;
+        }
+
+        internal override Instruction ToInstruction()
+        {
+            var pairInstructions = new List<Instruction>();
+
+            foreach (var pair in Pairs)
+            {
+                pairInstructions.Add(pair.ToInstruction());
+            }
+
+            return E.Container(pairInstructions);
+        }
+    }
+
+    class PairValue : RValue
+    {
+        internal readonly RValue Key;
+
+        internal readonly RValue Value;
+
+        internal PairValue(RValue key, RValue value, Emitter emitter)
+            : base(emitter)
+        {
+            Key = key;
+            Value = value;
+        }
+
+        internal override Instruction ToInstruction()
+        {
+            return E.Pair(Key.ToInstruction(), Value.ToInstruction());
+        }
+    }
+
+    class TagValue : RValue
+    {
+        internal readonly RValue TagName;
+
+        internal readonly RValue ExplicitClass;
+
+        internal readonly RValue ExplicitID;
+
+        internal readonly RValue Attributes;
+
+        Instruction _content;
+
+        internal TagValue(RValue tag, RValue explClass, RValue explId, RValue attributes, Emitter emitter)
+            : base(emitter)
+        {
+            TagName = tag;
+            ExplicitClass = explClass;
+            ExplicitID = explId;
+            Attributes = attributes;
+        }
+
+        internal void SetContent(Instruction content)
+        {
+            _content = content;
+        }
+
+        internal override Instruction ToInstruction()
+        {
+            var tag = E.Tag(TagName.ToInstruction());
+            if (Attributes != null)
+            {
+                var attributes = Attributes.ToInstruction();
+                if (ExplicitID != null)
+                {
+                    attributes = E.SetValue(attributes, E.Constant("id"), ExplicitID.ToInstruction());
+                }
+
+                if (ExplicitClass != null)
+                {
+                    attributes = E.SetValue(attributes, E.Constant("class"), ExplicitClass.ToInstruction());
+                }
+
+                tag.SetAttributes(attributes);
+            }
+
+            tag.SetContent(_content);
+
+            return tag;
         }
     }
 }

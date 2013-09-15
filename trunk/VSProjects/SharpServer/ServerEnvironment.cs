@@ -22,36 +22,23 @@ using SharpServer.HAML;
 
 namespace SharpServer
 {
-    class Program
+   public static class ServerEnvironment
     {
-        static void Main(string[] args)
+       static List<WebApplication> _list = new List<WebApplication>();
+
+        public static void Start()
         {
             LoadToolchains();
 
+            if (_list.Count != 1)
+                throw new NotImplementedException();
+
             var netConfig = new NetworkConfiguration(4000, IPAddress.Any);
             var memConfig = new MemoryConfiguration(4096, 2 << 20);
-            var controllers = NarioShop.GetManager();
+            var controllers = _list[0].CreateManager();
 
             var server = new HttpServer(controllers, netConfig, memConfig);
             server.Start();
-
-            ConsoleKeyInfo keyInfo;
-            do
-            {
-                keyInfo = Console.ReadKey();
-
-                switch (keyInfo.KeyChar)
-                {
-                    case 't':
-                        Log.TraceDisabled = !Log.TraceDisabled;
-                        break;
-                    case 'n':
-                        Log.NoticeDisabled = !Log.NoticeDisabled;
-                        break;
-                }
-
-            } while (keyInfo.Key != ConsoleKey.Escape);
-            Environment.Exit(0);   
         }
 
         static void LoadToolchains()
@@ -63,6 +50,11 @@ namespace SharpServer
             var hamlChain = new LanguageToolChain("haml", parser, HAML.Compiler.Compile);
 
             ResponseHandlerProvider.Register(hamlChain);
+        }
+
+        public static void AddManager(WebApplication webApp)
+        {
+            _list.Add(webApp);
         }
     }
 }

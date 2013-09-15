@@ -8,11 +8,13 @@ using Irony.Parsing;
 
 namespace SharpServer.Compiling
 {
-    static class ResponseHandlerProvider
+    public static class ResponseHandlerProvider
     {
         static readonly Dictionary<string, LanguageToolChain> _toolChains = new Dictionary<string, LanguageToolChain>();
-        
-        public static void Register(LanguageToolChain toolChain){
+
+        internal static readonly WebMethods WebMethods=new WebMethods();
+
+        internal static void Register(LanguageToolChain toolChain){
             _toolChains[toolChain.Language]=toolChain;
         }
 
@@ -25,10 +27,11 @@ namespace SharpServer.Compiling
 
             if (tree.Root != null)
             {
-                var emitter = new Emitter();
+                var emitter = new Emitter(WebMethods);
                 toolChain.Compile(tree.Root, emitter);
 
-                return emitter.GetResult();
+                var instructions = emitter.GetEmittedResult();
+                return HTMLCompiler.Compile(instructions);
             }
             else
             {

@@ -26,7 +26,7 @@ namespace SharpServer.Networking
     /// <summary>
     /// Representation of http client
     /// </summary>
-    class Client
+    public class Client
     {
         /// <summary>
         /// Socket for communication with client
@@ -46,7 +46,9 @@ namespace SharpServer.Networking
         /// <summary>
         /// Response object is used for creating response for client
         /// </summary>
-        internal Response Response { get; set; }
+        public Response Response { get; set; }
+
+        public HttpRequest Request { get { return Parser.Request; } }
 
         internal Client(TcpClient clientSocket, DataBuffer clientBuffer)
         {

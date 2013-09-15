@@ -9,12 +9,12 @@ using SharpServer.Networking;
 
 namespace SharpServer
 {
-    internal delegate void ResponseHandler(Response response);
+    public delegate void ResponseHandler(Response response);
 
     /// <summary>
     /// This is just testing implementation that will be heavily changed
     /// </summary>
-    class Response
+    public class Response
     {
         private readonly Client _client;
         private readonly ResponseProcessor _processor;
@@ -33,7 +33,7 @@ namespace SharpServer
 
         ResponseWorkItem _currentWork;
 
-        public Response(Client client, ResponseProcessor processor)
+        internal Response(Client client, ResponseProcessor processor)
         {
             _client = client;
             _processor = processor;
@@ -44,12 +44,12 @@ namespace SharpServer
             SetContentType("text/html; charset=utf-8"); //default content type
         }
 
-        internal void SetContentType(string mime)
+        public void SetContentType(string mime)
         {
             _responseHeaders["Content-Type"] = mime;
         }
 
-        internal void SetLength(int contentLength)
+        public void SetLength(int contentLength)
         {
             _responseHeaders["Content-Length"] = contentLength.ToString();
         }
@@ -66,11 +66,6 @@ namespace SharpServer
             _toSend.Enqueue(data);
         }
 
-        public string GetResult()
-        {
-            return _writtenData.ToString();
-        }
-
         internal void RunWork(ResponseWorkItem work)
         {
             _currentWork = work;
@@ -78,7 +73,7 @@ namespace SharpServer
             sendQueue();
         }
 
-        internal void Render(ResponseHandler page)
+        public void Render(ResponseHandler page)
         {
             _currentWork = new ResponseWorkItem(_client, page);
             _processor.EnqueueWork(_currentWork);

@@ -39,7 +39,6 @@ namespace SharpServer
             w.Stop();
 
             Console.WriteLine("Time elapsed: {0}ms", w.ElapsedMilliseconds);
-            Console.WriteLine(response.GetResult());
             Console.ReadKey();
         }
 

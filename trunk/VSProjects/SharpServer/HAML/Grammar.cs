@@ -16,18 +16,21 @@ namespace SharpServer.HAML
     [Language("HAML", "1.0", "Testing implementation for HAML")]
     public class Grammar : Irony.Parsing.Grammar
     {
+        NonTerminal hash = new NonTerminal("hash");
+
         public Grammar()
         {
             var statement = generateStatementGrammar();
             generateTemplateGrammar(statement);
 
-            MarkPunctuation("=", ".", "#", "%");            
+            MarkPunctuation("=", ".", "#", "%", "render", "=>", ",", ")", "(","}","{");            
             this.LanguageFlags = LanguageFlags.NewLineBeforeEOF;
         }
 
         private NonTerminal generateStatementGrammar()
         {
             #region Terminals/Neterminals definitions
+
             var statement = NT("statement");
             var expression = NT("expression");
 
@@ -35,11 +38,11 @@ namespace SharpServer.HAML
             var call = NT("call");
             var callName = NT("callName");
 
-
             var argList = NT("argList");
             var args = NT("args");
 
             var keyPair = NT("keyPair");
+            var keyPairs=NT("keyPairs");
 
             var value = NT("value");
             
@@ -56,9 +59,7 @@ namespace SharpServer.HAML
 
             //arguments
             argList.Rule = ("(" + args + ")") | args | Empty;
-            
             args.Rule = (expression + "," + args) | expression;
-            
 
             //call
             call.Rule = callName + argList;
@@ -67,15 +68,15 @@ namespace SharpServer.HAML
             //expression            
             expression.Rule = identifier | keyPair | symbol | value | call;
             keyPair.Rule = (symbol + "=>" + expression) | (shortKey + expression);
-
-            MarkPunctuation("render", "=>", ",", ")", "(");
+            keyPairs.Rule = (keyPair + "," + keyPairs) | keyPair;
 
             //literals
             value.Rule = new NumberLiteral("number") | new StringLiteral("string",@"""");
 
+            //hash
+            hash.Rule = "{" +keyPairs+ "}";
             return statement;
         }
-
 
         private void generateTemplateGrammar(NonTerminal statement)
         {
@@ -95,13 +96,14 @@ namespace SharpServer.HAML
             var attrib = NT("attribute");
             var attribs = NT("attributes");
 
+            var extAttrib = NT("extAttribute");
+            var extAttribs = NT("extAttributes");
+
             var id = NT("id");
             var cls = NT("class");
             var tag = NT("tag");
 
-
             var identifier = new RegexBasedTerminal("identifier", "[a-zA-Z][a-zA-Z01-9]*");
-
             var rawOutput = new RegexBasedTerminal("rawOutput", "[^\\r\\n]+");
             rawOutput.Priority = TerminalPriority.Low;
 
@@ -114,7 +116,7 @@ namespace SharpServer.HAML
             blocks.Rule = MakeStarRule(blocks, block);
 
             containerBlock.Rule = head + Eos + (Indent + blocks + Dedent);
-            contentBlock.Rule = head + (content | Empty) + Eos;
+            contentBlock.Rule = head + ((content+Eos )|Eos);
 
             //content rules
             content.Rule = code | rawOutput;
@@ -131,7 +133,7 @@ namespace SharpServer.HAML
             cls.Rule = "." + identifier;
 
             //tag rules
-            tag.Rule = "%" + identifier;
+            tag.Rule = "%" + identifier+(Empty | hash);
 
             //root
             view.Rule = blocks;
@@ -139,7 +141,6 @@ namespace SharpServer.HAML
 
             #endregion
         }
-
 
         private NonTerminal NT(string name)
         {

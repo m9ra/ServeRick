@@ -9,7 +9,9 @@ using SharpServer.Compiling;
 
 using System.IO;
 
-namespace SharpServer
+using SharpServer;
+
+namespace TestWebApp
 {
     /// <summary>
     /// Manage controllers and set handlers for client requests
@@ -50,9 +52,9 @@ namespace SharpServer
             _files[uri] = getHandler(fileRelative);
         }
 
-        internal override void Handle(Client client)
+        public override void Handle(Client client)
         {
-            var uri=client.Parser.Request.URI;
+            var uri=client.Request.URI;
 
             ResponseHandler handler;
             if (!_files.TryGetValue(uri,out handler))

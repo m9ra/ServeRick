@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace SharpServer
 {
-    static class Log
+    public static class Log
     {
-        internal volatile static bool TraceDisabled = true;
-        internal volatile static bool NoticeDisabled = true;
+        public volatile static bool TraceDisabled = true;
+        public volatile static bool NoticeDisabled = true;
         private static object _L_output = new object();
 
 
-        internal static void Trace(string message, params object[] formatArgs)
+        public static void Trace(string message, params object[] formatArgs)
         {
             if (TraceDisabled) return;
 
@@ -22,7 +22,7 @@ namespace SharpServer
         }
 
 
-        internal static void Notice(string message, params object[] formatArgs)
+        public static void Notice(string message, params object[] formatArgs)
         {
             if (NoticeDisabled) return;
 
@@ -30,7 +30,7 @@ namespace SharpServer
             writeline("[Notice] " + outputMessage);
         }
 
-        internal static void Error(string message, params object[] formatArgs)
+        public static void Error(string message, params object[] formatArgs)
         {
             var outputMessage = string.Format(message, formatArgs);
             writeline("[Error] " + outputMessage);

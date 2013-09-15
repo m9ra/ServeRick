@@ -4,17 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SharpServer
+using SharpServer;
+
+namespace TestWebApp
 {
-    static class NarioShop
+    class TestWeb:WebApplication
     {
-        internal static ControllerManager GetManager()
+        public override ControllerManager CreateManager()
         {
             var manager=new SimpleControllerManager("www/");
 
             manager.AddAll();
             manager.SetRoot("index.haml");
-
+            
             return manager;
         }
     }

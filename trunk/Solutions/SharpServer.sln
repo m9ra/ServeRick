@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "010.Irony.2010", "..\Extern
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpServer.UnitTesting", "..\VSProjects\SharpServer.UnitTesting\SharpServer.UnitTesting.csproj", "{0303F157-69BC-47DA-AFBC-F65CC0D3618E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestWebApp", "..\VSProjects\TestWebApp\TestWebApp.csproj", "{7391FDAF-F059-46FD-AB45-F00F2E8288B6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,16 @@ Global
 		{0303F157-69BC-47DA-AFBC-F65CC0D3618E}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{0303F157-69BC-47DA-AFBC-F65CC0D3618E}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{0303F157-69BC-47DA-AFBC-F65CC0D3618E}.Release|x86.ActiveCfg = Release|Any CPU
+		{7391FDAF-F059-46FD-AB45-F00F2E8288B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7391FDAF-F059-46FD-AB45-F00F2E8288B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7391FDAF-F059-46FD-AB45-F00F2E8288B6}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{7391FDAF-F059-46FD-AB45-F00F2E8288B6}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{7391FDAF-F059-46FD-AB45-F00F2E8288B6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7391FDAF-F059-46FD-AB45-F00F2E8288B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7391FDAF-F059-46FD-AB45-F00F2E8288B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7391FDAF-F059-46FD-AB45-F00F2E8288B6}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{7391FDAF-F059-46FD-AB45-F00F2E8288B6}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{7391FDAF-F059-46FD-AB45-F00F2E8288B6}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

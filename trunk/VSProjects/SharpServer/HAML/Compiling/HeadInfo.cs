@@ -15,7 +15,7 @@ namespace SharpServer.HAML.Compiling
         public string OpeningTag { get; private set; }
         public string ClosingTag { get; private set; }
 
-        public HeadInfo(string tag, string id, string[] classes)
+        public HeadInfo(string tag, string id, string[] classes,Dictionary<string,RValue> attributes)
         {
             if (tag == "" && id == "" && classes.Length == 0)
             {
