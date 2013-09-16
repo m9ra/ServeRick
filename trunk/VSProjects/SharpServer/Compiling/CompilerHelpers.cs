@@ -27,12 +27,9 @@ namespace SharpServer.Compiling
             return dict;
         }
 
-        public static object SetValue(object container, object key, object value)
+        public static Dictionary<Key,Value> SetValue<Key,Value>(Dictionary<Key,Value> container, Key key, Value value)
         {
-            //            container[key] = value;
-            container.GetType().GetMethod("set_Item").Invoke(container, new[] { key, value });
-
-
+            container[key] = value;
             return container;
         }
 

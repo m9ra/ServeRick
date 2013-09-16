@@ -143,10 +143,8 @@ namespace SharpServer.HAML
             {
                 case "call":
                     var argValues = getArguments(node);
-
                     var callName = getSubTerminal(node, null, "callName");
                     return new CallValue(callName, argValues, E);
-
                 case "expression":
                     return resolveRValue(stepToChild(node));
                 case "symbol":
@@ -188,7 +186,7 @@ namespace SharpServer.HAML
         {
             //TODO proper literal resolving
 
-            if (literal.Contains("\""))
+            if (literal.StartsWith("\"") && literal.EndsWith("\""))
             {
                 literal = literal.Substring(1, literal.Length - 2);
             }
@@ -330,9 +328,7 @@ namespace SharpServer.HAML
                     throw new NotSupportedException("Cannot step to child, invalid child count");
             }
         }
-
-
-
+        
         private string getChildName(ParseTreeNode parent)
         {
             var child = stepToChild(parent);

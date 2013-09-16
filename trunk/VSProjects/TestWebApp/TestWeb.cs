@@ -10,13 +10,11 @@ namespace TestWebApp
 {
     class TestWeb:WebApplication
     {
-        public override ControllerManager CreateManager()
+        protected override ControllerManager createManager()
         {
             var manager=new SimpleControllerManager("www/");
-
             manager.AddAll();
-            manager.SetRoot("index.haml");
-            
+                        
             return manager;
         }
     }

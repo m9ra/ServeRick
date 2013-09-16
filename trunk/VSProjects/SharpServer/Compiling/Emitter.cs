@@ -27,27 +27,32 @@ namespace SharpServer.Compiling
 
         #region API for emitting statements
 
-        public void StaticWrite(string data)
-        {
-            var constant = Constant(data);
-            Write(constant);
-        }
-
         /// <summary>
         /// Emits write into response stream on value specified by instruction
         /// </summary>
-        /// <param name="expression">Expression which output will be send to output</param>
+        /// <param name="expression">Expression which return value will be send to output</param>
         public void Write(Instruction instruction)
         {
             _emitted.AddLast(instruction);
         }
-
+        
+        /// <summary>
+        /// Create call of given method with given arguments
+        /// </summary>
+        /// <param name="methodName">Name of method that will be called</param>
+        /// <param name="args">Arguments for call</param>
+        /// <returns>Created call</returns>
         public Instruction Call(string methodName, Instruction[] args)
         {
             var methodInfo = getMethod(methodName);
             return new CallInstruction(methodInfo, args);
         }
 
+        /// <summary>
+        /// Emit instruction representation of value
+        /// </summary>
+        /// <param name="value">Emitted value</param>
+        /// <returns>Emitted constant</returns>
         public Instruction Constant(object value)
         {
             return new ConstantInstruction(value);

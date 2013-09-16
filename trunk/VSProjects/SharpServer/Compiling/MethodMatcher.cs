@@ -17,8 +17,6 @@ namespace SharpServer.Compiling
 
         private readonly Dictionary<Type, Type> _assignings = new Dictionary<Type, Type>();
 
-        private bool _isMatched;
-
         internal MethodMatcher(MethodInfo method, IEnumerable<Expression> args)
         {
             _method = method;
@@ -37,8 +35,7 @@ namespace SharpServer.Compiling
             if (!_method.ContainsGenericParameters)
             {
                 //there is nothing to convert
-                //note matched methods doesn't contains generic parameters
-                _isMatched = true;
+                //note matched methods doesn't contains generic parameters              
                 return;
             }
 
@@ -89,7 +86,6 @@ namespace SharpServer.Compiling
                 }
             }
 
-            _isMatched = true;
             _method = _method.MakeGenericMethod(_assignings.Values.ToArray());
         }
 

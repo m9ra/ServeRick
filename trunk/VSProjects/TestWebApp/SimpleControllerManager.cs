@@ -16,25 +16,19 @@ namespace TestWebApp
     /// <summary>
     /// Manage controllers and set handlers for client requests
     /// </summary>
-    class SimpleControllerManager:ControllerManager
+    class SimpleControllerManager : ControllerManager
     {
         readonly string _rootPath;
 
-        readonly Dictionary<string, ResponseHandler> _files = new Dictionary<string, ResponseHandler>();
-
-        readonly ResponseHandler _404;
+        private readonly string[] _publicExtensions = new[]{
+            "jpg"
+        };
 
         internal SimpleControllerManager(string rootPath)
+            : base(typeof(SimpleController))
         {
             _rootPath = rootPath;
             _404 = getHandler("404.haml");
-        }
-
-        internal void SetRoot(string fileRelative)
-        {
-            var uri = getUri(fileRelative);
-
-            _files["/"] = _files[uri];
         }
 
         internal void AddAll()
@@ -48,26 +42,26 @@ namespace TestWebApp
 
         internal void AddPath(string fileRelative)
         {
-            var uri = getUri(fileRelative);
-            _files[uri] = getHandler(fileRelative);
-        }
+            var handler = getHandler(fileRelative);
 
-        public override void Handle(Client client)
-        {
-            var uri=client.Request.URI;
+            RegisterFileHandler(fileRelative, handler);
 
-            ResponseHandler handler;
-            if (!_files.TryGetValue(uri,out handler))
+            if (isPublic(fileRelative))
             {
-                handler = _404;   
+                var uri = getUri(fileRelative);
+                RegisterActionHandler(uri, handler);
             }
-                        
-            client.Response.Render(handler);
         }
 
         private string getUri(string filePath)
         {
             return "/" + filePath;
+        }
+
+        private bool isPublic(string fileRelative)
+        {
+            var ext = Path.GetExtension(fileRelative).Substring(1);
+            return _publicExtensions.Contains(ext);
         }
 
         private ResponseHandler getHandler(string fileRelative)
@@ -81,14 +75,13 @@ namespace TestWebApp
                     return compileHAML(file);
                 case "jpg":
                 case "txt":
-                    return sendRaw(file,ext);
+                    return sendRaw(file, ext);
                 default:
                     throw new NotImplementedException();
             }
-            
         }
 
-        private ResponseHandler sendRaw(string file,string ext)
+        private ResponseHandler sendRaw(string file, string ext)
         {
             var bytes = File.ReadAllBytes(file);
             var mime = getMime(ext);
@@ -101,8 +94,10 @@ namespace TestWebApp
             };
         }
 
-        private string getMime(string ext){
-            switch(ext){
+        private string getMime(string ext)
+        {
+            switch (ext)
+            {
                 case "jpg":
                     return "image/jpeg";
                 case "txt":

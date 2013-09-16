@@ -63,7 +63,7 @@ namespace SharpServer.Compiling
                 args.Add(GetValue(arg));
             }
 
-            result(Expression.Call(null, x.Method.Info, args.ToArray()));
+            result(callMethod(x.Method.Info, args));
         }
 
         public override void VisitConstant(ConstantInstruction x)
@@ -115,7 +115,6 @@ namespace SharpServer.Compiling
                     "</", name, ">"
                     );
             }
-
         }
 
         public override void VisitConcat(ConcatInstruction x)
@@ -139,16 +138,20 @@ namespace SharpServer.Compiling
         {
             return callMethod("PairsToContainer", pairs);
         }
-        
-
 
         private Expression callMethod(string name, params Expression[] args)
         {
             return callMethod(name, (IEnumerable<Expression>)args);
         }
+
         private Expression callMethod(string name,IEnumerable<Expression> args){
             var method = ResponseHandlerProvider.WebMethods.GetMethod(name);
-            var matcher = new MethodMatcher(method.Info, args);
+            return callMethod(method.Info, args);
+        }
+
+        private Expression callMethod(MethodInfo methodInfo, IEnumerable<Expression> args)
+        {
+            var matcher = new MethodMatcher(methodInfo, args);
             return matcher.CreateCall();
         }
 

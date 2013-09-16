@@ -8,6 +8,12 @@ namespace SharpServer
 {
     public abstract class WebApplication
     {
-        public abstract ControllerManager CreateManager();
+        protected abstract ControllerManager createManager();
+
+        internal ControllerManager CreateManager(){
+            var manager=createManager();
+
+            return manager;
+        }
     }
 }

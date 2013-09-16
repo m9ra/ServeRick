@@ -16,7 +16,6 @@ namespace TestWebApp
             ServerEnvironment.AddManager(webApp);
             ServerEnvironment.Start();
 
-
             ConsoleKeyInfo keyInfo;
             do
             {

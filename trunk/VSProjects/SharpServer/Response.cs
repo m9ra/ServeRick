@@ -30,8 +30,7 @@ namespace SharpServer
         StringBuilder _writtenData = new StringBuilder();
 
         Queue<byte[]> _toSend = new Queue<byte[]>();
-
-        ResponseWorkItem _currentWork;
+        Queue<ResponseWorkItem> _workItems = new Queue<ResponseWorkItem>();
 
         internal Response(Client client, ResponseProcessor processor)
         {
@@ -68,15 +67,25 @@ namespace SharpServer
 
         internal void RunWork(ResponseWorkItem work)
         {
-            _currentWork = work;
-            work.Handler(this);
+            _workItems.Enqueue(work);
+            while (_workItems.Count > 0)
+            {
+                var currentWork = _workItems.Dequeue();
+                currentWork.Handler(this);
+            }
             sendQueue();
         }
 
-        public void Render(ResponseHandler page)
+        internal void EnqueueToProcessor(ResponseHandler handler)
         {
-            _currentWork = new ResponseWorkItem(_client, page);
-            _processor.EnqueueWork(_currentWork);
+            var work = new ResponseWorkItem(_client, handler);
+            _processor.EnqueueWork(work);
+        }
+
+        public void Render(ResponseHandler handler)
+        {            
+            var work= new ResponseWorkItem(_client, handler);
+            _workItems.Enqueue(work);
         }
 
         /// <summary>
@@ -90,7 +99,7 @@ namespace SharpServer
                 return;
             }
 
-            if (_toSend.Count == 0)
+            if (_toSend.Count == 0 && _workItems.Count==0)
             {
                 //there is no other work
                 _client.Close();
