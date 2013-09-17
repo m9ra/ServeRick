@@ -6,10 +6,10 @@ using SharpServer.UnitTesting.NetworkTools;
 namespace SharpServer.UnitTesting
 {
     [TestClass]
-    public class HeaderParsingTests
+    public class HeaderParsing_Tests
     {
         [TestMethod]
-        public void Parse_GET()
+        public void GET_ParseHeader()
         {
             @"GET / HTTP/1.1
 Host: test.cz

@@ -22,14 +22,9 @@ namespace SharpServer
 
         private bool _headersSent = false;
         private string _statusLine = "HTTP/1.1 200 OK";
-        private readonly Dictionary<string, string> _responseHeaders=new Dictionary<string,string>();
+        protected readonly Dictionary<string, string> _responseHeaders=new Dictionary<string,string>();
 
-        /// <summary>
-        /// TODO this is for debug only
-        /// </summary>
-        StringBuilder _writtenData = new StringBuilder();
-
-        Queue<byte[]> _toSend = new Queue<byte[]>();
+        protected Queue<byte[]> _toSend = new Queue<byte[]>();
         Queue<ResponseWorkItem> _workItems = new Queue<ResponseWorkItem>();
 
         internal Response(Client client, ResponseProcessor processor)
@@ -41,6 +36,13 @@ namespace SharpServer
             
             _responseHeaders["Cache-Control"] = "max-age=0, private, must-revalidate";
             SetContentType("text/html; charset=utf-8"); //default content type
+        }
+        
+        /// <summary>
+        /// Allow Mocking responses creation
+        /// </summary>
+        protected Response()
+        {
         }
 
         public void SetContentType(string mime)

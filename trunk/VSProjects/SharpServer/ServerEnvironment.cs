@@ -41,7 +41,7 @@ namespace SharpServer
             server.Start();
         }
 
-        static void LoadToolchains()
+        public static void LoadToolchains()
         {
             var hamlGrammar = new HAML.Grammar();
             var lang = new LanguageData(hamlGrammar);

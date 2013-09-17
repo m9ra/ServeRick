@@ -56,8 +56,6 @@ namespace SharpServer.Compiling
 
         #endregion
 
-
-
         #region Services for compiler
 
         internal static byte[] ConvertBytes(string data)
@@ -116,7 +114,6 @@ namespace SharpServer.Compiling
         }
 
         #endregion
-
 
         #region Private utilites
 

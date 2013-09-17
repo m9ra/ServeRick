@@ -236,8 +236,11 @@ namespace SharpServer.HAML
         private RValue getClassAttrib(ParseTreeNode headNode)
         {
             var classes = findTerminals("class", headNode);
-            var classAttrib = string.Join(" ", classes);
 
+            if (classes.Length == 0)
+                return null;    
+
+            var classAttrib = string.Join(" ", classes);
             return new LiteralValue(classAttrib, E);
         }
 

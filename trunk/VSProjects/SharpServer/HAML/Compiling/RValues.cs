@@ -133,25 +133,47 @@ namespace SharpServer.HAML.Compiling
         internal override Instruction ToInstruction()
         {
             var tag = E.Tag(TagName.ToInstruction());
-            if (Attributes != null)
-            {
-                var attributes = Attributes.ToInstruction();
-                if (ExplicitID != null)
-                {
-                    attributes = E.SetValue(attributes, E.Constant("id"), ExplicitID.ToInstruction());
-                }
+            var attributes = createAttributes();
 
-                if (ExplicitClass != null)
-                {
-                    attributes = E.SetValue(attributes, E.Constant("class"), ExplicitClass.ToInstruction());
-                }
-
-                tag.SetAttributes(attributes);
-            }
-
+            tag.SetAttributes(attributes);
             tag.SetContent(_content);
 
             return tag;
+        }
+
+        private Instruction createAttributes()
+        {
+            Instruction attributes;
+            var idConstant = E.Constant("id");
+            var classConstant = E.Constant("class");
+
+            if (Attributes == null)
+            {
+                var pairs = new List<Instruction>();
+
+                if (ExplicitID != null)
+                    pairs.Add(E.Pair(idConstant, ExplicitID.ToInstruction()));
+
+                if (ExplicitClass != null)
+                    pairs.Add(E.Pair(classConstant, ExplicitClass.ToInstruction()));
+
+                if (pairs.Count == 0)
+                    return null;
+
+                attributes = E.Container(pairs);
+
+            }
+            else
+            {
+                attributes = Attributes.ToInstruction();
+                if (ExplicitID != null)
+                    attributes = E.SetValue(attributes, idConstant, ExplicitID.ToInstruction());
+
+                if (ExplicitClass != null)
+                    attributes = E.SetValue(attributes, classConstant, ExplicitClass.ToInstruction());
+            }
+
+            return attributes;
         }
     }
 }
