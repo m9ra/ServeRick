@@ -35,6 +35,22 @@ namespace SharpServer.UnitTesting
 ".AssertHAML(@"<a><b/><c/></a><d><e><f/></e></d>");
         }
 
+
+        [TestMethod]
+        public void HAML_ChainedContent()
+        {
+            @"
+%a 
+ %b
+  %c
+ Test1
+ Test2
+ %d
+ Test3
+".AssertHAML(@"<a><b><c/></b>Test1Test2<d/>Test3</a>");
+
+        }
+
         [TestMethod]
         public void HAML_ImplicitTag()
         {
@@ -54,6 +70,16 @@ namespace SharpServer.UnitTesting
         {
             @"%img{:src=>""image.png"", :alt=>""Test""}"
             .AssertHAML("<img src=\"image.png\" alt=\"Test\"/>");
+        }
+
+        [TestMethod]
+        public void HAML_Doctype()
+        {
+            @"
+!!!
+%a
+"
+            .AssertHAML("<!DOCTYPE html><a/>");
         }
     }
 }

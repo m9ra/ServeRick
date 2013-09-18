@@ -60,5 +60,9 @@ namespace SharpServer.Compiling
             return container;
         }
 
+        public static void Yield(Response response, string identifier)
+        {
+            response.Yield(identifier);
+        }
     }
 }

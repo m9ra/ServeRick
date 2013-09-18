@@ -28,7 +28,8 @@ namespace SharpServer
             var w = Stopwatch.StartNew();
             handler = ResponseHandlerProvider.GetHandler(
                     "haml",
-                    PageSource()
+                    PageSource(),
+                    new WebMethods()
                     );
 
             if (handler != null)
@@ -74,7 +75,8 @@ namespace SharpServer
         {
             return ResponseHandlerProvider.GetHandler(
                      "haml",
-                     PageSource()
+                     PageSource(),
+                     null
                      );
         }
 

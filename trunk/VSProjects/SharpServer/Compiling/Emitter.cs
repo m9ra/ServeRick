@@ -18,11 +18,11 @@ namespace SharpServer.Compiling
     {
         private readonly LinkedList<Instruction> _emitted = new LinkedList<Instruction>();
 
-        private readonly WebMethods _methods;
+        private readonly WebMethods _helpers;
 
-        internal Emitter(WebMethods methods)
+        internal Emitter(WebMethods helpers)
         {
-            _methods = methods;
+            _helpers = helpers;
         }
 
         #region API for emitting statements
@@ -35,7 +35,7 @@ namespace SharpServer.Compiling
         {
             _emitted.AddLast(instruction);
         }
-        
+
         /// <summary>
         /// Create call of given method with given arguments
         /// </summary>
@@ -44,7 +44,7 @@ namespace SharpServer.Compiling
         /// <returns>Created call</returns>
         public Instruction Call(string methodName, Instruction[] args)
         {
-            var methodInfo = getMethod(methodName);
+            var methodInfo = _helpers.GetMethod(methodName);
             return new CallInstruction(methodInfo, args);
         }
 
@@ -89,10 +89,26 @@ namespace SharpServer.Compiling
             return new ContainerInstruction(pairs);
         }
 
+
+        internal Instruction WriteInstruction(Instruction output)
+        {
+            return new WriteInstruction(output);
+        }
+
         internal Instruction SetValue(Instruction container, Instruction key, Instruction value)
         {
-            var setValue = getMethod("SetValue");
+            var setValue = getCompilerMethod("SetValue");
             return new CallInstruction(setValue, container, key, value);
+        }
+
+        internal Instruction Yield(Instruction identifierInstr)
+        {
+            if (identifierInstr == null)
+                //default yield identifier
+                identifierInstr = Constant("");
+
+            var yield = getCompilerMethod("Yield");
+            return new CallInstruction(yield, new ResponseInstruction(), identifierInstr);
         }
 
         private void emit(Instruction instruction)
@@ -100,9 +116,10 @@ namespace SharpServer.Compiling
             _emitted.AddLast(instruction);
         }
 
-        private WebMethod getMethod(string methodName)
+        private WebMethod getCompilerMethod(string methodName)
         {
-            return _methods.GetMethod(methodName);
+            return ResponseHandlerProvider.CompilerHelpers.GetMethod(methodName);
         }
+
     }
 }

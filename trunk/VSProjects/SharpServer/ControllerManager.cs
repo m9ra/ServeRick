@@ -9,6 +9,8 @@ using System.Linq.Expressions;
 
 using SharpServer.Networking;
 
+using SharpServer.Compiling;
+
 namespace SharpServer
 {
     public abstract class ControllerManager
@@ -19,6 +21,9 @@ namespace SharpServer
         /// </summary>
         readonly Dictionary<string, ResponseHandler> _actions = new Dictionary<string, ResponseHandler>();
 
+        /// <summary>
+        /// Response handlers for file requests
+        /// </summary>
         readonly Dictionary<string, ResponseHandler> _files = new Dictionary<string, ResponseHandler>();
 
         /// <summary>
@@ -66,7 +71,7 @@ namespace SharpServer
 
             client.Response.EnqueueToProcessor(handler);
         }
-
+        
         /// <summary>
         /// Register handler for given uri
         /// </summary>
@@ -85,7 +90,7 @@ namespace SharpServer
         private void registerAction(MethodInfo action)
         {
             var actionInfo = resolveAction(action);
-            _actions.Add(actionInfo.Pattern, actionInfo.Handler);
+            addAction(actionInfo.Pattern, actionInfo.Handler);
         }
 
         private ActionInfo resolveAction(MethodInfo action)
@@ -108,5 +113,14 @@ namespace SharpServer
             return new ActionInfo("/" + action.Name, handler);
         }
 
+        private void addAction(string pattern, ResponseHandler handler)
+        {
+            if (pattern == "/index")
+            {
+                _actions.Add("/", handler);
+            }
+
+            _actions.Add(pattern, handler);
+        }
     }
 }

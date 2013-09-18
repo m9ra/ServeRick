@@ -16,7 +16,7 @@ namespace SharpServer.UnitTesting.HamlTools
         {
             ServerEnvironment.LoadToolchains();
 
-            var handler=ResponseHandlerProvider.GetHandler("haml", hamlInput);
+            var handler=ResponseHandlerProvider.GetHandler("haml", hamlInput,new WebMethods());
             var testResponse = new TestResponse();
             handler(testResponse);
 

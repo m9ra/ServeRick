@@ -18,11 +18,12 @@ namespace SharpServer
     {
         private readonly Client _client;
         private readonly ResponseProcessor _processor;
+        private readonly Dictionary<string, ResponseHandler> _contentsFor = new Dictionary<string, ResponseHandler>();
+        protected readonly Dictionary<string, string> _responseHeaders = new Dictionary<string, string>();
 
 
         private bool _headersSent = false;
         private string _statusLine = "HTTP/1.1 200 OK";
-        protected readonly Dictionary<string, string> _responseHeaders=new Dictionary<string,string>();
 
         protected Queue<byte[]> _toSend = new Queue<byte[]>();
         Queue<ResponseWorkItem> _workItems = new Queue<ResponseWorkItem>();
@@ -33,11 +34,11 @@ namespace SharpServer
             _processor = processor;
 
             _responseHeaders["Server"] = "SharpServer";
-            
+
             _responseHeaders["Cache-Control"] = "max-age=0, private, must-revalidate";
             SetContentType("text/html; charset=utf-8"); //default content type
         }
-        
+
         /// <summary>
         /// Allow Mocking responses creation
         /// </summary>
@@ -67,6 +68,27 @@ namespace SharpServer
             _toSend.Enqueue(data);
         }
 
+        public void Render(ResponseHandler handler)
+        {
+            var work = new ResponseWorkItem(_client, handler);
+            _workItems.Enqueue(work);
+        }
+
+        public void Yield(string identifier)
+        {
+            ResponseHandler yieldHandler;
+            if (_contentsFor.TryGetValue(identifier, out yieldHandler))
+            {
+                yieldHandler(this);
+                return;
+            }
+        }
+
+        internal void ContentFor(string yieldIdentifier, ResponseHandler handler)
+        {
+            _contentsFor[yieldIdentifier] = handler;
+        }
+
         internal void RunWork(ResponseWorkItem work)
         {
             _workItems.Enqueue(work);
@@ -84,11 +106,6 @@ namespace SharpServer
             _processor.EnqueueWork(work);
         }
 
-        public void Render(ResponseHandler handler)
-        {            
-            var work= new ResponseWorkItem(_client, handler);
-            _workItems.Enqueue(work);
-        }
 
         /// <summary>
         /// Non blocking single threaded queue send
@@ -101,7 +118,7 @@ namespace SharpServer
                 return;
             }
 
-            if (_toSend.Count == 0 && _workItems.Count==0)
+            if (_toSend.Count == 0 && _workItems.Count == 0)
             {
                 //there is no other work
                 _client.Close();
@@ -126,10 +143,8 @@ namespace SharpServer
             }
 
             builder.AppendLine();
-            var bytes=Encoding.ASCII.GetBytes(builder.ToString());
+            var bytes = Encoding.ASCII.GetBytes(builder.ToString());
             _client.Send(bytes, sendQueue);
         }
-
-
     }
 }

@@ -76,8 +76,11 @@
     <Compile Include="Compiling\Instructions\CallInstruction.cs" />
     <Compile Include="Compiling\Instructions\ConstantInstruction.cs" />
     <Compile Include="Compiling\Instructions\ConcatInstruction.cs" />
+    <Compile Include="Compiling\Instructions\EmittedItem.cs" />
     <Compile Include="Compiling\Instructions\PairInstruction.cs" />
+    <Compile Include="Compiling\Instructions\ResponseInstruction.cs" />
     <Compile Include="Compiling\Instructions\TagInstruction.cs" />
+    <Compile Include="Compiling\Instructions\WriteInstruction.cs" />
     <Compile Include="Compiling\InstructionVisitor.cs" />
     <Compile Include="Compiling\LanguageToolChain.cs" />
     <Compile Include="Compiling\MethodMatcher.cs" />
@@ -88,6 +91,7 @@
     <Compile Include="HAML\Compiler.cs" />
     <Compile Include="HAML\Grammar.cs" />
     <Compile Include="HAML\Compiling\RValues.cs" />
+    <Compile Include="Helper.cs" />
     <Compile Include="HttpServer.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Memory\DataBuffer.cs" />

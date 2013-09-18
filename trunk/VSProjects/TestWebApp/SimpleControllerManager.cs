@@ -20,6 +20,8 @@ namespace TestWebApp
     {
         readonly string _rootPath;
 
+        readonly WebMethods _helpers = new WebMethods(typeof(WebHelper));
+
         private readonly string[] _publicExtensions = new[]{
             "jpg"
         };
@@ -110,7 +112,7 @@ namespace TestWebApp
         private ResponseHandler compileHAML(string file)
         {
             var source = getSource(file);
-            var handler = ResponseHandlerProvider.GetHandler("haml", source);
+            var handler = ResponseHandlerProvider.GetHandler("haml", source,_helpers);
             if (handler == null)
             {
                 throw new NotSupportedException("Compilation failed");

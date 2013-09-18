@@ -11,47 +11,48 @@ using SharpServer.Compiling.Instructions;
 
 namespace SharpServer.Compiling
 {
-    delegate object PartialEvaluator();
-
     class HTMLValues : InstructionVisitor
     {
         static readonly Type ThisType = typeof(HTMLValues);
-        static readonly MethodInfo StringConcat = typeof(string).GetMethod("Concat", new[] { typeof(object[]) });        
-               
+        static readonly MethodInfo StringConcat = typeof(string).GetMethod("Concat", new[] { typeof(object[]) });
 
-        static HTMLValues _creator = new HTMLValues();
+        private readonly HTMLCompiler _compiler;
 
         private Expression _result;
 
-        public static Expression GetValue(Instruction instruction)
+        internal HTMLValues(HTMLCompiler compiler)
+        {
+            _compiler = compiler;
+        }
+
+        public static Expression GetValue(Instruction instruction, HTMLCompiler compiler)
         {
             if (instruction == null)
                 return null;
 
-            instruction.VisitMe(_creator);
+            var creator = new HTMLValues(compiler);
+            instruction.VisitMe(creator);
 
-            var result = _creator._result;
-            _creator._result = null;
-
-            if (instruction.IsStatic())
-            {
-                result = precomputeExpression(result);
-            }
-
+            var result = creator._result;
+            creator._result = null;
             return result;
         }
-
-        private static Expression precomputeExpression(Expression staticExpression)
-        {
-            var evaluator = Expression.Lambda<PartialEvaluator>(staticExpression).Compile();
-            var precomputed = evaluator();
-
-            return Expression.Constant(precomputed);
-        }
+             
+        #region Visitor overrides
 
         public override void VisitInstruction(Instruction x)
         {
             throw new NotImplementedException();
+        }
+
+        public override void VisitTag(TagInstruction x)
+        {
+            throw new NotSupportedException("Tag instruction is not RValue");
+        }
+
+        public override void VisitConcat(ConcatInstruction x)
+        {
+            throw new NotSupportedException("Concat instruction is not RValue");
         }
 
         public override void VisitCall(CallInstruction x)
@@ -60,10 +61,10 @@ namespace SharpServer.Compiling
 
             foreach (var arg in x.Arguments)
             {
-                args.Add(GetValue(arg));
+                args.Add(getValue(arg));
             }
 
-            result(callMethod(x.Method.Info, args));
+            result(_compiler.CallMethod(x.IsStatic(),x.Method.Info, args));
         }
 
         public override void VisitConstant(ConstantInstruction x)
@@ -71,10 +72,15 @@ namespace SharpServer.Compiling
             result(Expression.Constant(x.Constant));
         }
 
+        public override void VisitResponse(ResponseInstruction x)
+        {
+            result(_compiler.ResponseParameter);
+        }
+
         public override void VisitPair(PairInstruction x)
         {
-            var key = GetValue(x.Key);
-            var value = GetValue(x.Value);
+            var key = getValue(x.Key);
+            var value = getValue(x.Value);
 
             var argTypes = new[] { key.Type, value.Type };
 
@@ -90,95 +96,32 @@ namespace SharpServer.Compiling
 
             foreach (var pair in x.Pairs)
             {
-                pairValues.Add(GetValue(pair));
+                pairValues.Add(getValue(pair));
             }
 
-            result(pairsToContainer(pairValues));
+            result(pairsToContainer(pairValues,x.IsStatic()));
         }
 
-        public override void VisitTag(TagInstruction x)
+        #endregion
+
+
+        #region Private utilities
+
+        internal Expression pairsToContainer(IEnumerable<Expression> pairs,bool precompute)
         {
-            var name = GetValue(x.Name);
-            var content = GetValue(x.Content);
-            var attributes = GetValue(x.Attributes);
-
-            var stringyAttributes = attributes == null ? Expression.Constant("") : attributesToString(attributes);
-
-            if (content == null)
-            {
-                resultConcat("<", name, stringyAttributes, "/>");
-            }
-            else
-            {
-                resultConcat(
-                    "<", name, stringyAttributes, ">", content,
-                    "</", name, ">"
-                    );
-            }
-        }
-
-        public override void VisitConcat(ConcatInstruction x)
-        {
-            var chunks = new List<Expression>();
-
-            foreach (var chunk in x.Chunks)
-            {
-                chunks.Add(GetValue(chunk));
-            }
-
-            resultConcat(chunks.ToArray());
-        }
-        
-        private Expression attributesToString(Expression attributesContainer)
-        {
-            return callMethod("AttributesToString", attributesContainer);
-        }
-
-        internal Expression pairsToContainer(IEnumerable<Expression> pairs)
-        {
-            return callMethod("PairsToContainer", pairs);
-        }
-
-        private Expression callMethod(string name, params Expression[] args)
-        {
-            return callMethod(name, (IEnumerable<Expression>)args);
-        }
-
-        private Expression callMethod(string name,IEnumerable<Expression> args){
-            var method = ResponseHandlerProvider.WebMethods.GetMethod(name);
-            return callMethod(method.Info, args);
-        }
-
-        private Expression callMethod(MethodInfo methodInfo, IEnumerable<Expression> args)
-        {
-            var matcher = new MethodMatcher(methodInfo, args);
-            return matcher.CreateCall();
-        }
-
-        private void resultConcat(params object[] chunks)
-        {
-            var chunkExprs = new List<Expression>();
-            foreach (var chunk in chunks)
-            {
-                if (chunk == null)
-                    continue;
-
-                var expr = chunk as Expression;
-
-                if (expr == null)
-                    expr = Expression.Constant(chunk);
-
-                chunkExprs.Add(expr);
-            }
-
-            var array = Expression.NewArrayInit(typeof(object), chunkExprs.ToArray());
-
-            result(Expression.Call(null, StringConcat, array));
+            return _compiler.CallMethod(precompute,"PairsToContainer", pairs);
         }
 
         private void result(Expression result)
         {
             _result = result;
         }
+
+        private Expression getValue(Instruction instruction)
+        {
+            return _compiler.GetValue(instruction);
+        }
+
+        #endregion
     }
 }

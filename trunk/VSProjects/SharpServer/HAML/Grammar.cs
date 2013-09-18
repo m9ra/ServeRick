@@ -23,7 +23,7 @@ namespace SharpServer.HAML
             var statement = generateStatementGrammar();
             generateTemplateGrammar(statement);
 
-            MarkPunctuation("=", ".", "#", "%", "render", "=>", ",", ")", "(","}","{");            
+            MarkPunctuation("=", "!!!", ".", "#", "%", "render", "=>", ",", ")", "(", "}", "{");
             this.LanguageFlags = LanguageFlags.NewLineBeforeEOF;
         }
 
@@ -37,20 +37,22 @@ namespace SharpServer.HAML
             var render = NT("render");
             var call = NT("call");
             var callName = NT("callName");
+            var yield = NT("yield");
 
             var argList = NT("argList");
             var args = NT("args");
 
             var keyPair = NT("keyPair");
-            var keyPairs=NT("keyPairs");
+            var keyPairs = NT("keyPairs");
 
             var value = NT("value");
-            
+
+
             var symbol = new RegexBasedTerminal("symbol", ":[a-zA-Z][a-zA-Z01-9_]*");
             var shortKey = new RegexBasedTerminal("shortKey", "[a-zA-Z][a-zA-Z01-9_]*:");
             var identifier = new RegexBasedTerminal("identifier", "[a-zA-Z][a-zA-Z01-9_]*");
             identifier.Priority = TerminalPriority.Low;
-            
+
             #endregion
 
             //statement
@@ -65,16 +67,17 @@ namespace SharpServer.HAML
             call.Rule = callName + argList;
             callName.Rule = identifier;
 
-            //expression            
-            expression.Rule = identifier | keyPair | symbol | value | call;
+            //expression           
+            yield.Rule = "yield" + (symbol | Empty);
+            expression.Rule = yield | identifier | keyPair | symbol | value | call;
             keyPair.Rule = (symbol + "=>" + expression) | (shortKey + expression);
             keyPairs.Rule = (keyPair + "," + keyPairs) | keyPair;
 
             //literals
-            value.Rule = new NumberLiteral("number") | new StringLiteral("string",@"""");
+            value.Rule = new NumberLiteral("number") | new StringLiteral("string", @"""");
 
             //hash
-            hash.Rule = "{" +keyPairs+ "}";
+            hash.Rule = "{" + keyPairs + "}";
             return statement;
         }
 
@@ -83,6 +86,7 @@ namespace SharpServer.HAML
             #region Terminals/Neterminals definitions
 
             var view = NT("view");
+            var doctype = NT("doctype");
 
             var blocks = NT("blocks");
             var block = NT("block");
@@ -116,7 +120,7 @@ namespace SharpServer.HAML
             blocks.Rule = MakeStarRule(blocks, block);
 
             containerBlock.Rule = head + Eos + (Indent + blocks + Dedent);
-            contentBlock.Rule = head + ((content+Eos )|Eos);
+            contentBlock.Rule = head + ((content + Eos) | Eos);
 
             //content rules
             content.Rule = code | rawOutput;
@@ -133,10 +137,11 @@ namespace SharpServer.HAML
             cls.Rule = "." + identifier;
 
             //tag rules
-            tag.Rule = "%" + identifier+(Empty | hash);
+            tag.Rule = "%" + identifier + (Empty | hash);
 
             //root
-            view.Rule = blocks;
+            doctype.Rule = "!!!" + (identifier | Empty) + Eos;
+            view.Rule = (doctype | Empty) + blocks;
             this.Root = view;
 
             #endregion

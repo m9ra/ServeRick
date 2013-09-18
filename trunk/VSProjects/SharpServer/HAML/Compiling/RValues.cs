@@ -21,14 +21,30 @@ namespace SharpServer.HAML.Compiling
         }
     }
 
+    class YieldValue : RValue
+    {
+        internal readonly RValue Identifier;
+
+        internal YieldValue(RValue identifier, Emitter emitter)
+            : base(emitter)
+        {
+            Identifier = identifier;
+        }
+
+        internal override Instruction ToInstruction()
+        {
+            var identifierInstr=Identifier==null?null: Identifier.ToInstruction();
+            return E.Yield(identifierInstr);
+        }
+    }
 
     class CallValue : RValue
     {
         internal readonly string CallName;
         internal readonly RValue[] Args;
 
-        internal CallValue(string callName, RValue[] args, Emitter emitter) :
-            base(emitter)
+        internal CallValue(string callName, RValue[] args, Emitter emitter)
+            : base(emitter)
         {
             CallName = callName;
             Args = args;
@@ -135,7 +151,7 @@ namespace SharpServer.HAML.Compiling
             var tag = E.Tag(TagName.ToInstruction());
             var attributes = createAttributes();
 
-            tag.SetAttributes(attributes);
+            tag.SetAttributes(attributes);            
             tag.SetContent(_content);
 
             return tag;

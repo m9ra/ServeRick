@@ -53,7 +53,17 @@ namespace SharpServer.HAML
 
         private Instruction compileView(ParseTreeNode view)
         {
-            return compileBlocks(view);
+            var blocks = compileBlocks(view);
+
+            var doctype = findNode(view, "doctype");
+            if (doctype != null)
+            {
+                //TODO resolve doctype type
+                var doctypeString = E.Constant("<!DOCTYPE html>\n");
+
+                return E.Concat(new Instruction[] { doctypeString, blocks });
+            }
+            return blocks;
         }
 
         private Instruction compileBlocks(ParseTreeNode parent)
@@ -79,17 +89,19 @@ namespace SharpServer.HAML
 
 
             var contentNode = getChild("content", contentBlock);
-            if (contentNode != null)
-            {
-                var content = compileContent(contentNode);
-                tag.SetContent(content);
-            }
+            var content = compileContent(contentNode);
+            if (tag == null)
+                //empty tag declaration
+                return content;
 
+            tag.SetContent(content);
             return tag.ToInstruction();
         }
 
         private Instruction compileContent(ParseTreeNode contentNode)
         {
+            if (contentNode == null)
+                return null;
             var rawContent = getSubTerminal(contentNode);
             if (rawContent != null)
             {
@@ -105,6 +117,7 @@ namespace SharpServer.HAML
         private Instruction compileCode(ParseTreeNode code)
         {
             var statement = getChild("statement", code);
+
             return compileStatement(statement);
         }
 
@@ -117,11 +130,23 @@ namespace SharpServer.HAML
                 case "expression":
                     var value = resolveRValue(child);
                     var output = value.ToInstruction();
-                    return output;
+
+                    if (containsYield(child))
+                        //yield doesn't have return value
+                        return output;
+                    else
+                        return E.WriteInstruction(output);
                 default:
                     throw new NotImplementedException();
             }
         }
+
+        private bool containsYield(ParseTreeNode child)
+        {
+            return findNode(child, "yield")!=null;
+        }
+
+        
 
         private Instruction compileContainerBlock(ParseTreeNode containerBlock)
         {
@@ -129,6 +154,9 @@ namespace SharpServer.HAML
             var tag = createTag(headNode);
 
             var blocks = compileBlocks(containerBlock);
+            if (tag == null)
+                return blocks;
+
             tag.SetContent(blocks);
 
             return tag.ToInstruction();
@@ -149,6 +177,8 @@ namespace SharpServer.HAML
                     return resolveRValue(stepToChild(node));
                 case "symbol":
                     return resolveSymbol(node);
+                case "shortKey":
+                    return resolveShortKey(node);
                 case "value":
                     var literal = getSubTerminal(node);
                     return resolveLiteralValue(literal);
@@ -156,6 +186,8 @@ namespace SharpServer.HAML
                     return resolveHashValue(node);
                 case "keyPair":
                     return resolveKeyPair(node);
+                case "yield":
+                    return resolveYield(node);
 
                 default:
                     throw new NotImplementedException();
@@ -168,10 +200,20 @@ namespace SharpServer.HAML
 
             var args = new List<RValue>();
 
-            foreach (var argNode in argsNode.ChildNodes)
+            while(argsNode!=null)
             {
+                var argNode = argsNode;
+                if (argsNode.Term.Name == "args")
+                {
+                    argNode = argsNode.ChildNodes[0];
+                }
                 var value = resolveRValue(argNode);
                 args.Add(value);
+
+                if (argsNode.ChildNodes.Count == 1)
+                    break;
+
+                argsNode = findNode(argsNode.ChildNodes[1], "args");
             }
 
             return args.ToArray();
@@ -179,7 +221,18 @@ namespace SharpServer.HAML
 
         private RValue resolveSymbol(ParseTreeNode symbolNode)
         {
+            if (symbolNode == null)
+                return null;
+
             return new LiteralValue(getTerminalText(symbolNode).Substring(1), E);
+        }
+
+        private RValue resolveShortKey(ParseTreeNode shortKeyNode)
+        {
+            var keyText = getTerminalText(shortKeyNode);
+            //remove ending :
+            keyText = keyText.Substring(0, keyText.Length - 1);
+            return new LiteralValue(keyText, E);
         }
 
         private RValue resolveLiteralValue(string literal)
@@ -203,6 +256,14 @@ namespace SharpServer.HAML
             var key = resolveRValue(pairNode.ChildNodes[0]);
             var value = resolveRValue(pairNode.ChildNodes[1]);
             return new PairValue(key, value, E);
+        }
+
+        private RValue resolveYield(ParseTreeNode yieldNode)
+        {
+            var symbolNode = findNode(yieldNode, "symbol");
+            var symbol = resolveSymbol(symbolNode);
+
+            return new YieldValue(symbol, E);
         }
 
         private RValue resolveHashValue(ParseTreeNode hashNode)
@@ -230,6 +291,16 @@ namespace SharpServer.HAML
 
             var classAttrib = getClassAttrib(headNode);
 
+            if (tag == null && id == null && classAttrib == null)
+            {
+                //empty element declaration
+                return null;
+            }
+
+            if (tag == null)
+                //implicit tag
+                tag = new LiteralValue("div", E);
+
             return new TagValue(tag, classAttrib, id, hash, E);
         }
 
@@ -238,7 +309,7 @@ namespace SharpServer.HAML
             var classes = findTerminals("class", headNode);
 
             if (classes.Length == 0)
-                return null;    
+                return null;
 
             var classAttrib = string.Join(" ", classes);
             return new LiteralValue(classAttrib, E);
@@ -246,17 +317,16 @@ namespace SharpServer.HAML
 
         private RValue getTagName(ParseTreeNode headNode)
         {
-            string tag=null;
+            string tag = null;
             if (headNode.ChildNodes.Count != 0)
             {
                 var tagNode = headNode.ChildNodes[0];
                 tag = getTerminalText(tagNode.ChildNodes[0]);
             }
-          
 
             if (tag == null)
             {
-                tag = "div";
+                return null;
             }
 
             return new LiteralValue(tag, E);
@@ -295,6 +365,9 @@ namespace SharpServer.HAML
 
         private string getName(ParseTreeNode node)
         {
+            if (node == null)
+                return null;
+
             return node.Term.Name;
         }
 
@@ -331,7 +404,7 @@ namespace SharpServer.HAML
                     throw new NotSupportedException("Cannot step to child, invalid child count");
             }
         }
-        
+
         private string getChildName(ParseTreeNode parent)
         {
             var child = stepToChild(parent);

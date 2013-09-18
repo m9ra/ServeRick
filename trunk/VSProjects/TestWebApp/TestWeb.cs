@@ -14,7 +14,8 @@ namespace TestWebApp
         {
             var manager=new SimpleControllerManager("www/");
             manager.AddAll();
-                        
+      //      manager.AddPath("application.haml");
+                                    
             return manager;
         }
     }

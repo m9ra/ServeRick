@@ -12,13 +12,15 @@ namespace TestWebApp
     {
         public void index()
         {
+            Layout("application.haml");
             Render("index.haml");
         }
 
         [GET("/attribs/:name/:page")]
-        public void attribs(/*string name, int page*/)
+        public void nabizime(/*string name, int page*/)
         {
-            Render("attribs.haml");
+            Layout("application.haml");
+            Render("index.haml");
         }
     }
 }

@@ -8,15 +8,22 @@ using System.Reflection;
 
 namespace SharpServer.Compiling
 {
-    class WebMethods
+    public class WebMethods
     {
         Dictionary<string, WebMethod> _methods = new Dictionary<string, WebMethod>();
 
-        internal WebMethods()
+        readonly Type[] _helperClasses;
+
+        public WebMethods(params Type[] helperClasses)
         {
-            foreach (var method in typeof(CompilerHelpers).GetMethods())
+            _helperClasses = helperClasses;
+
+            foreach (var helperClass in helperClasses)
             {
-                registerMethod(method);
+                foreach (var method in helperClass.GetMethods())
+                {
+                    registerMethod(method);
+                }
             }
         }
 

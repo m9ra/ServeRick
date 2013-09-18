@@ -12,13 +12,13 @@ namespace SharpServer.Compiling
     {
         static readonly Dictionary<string, LanguageToolChain> _toolChains = new Dictionary<string, LanguageToolChain>();
 
-        internal static readonly WebMethods WebMethods=new WebMethods();
+        internal static readonly WebMethods CompilerHelpers=new WebMethods(typeof(CompilerHelpers));
 
         internal static void Register(LanguageToolChain toolChain){
             _toolChains[toolChain.Language]=toolChain;
         }
 
-        public static ResponseHandler GetHandler(string language,string source)
+        public static ResponseHandler GetHandler(string language,string source,WebMethods helperMethods)
         {
             var toolChain= _toolChains[language];
 
@@ -27,7 +27,7 @@ namespace SharpServer.Compiling
 
             if (tree.Root != null)
             {
-                var emitter = new Emitter(WebMethods);
+                var emitter = new Emitter(helperMethods);
                 toolChain.Compile(tree.Root, emitter);
 
                 var instructions = emitter.GetEmittedResult();
