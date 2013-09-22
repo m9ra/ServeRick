@@ -8,6 +8,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using SharpServer.Compiling;
 
+using SharpServer.UnitTesting.WebTools;
+
 namespace SharpServer.UnitTesting.HamlTools
 {
     static class Extensions
@@ -15,8 +17,9 @@ namespace SharpServer.UnitTesting.HamlTools
         internal static void AssertHAML(this string hamlInput, string expectedHtmlOutput)
         {
             ServerEnvironment.LoadToolchains();
+            var testWeb = new TestWebApp();
 
-            var handler=ResponseHandlerProvider.GetHandler("haml", hamlInput,new WebMethods());
+            var handler=testWeb.HandlerProvider.Compile("haml", hamlInput);
             var testResponse = new TestResponse();
             handler(testResponse);
 

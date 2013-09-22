@@ -58,6 +58,7 @@
     <Compile Include="NetworkTools\Extensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="NetworkTools\HeaderParsingCase.cs" />
+    <Compile Include="WebTools\TestWebApp.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\VSProjects\SharpServer\SharpServer.csproj">

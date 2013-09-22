@@ -111,6 +111,7 @@
     <Compile Include="Responsing\ResponseProcessor.cs" />
     <Compile Include="Responsing\ResponseWorkItem.cs" />
     <Compile Include="WebApplication.cs" />
+    <Compile Include="WebItem.cs" />
     <Compile Include="WebMethod.cs" />
   </ItemGroup>
   <ItemGroup>

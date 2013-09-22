@@ -20,30 +20,6 @@ namespace SharpServer
 {
     static class Research
     {
-        internal static void RunCompiling()
-        {
-            ResponseHandler handler = null;
-            var response = new Response(null, null);
-
-            var w = Stopwatch.StartNew();
-            handler = ResponseHandlerProvider.GetHandler(
-                    "haml",
-                    PageSource(),
-                    new WebMethods()
-                    );
-
-            if (handler != null)
-            {
-                handler(response);
-            }
-
-            w.Stop();
-
-            Console.WriteLine("Time elapsed: {0}ms", w.ElapsedMilliseconds);
-            Console.ReadKey();
-        }
-
-
 
         internal static string Test1()
         {
@@ -70,17 +46,6 @@ namespace SharpServer
             Some extra loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong context
 ";
         }
-
-        internal static ResponseHandler CompilePageHandler()
-        {
-            return ResponseHandlerProvider.GetHandler(
-                     "haml",
-                     PageSource(),
-                     null
-                     );
-        }
-
-
 
         static ResponseHandler generateHandler()
         {

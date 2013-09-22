@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.IO;
 using System.Reflection;
 using System.Linq.Expressions;
 
@@ -19,20 +20,31 @@ namespace SharpServer
         /// Response handlers for uri requests
         /// TODO: pattern based resolving of response handlers
         /// </summary>
-        readonly Dictionary<string, ResponseHandler> _actions = new Dictionary<string, ResponseHandler>();
+        readonly Dictionary<string, WebItem> _actions = new Dictionary<string, WebItem>();
 
         /// <summary>
         /// Response handlers for file requests
         /// </summary>
-        readonly Dictionary<string, ResponseHandler> _files = new Dictionary<string, ResponseHandler>();
+        readonly Dictionary<string, WebItem> _files = new Dictionary<string, WebItem>();
 
         /// <summary>
-        /// Response handler for missing action
+        /// File for missing file action
         /// </summary>
-        protected ResponseHandler _404;
+        protected WebItem _404;
 
-        public ControllerManager(params Type[] controllers)
+        /// <summary>
+        /// Owning web application
+        /// </summary>
+        protected readonly WebApplication Application;
+
+        /// <summary>
+        /// Handler provider available for current controller
+        /// </summary>
+        protected ResponseHandlerProvider HandlerProvider { get { return Application.HandlerProvider; } }
+
+        public ControllerManager(WebApplication application, params Type[] controllers)
         {
+            Application = application;
             foreach (var controller in controllers)
             {
                 foreach (var action in controller.GetMethods())
@@ -43,6 +55,44 @@ namespace SharpServer
             }
         }
 
+        #region Controller manager services
+
+        /// <summary>
+        /// Publish file item with given uri
+        /// </summary>
+        /// <param name="uri">Uri to publish</param>
+        /// <param name="fileItem">Published file item</param>
+        protected void PublishFile(string uri, WebItem fileItem)
+        {
+            _files.Add(uri, fileItem);
+        }
+
+        /// <summary>
+        /// Publish action item with given uri
+        /// </summary>
+        /// <param name="uri">Uri to publish</param>
+        /// <param name="actionItem">Published action item</param>
+        protected void PublishAction(string uri, WebItem actionItem)
+        {
+            _actions.Add(uri, actionItem);
+        }
+
+        /// <summary>
+        /// Compile given file into web item
+        /// </summary>
+        /// <param name="file">File to be compiled</param>
+        /// <returns>Compiled file</returns>
+        protected WebItem CompileHAML(string file)
+        {
+            var item = new WebItem(file);
+            fillItem(item);
+            return item;
+        }
+
+        #endregion
+
+        #region Internal methods for response handling
+
         /// <summary>
         /// Get handler for file
         /// </summary>
@@ -50,9 +100,9 @@ namespace SharpServer
         /// <returns>Handler for file</returns>
         internal ResponseHandler GetFileHandler(string fileName)
         {
-            ResponseHandler handler;
-            _files.TryGetValue(fileName, out handler);
-            return handler;
+            WebItem item;
+            _files.TryGetValue(fileName, out item);
+            return item.Handler;
         }
 
         /// <summary>
@@ -63,34 +113,64 @@ namespace SharpServer
         {
             var uri = client.Request.URI;
 
-            ResponseHandler handler;
-            if (!_actions.TryGetValue(uri, out handler))
+            WebItem item;
+            if (!_actions.TryGetValue(uri, out item))
             {
-                handler = _404;
+                item = _404;
             }
 
-            client.Response.EnqueueToProcessor(handler);
-        }
-        
-        /// <summary>
-        /// Register handler for given uri
-        /// </summary>
-        /// <param name="file">Uri to register</param>
-        /// <param name="handler">Handler for given uri</param>
-        protected void RegisterFileHandler(string file, ResponseHandler handler)
-        {
-            _files.Add(file, handler);
+            client.Response.EnqueueToProcessor(item.Handler);
         }
 
-        protected void RegisterActionHandler(string uri, ResponseHandler handler)
+        #endregion
+
+        #region Private utilities
+
+        /// <summary>
+        /// Fill item with item.FilePath, is called on every file change
+        /// </summary>
+        /// <param name="item">Filled item</param>
+        private void fillItem(WebItem item)
         {
-            _actions.Add(uri, handler);
+            var source = getSource(item.FilePath);
+
+            //TODO resolve source format
+            var handler = HandlerProvider.Compile("haml", source);
+            if (handler == null)
+            {
+                throw new NotSupportedException("Compilation failed");
+            }
+            item.Handler = handler;
+
+            if(item.Watcher==null){
+                var directory = Path.GetDirectoryName(item.FilePath)+Path.DirectorySeparatorChar;
+                var fileName = Path.GetFileName(item.FilePath); 
+                item.Watcher=new FileSystemWatcher(directory,fileName);
+
+                item.Watcher.EnableRaisingEvents = true;
+                item.Watcher.Changed += (s, e) => fillItem(item);
+            }
+        }
+
+        private string getSource(string file)
+        {
+            try
+            {
+                return File.ReadAllText(file);
+            }
+            catch (Exception ex)
+            {
+                return @"
+%h1 
+    Exception: 
+%div " + ex.ToString().Replace(Environment.NewLine, "<br>");
+            }
         }
 
         private void registerAction(MethodInfo action)
         {
             var actionInfo = resolveAction(action);
-            addAction(actionInfo.Pattern, actionInfo.Handler);
+            addAction(actionInfo.Pattern, actionInfo.Item);
         }
 
         private ActionInfo resolveAction(MethodInfo action)
@@ -110,17 +190,21 @@ namespace SharpServer
 
             var handler = Expression.Lambda<ResponseHandler>(actionMethod, responseParam).Compile();
 
-            return new ActionInfo("/" + action.Name, handler);
+            var item = WebItem.Runtime(handler);
+
+            return new ActionInfo("/" + action.Name, item);
         }
 
-        private void addAction(string pattern, ResponseHandler handler)
+        private void addAction(string pattern, WebItem item)
         {
             if (pattern == "/index")
             {
-                _actions.Add("/", handler);
+                _actions.Add("/", item);
             }
 
-            _actions.Add(pattern, handler);
+            _actions.Add(pattern, item);
         }
+
+        #endregion 
     }
 }

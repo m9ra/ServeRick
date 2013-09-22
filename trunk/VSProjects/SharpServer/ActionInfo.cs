@@ -9,12 +9,12 @@ namespace SharpServer
     class ActionInfo
     {
         internal readonly string Pattern;
-        internal readonly ResponseHandler Handler;
+        internal readonly WebItem Item;
 
-        internal ActionInfo(string pattern, ResponseHandler handler)
+        internal ActionInfo(string pattern, WebItem handler)
         {
             Pattern = pattern;
-            Handler = handler;
+            Item = handler;
         }
     }
 }

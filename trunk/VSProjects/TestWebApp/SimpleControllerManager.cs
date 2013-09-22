@@ -20,17 +20,17 @@ namespace TestWebApp
     {
         readonly string _rootPath;
 
-        readonly WebMethods _helpers = new WebMethods(typeof(WebHelper));
-
         private readonly string[] _publicExtensions = new[]{
             "jpg"
         };
 
-        internal SimpleControllerManager(string rootPath)
-            : base(typeof(SimpleController))
+        internal SimpleControllerManager(WebApplication app, string rootPath)
+            : base(app,
+                typeof(SimpleController)
+            )
         {
             _rootPath = rootPath;
-            _404 = getHandler("404.haml");
+            _404 = getWebItem("404.haml");
         }
 
         internal void AddAll()
@@ -44,14 +44,14 @@ namespace TestWebApp
 
         internal void AddPath(string fileRelative)
         {
-            var handler = getHandler(fileRelative);
+            var handler = getWebItem(fileRelative);
 
-            RegisterFileHandler(fileRelative, handler);
+            PublishFile(fileRelative, handler);
 
             if (isPublic(fileRelative))
             {
                 var uri = getUri(fileRelative);
-                RegisterActionHandler(uri, handler);
+                PublishAction(uri, handler);
             }
         }
 
@@ -66,7 +66,7 @@ namespace TestWebApp
             return _publicExtensions.Contains(ext);
         }
 
-        private ResponseHandler getHandler(string fileRelative)
+        private WebItem getWebItem(string fileRelative)
         {
             var file = _rootPath + fileRelative;
             var ext = Path.GetExtension(file).Substring(1);
@@ -74,7 +74,7 @@ namespace TestWebApp
             switch (ext.ToLower())
             {
                 case "haml":
-                    return compileHAML(file);
+                    return CompileHAML(file);
                 case "jpg":
                 case "txt":
                     return sendRaw(file, ext);
@@ -83,17 +83,17 @@ namespace TestWebApp
             }
         }
 
-        private ResponseHandler sendRaw(string file, string ext)
+        private WebItem sendRaw(string file, string ext)
         {
             var bytes = File.ReadAllBytes(file);
             var mime = getMime(ext);
 
-            return (r) =>
+            return WebItem.Runtime( (r) =>
             {
                 r.SetContentType(mime);
                 r.SetLength(bytes.Length);
                 r.Write(bytes);
-            };
+            });
         }
 
         private string getMime(string ext)
@@ -106,32 +106,6 @@ namespace TestWebApp
                     return "text/plain";
                 default:
                     throw new NotImplementedException();
-            }
-        }
-
-        private ResponseHandler compileHAML(string file)
-        {
-            var source = getSource(file);
-            var handler = ResponseHandlerProvider.GetHandler("haml", source,_helpers);
-            if (handler == null)
-            {
-                throw new NotSupportedException("Compilation failed");
-            }
-            return handler;
-        }
-
-        private string getSource(string file)
-        {
-            try
-            {
-                return File.ReadAllText(file);
-            }
-            catch (Exception ex)
-            {
-                return @"
-%h1 
-    Exception: 
-%div " + ex.ToString().Replace(Environment.NewLine, "<br>");
             }
         }
     }

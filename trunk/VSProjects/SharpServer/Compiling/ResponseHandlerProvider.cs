@@ -8,26 +8,35 @@ using Irony.Parsing;
 
 namespace SharpServer.Compiling
 {
-    public static class ResponseHandlerProvider
+    public class ResponseHandlerProvider
     {
-        static readonly Dictionary<string, LanguageToolChain> _toolChains = new Dictionary<string, LanguageToolChain>();
+        private static readonly Dictionary<string, LanguageToolChain> _toolChains = new Dictionary<string, LanguageToolChain>();
 
-        internal static readonly WebMethods CompilerHelpers=new WebMethods(typeof(CompilerHelpers));
+        internal static readonly WebMethods CompilerHelpers = new WebMethods(typeof(CompilerHelpers));
 
-        internal static void Register(LanguageToolChain toolChain){
-            _toolChains[toolChain.Language]=toolChain;
+        private readonly WebMethods WebHelpers;
+
+
+        internal ResponseHandlerProvider(WebMethods webHelpers)
+        {
+            WebHelpers = webHelpers;
         }
 
-        public static ResponseHandler GetHandler(string language,string source,WebMethods helperMethods)
+        internal static void Register(LanguageToolChain toolChain)
         {
-            var toolChain= _toolChains[language];
+            _toolChains[toolChain.Language] = toolChain;
+        }
 
-            var tree=toolChain.Parser.Parse(source);
+        public ResponseHandler Compile(string language, string source)
+        {
+            var toolChain = _toolChains[language];
+
+            var tree = toolChain.Parser.Parse(source);
             Output.DisplayTree(tree);
 
             if (tree.Root != null)
             {
-                var emitter = new Emitter(helperMethods);
+                var emitter = new Emitter(WebHelpers);
                 toolChain.Compile(tree.Root, emitter);
 
                 var instructions = emitter.GetEmittedResult();
