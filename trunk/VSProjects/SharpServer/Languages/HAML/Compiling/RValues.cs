@@ -8,7 +8,7 @@ using System.Linq.Expressions;
 
 using SharpServer.Compiling;
 
-namespace SharpServer.HAML.Compiling
+namespace SharpServer.Languages.HAML.Compiling
 {
     abstract class RValue
     {

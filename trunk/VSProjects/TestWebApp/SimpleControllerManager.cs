@@ -21,7 +21,7 @@ namespace TestWebApp
         readonly string _rootPath;
 
         private readonly string[] _publicExtensions = new[]{
-            "jpg"
+            "jpg","css"
         };
 
         internal SimpleControllerManager(WebApplication app, string rootPath)
@@ -46,7 +46,7 @@ namespace TestWebApp
         {
             var handler = getWebItem(fileRelative);
 
-            PublishFile(fileRelative, handler);
+            RegisterFile(fileRelative, handler);
 
             if (isPublic(fileRelative))
             {
@@ -75,38 +75,13 @@ namespace TestWebApp
             {
                 case "haml":
                     return CompileHAML(file);
+                case "css":
                 case "jpg":
                 case "txt":
-                    return sendRaw(file, ext);
+                    return  SendRaw(file, ext);
                 default:
                     throw new NotImplementedException();
             }
-        }
-
-        private WebItem sendRaw(string file, string ext)
-        {
-            var bytes = File.ReadAllBytes(file);
-            var mime = getMime(ext);
-
-            return WebItem.Runtime( (r) =>
-            {
-                r.SetContentType(mime);
-                r.SetLength(bytes.Length);
-                r.Write(bytes);
-            });
-        }
-
-        private string getMime(string ext)
-        {
-            switch (ext)
-            {
-                case "jpg":
-                    return "image/jpeg";
-                case "txt":
-                    return "text/plain";
-                default:
-                    throw new NotImplementedException();
-            }
-        }
+        } 
     }
 }

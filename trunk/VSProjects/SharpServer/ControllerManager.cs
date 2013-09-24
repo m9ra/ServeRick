@@ -16,6 +16,8 @@ namespace SharpServer
 {
     public abstract class ControllerManager
     {
+        object _L_itemRefresh = new object();
+
         /// <summary>
         /// Response handlers for uri requests
         /// TODO: pattern based resolving of response handlers
@@ -60,11 +62,11 @@ namespace SharpServer
         /// <summary>
         /// Publish file item with given uri
         /// </summary>
-        /// <param name="uri">Uri to publish</param>
+        /// <param name="fileId">Id of registered file</param>
         /// <param name="fileItem">Published file item</param>
-        protected void PublishFile(string uri, WebItem fileItem)
+        protected void RegisterFile(string fileId, WebItem fileItem)
         {
-            _files.Add(uri, fileItem);
+            _files.Add(fileId, fileItem);
         }
 
         /// <summary>
@@ -85,7 +87,39 @@ namespace SharpServer
         protected WebItem CompileHAML(string file)
         {
             var item = new WebItem(file);
-            fillItem(item);
+            fillItem(item, () =>
+            {
+                var source = getSource(item.FilePath);
+
+                //TODO resolve source format
+                var handler = HandlerProvider.Compile("haml", source);
+                if (handler == null)
+                {
+                    throw new NotSupportedException("Compilation failed");
+                }
+                item.Handler = handler;
+            });
+            return item;
+        }
+
+        protected WebItem SendRaw(string file, string ext)
+        {
+            var item = new WebItem(file);
+
+            fillItem(item, () =>
+            {
+                var bytes = File.ReadAllBytes(file);
+                var mime = getMime(ext);
+
+
+                item.Handler = (r) =>
+                {
+                    r.SetContentType(mime);
+                    r.SetLength(bytes.Length);
+                    r.Write(bytes);
+                };
+            });
+
             return item;
         }
 
@@ -130,26 +164,34 @@ namespace SharpServer
         /// Fill item with item.FilePath, is called on every file change
         /// </summary>
         /// <param name="item">Filled item</param>
-        private void fillItem(WebItem item)
+        /// <param name="action">Action called when item has to be refreshed</param>
+        private void fillItem(WebItem item, Action action)
         {
-            var source = getSource(item.FilePath);
-
-            //TODO resolve source format
-            var handler = HandlerProvider.Compile("haml", source);
-            if (handler == null)
+            action();
+            if (item.Watcher == null)
             {
-                throw new NotSupportedException("Compilation failed");
-            }
-            item.Handler = handler;
-
-            if(item.Watcher==null){
-                var directory = Path.GetDirectoryName(item.FilePath)+Path.DirectorySeparatorChar;
-                var fileName = Path.GetFileName(item.FilePath); 
-                item.Watcher=new FileSystemWatcher(directory,fileName);
+                var directory = Path.GetDirectoryName(item.FilePath) + Path.DirectorySeparatorChar;
+                var fileName = Path.GetFileName(item.FilePath);
+                item.Watcher = new FileSystemWatcher(directory, fileName);
 
                 item.Watcher.EnableRaisingEvents = true;
-                item.Watcher.Changed += (s, e) => fillItem(item);
-            }
+                item.Watcher.NotifyFilter = NotifyFilters.LastWrite;
+                item.Watcher.Changed += (s, e) =>
+                {
+                    lock (_L_itemRefresh)
+                    {
+                        try
+                        {
+                            action();
+                        }
+                        catch (Exception)
+                        {
+                            Log.Notice("Item refresh action caused exception");
+                        }
+
+                    }
+                };
+            }            
         }
 
         private string getSource(string file)
@@ -205,6 +247,20 @@ namespace SharpServer
             _actions.Add(pattern, item);
         }
 
-        #endregion 
+        private string getMime(string ext)
+        {
+            switch (ext)
+            {
+                case "css":
+                    return "text/css";
+                case "jpg":
+                    return "image/jpeg";
+                case "txt":
+                    return "text/plain";
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+        #endregion
     }
 }

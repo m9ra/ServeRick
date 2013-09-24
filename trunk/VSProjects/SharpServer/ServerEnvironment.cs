@@ -18,13 +18,13 @@ using SharpServer.Networking;
 using SharpServer.Memory;
 
 using SharpServer.Compiling;
-using SharpServer.HAML;
+using SharpServer.Languages.HAML;
 
 namespace SharpServer
 {
-   public static class ServerEnvironment
+    public static class ServerEnvironment
     {
-       static List<WebApplication> _list = new List<WebApplication>();
+        static List<WebApplication> _list = new List<WebApplication>();
 
         public static void Start()
         {
@@ -43,13 +43,20 @@ namespace SharpServer
 
         public static void LoadToolchains()
         {
-            var hamlGrammar = new HAML.Grammar();
+            var hamlGrammar = new Languages.HAML.Grammar();
             var lang = new LanguageData(hamlGrammar);
             var parser = new Parser(lang);
 
-            var hamlChain = new LanguageToolChain("haml", parser, HAML.Compiler.Compile);
+            var hamlChain = new LanguageToolChain("haml", parser, Languages.HAML.Compiler.Compile);
 
             ResponseHandlerProvider.Register(hamlChain);
+
+            var scssGrammar = new Languages.SCSS.Grammar();
+            var scssLang = new LanguageData(scssGrammar);
+            var scssParser = new Parser(scssLang);
+            var scssChain = new LanguageToolChain("scss", scssParser, Languages.SCSS.Compiler.Compile);
+
+            ResponseHandlerProvider.Register(scssChain);
         }
 
         public static void AddManager(WebApplication webApp)

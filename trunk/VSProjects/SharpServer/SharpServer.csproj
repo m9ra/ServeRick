@@ -67,6 +67,8 @@
   <ItemGroup>
     <Compile Include="ActionInfo.cs" />
     <Compile Include="Attributes.cs" />
+    <Compile Include="Compiling\CompilerBase.cs" />
+    <Compile Include="Compiling\GrammarBase.cs" />
     <Compile Include="Compiling\Instructions\ContainerInstruction.cs" />
     <Compile Include="Compiling\Emitter.cs" />
     <Compile Include="Compiling\CompilerHelpers.cs" />
@@ -88,11 +90,15 @@
     <Compile Include="Compiling\WebMethods.cs" />
     <Compile Include="Controller.cs" />
     <Compile Include="ControllerManager.cs" />
-    <Compile Include="HAML\Compiler.cs" />
-    <Compile Include="HAML\Grammar.cs" />
-    <Compile Include="HAML\Compiling\RValues.cs" />
+    <Compile Include="Languages\HAML\Compiler.cs" />
+    <Compile Include="Languages\HAML\Grammar.cs" />
+    <Compile Include="Languages\HAML\Compiling\RValues.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="HttpServer.cs" />
+    <Compile Include="Languages\SCSS\Compiler.cs" />
+    <Compile Include="Languages\SCSS\CssBlock.cs" />
+    <Compile Include="Languages\SCSS\Grammar.cs" />
+    <Compile Include="Languages\SCSS\SpecifierList.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Memory\DataBuffer.cs" />
     <Compile Include="Memory\BufferProvider.cs" />

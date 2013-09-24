@@ -9,12 +9,12 @@ using Irony.Parsing;
 using Irony.Ast;
 using Irony.Parsing.Construction;
 
+using SharpServer.Compiling;
 
-
-namespace SharpServer.HAML
+namespace SharpServer.Languages.HAML
 {
     [Language("HAML", "1.0", "Testing implementation for HAML")]
-    public class Grammar : Irony.Parsing.Grammar
+    public class Grammar : GrammarBase
     {
         NonTerminal hash = new NonTerminal("hash");
 
@@ -147,17 +147,6 @@ namespace SharpServer.HAML
             #endregion
         }
 
-        private NonTerminal NT(string name)
-        {
-            return new NonTerminal(name);
-        }
-
-        private KeyTerm T_HIGH(string terminal)
-        {
-            var term = ToTerm(terminal);
-            term.Priority = TerminalPriority.High;
-            return term;
-        }
 
         public override void CreateTokenFilters(LanguageData language, TokenFilterList filters)
         {
@@ -166,12 +155,7 @@ namespace SharpServer.HAML
             filters.Add(outlineFilter);
         }
 
-        public override string ConstructParserErrorMessage(ParsingContext context, StringSet expectedTerms)
-        {
-            var expected = base.ConstructParserErrorMessage(context, expectedTerms);
 
-            return string.Format("{0}\n but got: {1}", expected, context.CurrentParserInput);
-        }
 
         public override void ReportParseError(ParsingContext context)
         {

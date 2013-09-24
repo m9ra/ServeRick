@@ -53,7 +53,7 @@ namespace SharpServer.Networking
         /// <summary>
         /// Content length detected for request
         /// </summary>
-        public int ContentLength { get; private set; } 
+        public int ContentLength { get; private set; }
         #endregion
 
         #region Request state members
@@ -82,9 +82,16 @@ namespace SharpServer.Networking
         /// <param name="uri">Uri with query string</param>
         /// <param name="httpVersion">Version of http</param>
         internal HttpRequest(string method, string uri, string httpVersion)
-        {            
+        {
             Method = method.ToUpper();
-            URI = uri;
+
+            var dataStart = uri.IndexOf('?');
+            if (dataStart > 0)
+                //TODO parse GET data
+                URI = uri.Substring(0,dataStart);
+            else
+                //there are no data
+                URI = uri;
             HttpVersion = httpVersion.ToUpper();
         }
 
@@ -95,7 +102,7 @@ namespace SharpServer.Networking
         /// <param name="headerValue">Output value of header, if header is present. Default value otherwise</param>
         /// <param name="defaultValue">Default value for headerValue. Is used when header with given name is not found</param>
         /// <returns>True if header is found, false otherwise</returns>
-        public bool TryGetHeader(string headerName, out string headerValue, string defaultValue=null)
+        public bool TryGetHeader(string headerName, out string headerValue, string defaultValue = null)
         {
             if (_headers.TryGetValue(headerName, out headerValue))
             {
@@ -103,7 +110,7 @@ namespace SharpServer.Networking
             }
 
             headerValue = defaultValue;
-            return false;   
+            return false;
         }
 
         #region Internal API for building request
