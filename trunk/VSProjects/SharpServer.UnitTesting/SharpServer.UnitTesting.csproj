@@ -51,13 +51,14 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="HamlCompiling_Tests.cs" />
-    <Compile Include="HamlTools\Extensions.cs" />
-    <Compile Include="HamlTools\TestResponse.cs" />
+    <Compile Include="Haml_Tests.cs" />
+    <Compile Include="CompilingTools\Extensions.cs" />
+    <Compile Include="CompilingTools\TestResponse.cs" />
     <Compile Include="HeaderParsing_Tests.cs" />
     <Compile Include="NetworkTools\Extensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="NetworkTools\HeaderParsingCase.cs" />
+    <Compile Include="Scss_Tests.cs" />
     <Compile Include="WebTools\TestWebApp.cs" />
   </ItemGroup>
   <ItemGroup>

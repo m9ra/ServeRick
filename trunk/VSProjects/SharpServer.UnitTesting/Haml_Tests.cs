@@ -1,12 +1,12 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using SharpServer.UnitTesting.HamlTools;
+using SharpServer.UnitTesting.CompilingTools;
 
 namespace SharpServer.UnitTesting
 {
     [TestClass]
-    public class HamlCompiling_Tests
+    public class Haml_Tests
     {
         [TestMethod]
         public void HAML_EmtpyElement()

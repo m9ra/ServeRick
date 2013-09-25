@@ -10,28 +10,32 @@ namespace SharpServer
 {
     static class Output
     {
-        public static void DisplayTree(ParseTree tree)
+        public static string DisplayTree(ParseTree tree)
         {
+            var output = new StringBuilder();
+
             foreach (var tok in tree.Tokens)
             {
-                Console.WriteLine(tok.ToString().Trim());
+                output.AppendLine(tok.ToString().Trim());
             }
 
             if (tree.Root == null)
             {
                 foreach (var message in tree.ParserMessages)
                 {
-                    Console.WriteLine(message);
+                    output.AppendLine(message.ToString());
                     var str = message.Location.ToUiString();
                 }
-                return;
+                return output.ToString();
             }
 
-          DisplayTree(tree.Root);
+            output.Append(DisplayTree(tree.Root));
+            return output.ToString();
         }
 
-        public static void DisplayTree(ParseTreeNode node, int level = 0)
+        public static string DisplayTree(ParseTreeNode node, int level = 0)
         {
+            var output = new StringBuilder();
             //TODO proper resolving
             var isUnnammed = node.ToString().StartsWith("Unnamed");
 
@@ -42,12 +46,14 @@ namespace SharpServer
             else
             {
                 var caption = node.ToString();
-                Console.WriteLine("{0}{1}", "".PadLeft(level * 2), caption);
+                output.AppendFormat("{0}{1}\n", "".PadLeft(level * 2), caption);
             }
 
 
             foreach (ParseTreeNode child in node.ChildNodes)
-                DisplayTree(child, level + 1);
+                output.Append(DisplayTree(child, level + 1));
+
+            return output.ToString();
         }
     }
 }

@@ -21,7 +21,7 @@ namespace TestWebApp
         readonly string _rootPath;
 
         private readonly string[] _publicExtensions = new[]{
-            "jpg","css"
+            "jpg","css","scss"
         };
 
         internal SimpleControllerManager(WebApplication app, string rootPath)
@@ -29,8 +29,8 @@ namespace TestWebApp
                 typeof(SimpleController)
             )
         {
-            _rootPath = rootPath;
-            _404 = getWebItem("404.haml");
+            _rootPath = rootPath;            
+            _404 = getWebItem("404.haml");            
         }
 
         internal void AddAll()
@@ -75,6 +75,8 @@ namespace TestWebApp
             {
                 case "haml":
                     return CompileHAML(file);
+                case "scss":
+                    return CompileSCSS(file);
                 case "css":
                 case "jpg":
                 case "txt":

@@ -32,13 +32,20 @@ namespace SharpServer.Languages.SCSS
 
         private void compile()
         {
-            //   E.Write(compileBlock(_root));
             var definitionsNode = getNode(_root, "definitions");
             discoverDefinitions(definitionsNode);
 
-            //TODO write css blocks
+            foreach (var block in _blocks.Values)
+            {
+                var constant = E.Constant(block.ToCSS());
+                E.Write(constant);
+            }
         }
 
+        /// <summary>
+        /// Discover top level definitions
+        /// </summary>
+        /// <param name="definitionsNode"></param>
         private void discoverDefinitions(ParseTreeNode definitionsNode)
         {
             foreach (var child in definitionsNode.ChildNodes)
@@ -51,7 +58,7 @@ namespace SharpServer.Languages.SCSS
                         defineVariable(definitionNode);
                         break;
                     case "block_def":
-                        discoverBlock(definitionNode);
+                        discoverBlock(definitionNode,null);
                         break;
                     default:
                         throw new NotSupportedException("Unknown definition");
@@ -59,12 +66,43 @@ namespace SharpServer.Languages.SCSS
             }
         }
 
-        private void discoverBlock(ParseTreeNode blockNode)
+        /// <summary>
+        /// Discover top level block
+        /// </summary>
+        /// <param name="blockNode"></param>
+        private void discoverBlock(ParseTreeNode blockNode, ParseTreeNode parentBlock)
+        {
+            if (parentBlock != null)
+                throw new NotImplementedException();
+
+            var block = getBlock(blockNode);
+
+            _blocks.Add(block.BlockHead, block);
+        }
+
+        private CssBlock getBlock(ParseTreeNode blockNode)
         {
             var specifiersNode = getNode(blockNode, "specifiers");
             var specifiers = getSpecifiers(specifiersNode);
 
+            var block = new CssBlock(specifiers);
 
+            foreach (var definitionNode in getNode(blockNode, "definitions").ChildNodes)
+            {
+                var node = skipUnnamedChildren(definitionNode);
+
+                switch (getName(node))
+                {
+                    case "variable_def":
+                        defineVariable(definitionNode);
+                        break;
+                    case "style_def":
+                        addStyle(node, block);
+                        break;
+                }
+            }
+
+            return block;
         }
 
         private SpecifierList getSpecifiers(ParseTreeNode specifiersNode)
@@ -102,6 +140,8 @@ namespace SharpServer.Languages.SCSS
                     return getSpecifier(childs[0]) + " > " + getSpecifier(childs[1]);
                 case "child_relation":
                     return getSpecifier(childs[0]) + " " + getSpecifier(childs[1]);
+                case "pseudo_relation":
+                    return getSpecifier(childs[0]) + ":" + getTerminalText(childs[1]);
 
                 default:
                     throw new NotImplementedException("Unimplemented specifier: " + specifierName);
@@ -114,6 +154,22 @@ namespace SharpServer.Languages.SCSS
             var value = getTerminalText(variableDefinition.ChildNodes[1]);
 
             _variables[name] = value;
+        }
+
+        private void addStyle(ParseTreeNode styleDefinition, CssBlock block)
+        {
+            var keyNode = styleDefinition.ChildNodes[0];
+            var valueNode = styleDefinition.ChildNodes[1];
+
+            var key = getTerminalText(keyNode);
+            var value = getTerminalText(valueNode);
+
+            foreach (var variable in _variables)
+            {
+                value = value.Replace("$" + variable.Key, variable.Value);
+            }
+
+            block.AddDefinition(key, value);
         }
     }
 }

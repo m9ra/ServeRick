@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace SharpServer.UnitTesting.HamlTools
+namespace SharpServer.UnitTesting.CompilingTools
 {
     class TestResponse : Response
     {

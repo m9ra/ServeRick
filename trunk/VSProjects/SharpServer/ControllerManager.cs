@@ -86,21 +86,42 @@ namespace SharpServer
         /// <returns>Compiled file</returns>
         protected WebItem CompileHAML(string file)
         {
-            var item = new WebItem(file);
+            return Compile(file, "haml");
+        }
+
+        /// <summary>
+        /// Compile given file into web item
+        /// </summary>
+        /// <param name="file">File to be compiled</param>
+        /// <returns>Compiled file</returns>
+        protected WebItem CompileSCSS(string file)
+        {
+            return Compile(file, "scss");
+        }
+
+        protected WebItem Compile(string file, string language)
+        {
+            var item = new WebItem(file);            
             fillItem(item, () =>
             {
                 var source = getSource(item.FilePath);
+                var contentType=getCompilationMime(language);
 
                 //TODO resolve source format
-                var handler = HandlerProvider.Compile("haml", source);
+                var handler = HandlerProvider.Compile(language, source);
                 if (handler == null)
                 {
                     throw new NotSupportedException("Compilation failed");
                 }
-                item.Handler = handler;
+                item.Handler = (r) =>
+                {
+                    r.SetContentType(contentType);
+                    handler(r);
+                };
             });
             return item;
         }
+
 
         protected WebItem SendRaw(string file, string ext)
         {
@@ -191,7 +212,7 @@ namespace SharpServer
 
                     }
                 };
-            }            
+            }
         }
 
         private string getSource(string file)
@@ -257,9 +278,26 @@ namespace SharpServer
                     return "image/jpeg";
                 case "txt":
                     return "text/plain";
+                case "html":
+                    return "text/html";
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+
+        private string getCompilationMime(string language)
+        {
+            switch (language)
+            {
+                case "scss":
+                    return getMime("css");
+                case "haml":
+                    return getMime("html");
+                default:
+                    throw new NotSupportedException("Unsupported language: " + language);
+            }
+
         }
         #endregion
     }

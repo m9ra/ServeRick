@@ -32,7 +32,9 @@ namespace SharpServer.Compiling
             var toolChain = _toolChains[language];
 
             var tree = toolChain.Parser.Parse(source);
-            Output.DisplayTree(tree);
+            var parsingInfo=Output.DisplayTree(tree);
+            Console.WriteLine(parsingInfo);
+
 
             if (tree.Root != null)
             {
