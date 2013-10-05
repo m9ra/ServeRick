@@ -13,6 +13,10 @@ namespace SharpServer.Languages.HAML
 {
     class Compiler : CompilerBase
     {
+        static readonly Grammar HamlGrammar = new HAML.Grammar();
+        static readonly LanguageData HamlLang = new LanguageData(HamlGrammar);
+        static readonly Parser Parser = new Parser(HamlLang);
+
         readonly ParseTreeNode _root;
         readonly Emitter E;
 
@@ -22,8 +26,17 @@ namespace SharpServer.Languages.HAML
             _root = root;
         }
 
-        public static void Compile(ParseTreeNode root, Emitter emitter)
+        public static void Compile(string source, Emitter emitter)
         {
+            var tree = Parser.Parse(source);
+            var root = tree.Root;
+            if (root == null)
+            {
+                emitter.ReportParseError("Cannot parse");
+                return;
+            }
+
+
             var compiler = new Compiler(root, emitter);
             compiler.compile();
         }
@@ -195,7 +208,7 @@ namespace SharpServer.Languages.HAML
 
         private RValue[] getArguments(ParseTreeNode callNode)
         {
-            var argsNode = getNode(callNode, "argList", "args");
+            var argsNode = GetNode(callNode, "argList", "args");
 
             var args = new List<RValue>();
 
@@ -223,12 +236,12 @@ namespace SharpServer.Languages.HAML
             if (symbolNode == null)
                 return null;
 
-            return new LiteralValue(getTerminalText(symbolNode).Substring(1), E);
+            return new LiteralValue(GetTerminalText(symbolNode).Substring(1), E);
         }
 
         private RValue resolveShortKey(ParseTreeNode shortKeyNode)
         {
-            var keyText = getTerminalText(shortKeyNode);
+            var keyText = GetTerminalText(shortKeyNode);
             //remove ending :
             keyText = keyText.Substring(0, keyText.Length - 1);
             return new LiteralValue(keyText, E);
@@ -319,7 +332,7 @@ namespace SharpServer.Languages.HAML
             if (headNode.ChildNodes.Count != 0)
             {
                 var tagNode = headNode.ChildNodes[0];
-                tag = getTerminalText(tagNode.ChildNodes[0]);
+                tag = GetTerminalText(tagNode.ChildNodes[0]);
             }
 
             if (tag == null)
@@ -349,7 +362,7 @@ namespace SharpServer.Languages.HAML
                 foreach (var pair in pairs)
                 {
                     //TODO better resolving of keys
-                    var symbol = getTerminalText(pair.ChildNodes[0]);
+                    var symbol = GetTerminalText(pair.ChildNodes[0]);
                     var value = resolveRValue(pair.ChildNodes[1]);
                     result[symbol] = value;
                 }

@@ -20,9 +20,19 @@ namespace SharpServer.Compiling
 
         private readonly WebMethods _helpers;
 
+        public string ErrorMessage { get; private set; }
+
+        public bool HasError { get { return ErrorMessage != null; } }
+
         internal Emitter(WebMethods helpers)
         {
             _helpers = helpers;
+        }
+
+
+        public void ReportParseError(string errorMessage)
+        {
+            ErrorMessage = errorMessage;
         }
 
         #region API for emitting statements
@@ -120,6 +130,7 @@ namespace SharpServer.Compiling
         {
             return ResponseHandlerProvider.CompilerHelpers.GetMethod(methodName);
         }
+
 
     }
 }

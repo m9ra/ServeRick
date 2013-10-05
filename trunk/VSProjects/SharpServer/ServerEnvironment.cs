@@ -43,19 +43,10 @@ namespace SharpServer
 
         public static void LoadToolchains()
         {
-            var hamlGrammar = new Languages.HAML.Grammar();
-            var lang = new LanguageData(hamlGrammar);
-            var parser = new Parser(lang);
-
-            var hamlChain = new LanguageToolChain("haml", parser, Languages.HAML.Compiler.Compile);
-
+            var hamlChain = new LanguageToolChain("haml", Languages.HAML.Compiler.Compile);
             ResponseHandlerProvider.Register(hamlChain);
 
-            var scssGrammar = new Languages.SCSS.Grammar();
-            var scssLang = new LanguageData(scssGrammar);
-            var scssParser = new Parser(scssLang);
-            var scssChain = new LanguageToolChain("scss", scssParser, Languages.SCSS.Compiler.Compile);
-
+            var scssChain = new LanguageToolChain("scss", Languages.SCSS.Compiler.Compile);
             ResponseHandlerProvider.Register(scssChain);
         }
 

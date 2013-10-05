@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpServer.UnitTesting", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestWebApp", "..\VSProjects\TestWebApp\TestWebApp.csproj", "{7391FDAF-F059-46FD-AB45-F00F2E8288B6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parsing", "..\VSProjects\Parsing\Parsing.csproj", "{ABF0C475-C489-4C87-AA03-B8CF49F89F76}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,8 +65,21 @@ Global
 		{7391FDAF-F059-46FD-AB45-F00F2E8288B6}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{7391FDAF-F059-46FD-AB45-F00F2E8288B6}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{7391FDAF-F059-46FD-AB45-F00F2E8288B6}.Release|x86.ActiveCfg = Release|Any CPU
+		{ABF0C475-C489-4C87-AA03-B8CF49F89F76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABF0C475-C489-4C87-AA03-B8CF49F89F76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABF0C475-C489-4C87-AA03-B8CF49F89F76}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{ABF0C475-C489-4C87-AA03-B8CF49F89F76}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{ABF0C475-C489-4C87-AA03-B8CF49F89F76}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{ABF0C475-C489-4C87-AA03-B8CF49F89F76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABF0C475-C489-4C87-AA03-B8CF49F89F76}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABF0C475-C489-4C87-AA03-B8CF49F89F76}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{ABF0C475-C489-4C87-AA03-B8CF49F89F76}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{ABF0C475-C489-4C87-AA03-B8CF49F89F76}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

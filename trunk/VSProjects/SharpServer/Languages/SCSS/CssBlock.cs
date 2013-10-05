@@ -23,7 +23,7 @@ namespace SharpServer.Languages.SCSS
 
         public void AddDefinition(string key, string cssValue)
         {
-            _styleDefinitions.Add(key + " :" + cssValue + ";");
+            _styleDefinitions.Add(key + ": " + cssValue + ";");
         }
 
         public string ToCSS()
@@ -31,14 +31,14 @@ namespace SharpServer.Languages.SCSS
             var result = new StringBuilder();
 
             result.Append(BlockHead);
-            result.Append('{');
+            result.AppendLine("{");
 
             foreach (var def in _styleDefinitions)
             {
-                result.Append(def);
+                result.AppendLine("\t"+def);
             }
 
-            result.Append("};");
+            result.AppendLine("}");
             return result.ToString();
         }
     }

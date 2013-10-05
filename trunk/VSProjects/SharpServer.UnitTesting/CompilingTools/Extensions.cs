@@ -27,8 +27,8 @@ namespace SharpServer.UnitTesting.CompilingTools
         private static void assertCompiled(string language, string source, string expectedOutput)
         {
             var actualOutput = getCompiled(language, source);
-            var normalizedExpected = normalizeHtml(expectedOutput);
-            var normalizedActual = normalizeHtml(actualOutput);
+            var normalizedExpected = normalizeText(expectedOutput);
+            var normalizedActual = normalizeText(actualOutput);
             Assert.AreEqual(normalizedExpected, normalizedActual);
         }
 
@@ -44,9 +44,9 @@ namespace SharpServer.UnitTesting.CompilingTools
             return testResponse.WrittenData();
         }
 
-        private static string normalizeHtml(string html)
+        private static string normalizeText(string html)
         {
-            return html.Replace(" ", "").Replace("\n", "").Replace("\r", "");
+            return html.Replace(" ", "").Replace("\n", "").Replace("\r", "").Replace("\t","");
         }
     }
 }

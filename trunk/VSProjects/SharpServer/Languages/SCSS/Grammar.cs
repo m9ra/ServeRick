@@ -16,7 +16,7 @@ using SharpServer.Compiling;
 namespace SharpServer.Languages.SCSS
 {
     [Language("SCSS", "1.0", "Testing implementation for SCSS")]
-    public class Grammar : GrammarBase
+    public class Grammar : Parsing.GrammarBase
     {
         public Grammar()
         {
@@ -40,30 +40,23 @@ namespace SharpServer.Languages.SCSS
             var class_specifier = NT("class_specifier");
             var tag_specifier = NT("tag_specifier");
 
-            //needed because of Irony's weakness...
-            var dotted_specifier = NT("dotted_specifier");
-            var dotted_tag_specifier = NT("tag_specifier");
-            var dotted_identifier = NT("dotted_identifier");
-
-            var raw_value = T_REG("raw_value", "[^}{\\r\\n:;,]+");
-            var identifier = T_ID("identifier");            
-            identifier.AllChars += "-";
-
-            identifier.Priority = raw_value.Priority + 1;
+            var raw_value = T_REG("[^}{\\r\\n:;,]+", "raw_value");
+            var identifier = T_REG("[a-zA-Z][a-zA-Z1-90_-]*", "identifier");
+            //identifier.AllChars += "-";
 
             this.Root = file;
-            file.Rule = definitions + Eof;
+            file.Rule = definitions;
 
             //  definitions.Rule = definition + ";" + (definitions | Empty);
-            definitions.Rule = MakeStarRule(definitions, definition);
+            definitions.Rule = MakeStarRule(definition);
 
             definition.Rule = variable_def | block_def | style_def;
 
-            block_def.Rule = specifiers + T_HIGH("{") + definitions + T_HIGH("}") + T(";").Q();
+            block_def.Rule = specifiers + "{" + definitions + "}" + Q(";");
             variable_def.Rule = "$" + identifier + ":" + raw_value + ";";
-            style_def.Rule = dotted_identifier + raw_value + ";";
+            style_def.Rule = identifier + ":" + raw_value + ";";
 
-            specifiers.Rule = MakePlusRule(specifiers, T(","), specifier | relation);
+            specifiers.Rule = MakePlusRule(specifier | relation, ",");
             specifier.Rule = id_specifier | class_specifier | tag_specifier;
             id_specifier.Rule = "#" + identifier;
             class_specifier.Rule = "." + identifier;
@@ -72,21 +65,10 @@ namespace SharpServer.Languages.SCSS
             relation.Rule = adjacent_relation | child_relation | pseudo_relation;
             adjacent_relation.Rule = specifier + ">" + specifier;
             child_relation.Rule = specifier + specifier;
-            pseudo_relation.Rule = dotted_specifier + identifier;
+            pseudo_relation.Rule = specifier + ":" + identifier;
 
-            dotted_specifier.Rule = dotted_tag_specifier | ((id_specifier | class_specifier) + ":");
-            dotted_tag_specifier.Rule = dotted_identifier;
-            dotted_identifier.Rule = identifier + T_HIGH(":");
-
-            MarkPunctuation("$", ",", ":", ";", "{", "}", "#", ".", ">");
-            MarkTransient(definition, specifier, relation, dotted_identifier, dotted_specifier);
+            MarkPunctuation("$", ",", ":", ";", "{", "}", "#", ".", ">","");
+            MarkTransient(definition, specifier, relation);
         }
-
-        public override void OnScannerSelectTerminal(ParsingContext context)
-        {
-            
-            base.OnScannerSelectTerminal(context);
-        }
-
     }
 }

@@ -9,19 +9,17 @@ using Irony.Parsing;
 namespace SharpServer.Compiling
 {
 
-    public delegate void CompileDelegate(ParseTreeNode source, Emitter emitter);
+    public delegate void EmitDelegate(string source,Emitter emitter);
 
     class LanguageToolChain
     {
-        public readonly string Language;
-        public readonly Parser Parser;
-        public readonly CompileDelegate Compile;
+        public readonly string Language;     
+        public readonly EmitDelegate EmitDelegate;
 
-        public LanguageToolChain(string language, Parser parser, CompileDelegate compile)
+        public LanguageToolChain(string language, EmitDelegate compile)
         {
             Language = language;
-            Parser = parser;
-            Compile = compile;
+            EmitDelegate = compile;
         }
     }
 }

@@ -31,23 +31,17 @@ namespace SharpServer.Compiling
         {
             var toolChain = _toolChains[language];
 
-            var tree = toolChain.Parser.Parse(source);
-            var parsingInfo=Output.DisplayTree(tree);
-            Console.WriteLine(parsingInfo);
+            var emitter = new Emitter(WebHelpers);
 
-
-            if (tree.Root != null)
+            toolChain.EmitDelegate(source, emitter);
+            if (emitter.HasError)
             {
-                var emitter = new Emitter(WebHelpers);
-                toolChain.Compile(tree.Root, emitter);
-
-                var instructions = emitter.GetEmittedResult();
-                return HTMLCompiler.Compile(instructions);
-            }
-            else
-            {
+                //TODO error handling
                 return null;
             }
+
+            var instructions = emitter.GetEmittedResult();
+            return HTMLCompiler.Compile(instructions);
         }
     }
 }

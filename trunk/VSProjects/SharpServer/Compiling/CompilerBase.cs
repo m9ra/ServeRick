@@ -4,13 +4,61 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Parsing;
 using Irony.Parsing;
 
 namespace SharpServer.Compiling
 {
     class CompilerBase
     {
+
         #region AST utilities
+
+        /// <summary>
+        /// Get first node, found from root, through given path
+        /// </summary>
+        /// <param name="root">Root node, where searching starts</param>
+        /// <param name="path">Path specifiing names of child hierarchy</param>
+        /// <returns>Founded node, or null if no suitable node is found</returns>
+        protected Node GetNode(Node root, params string[] path)
+        {
+            var currentNode = root;
+            foreach (var pathPart in path)
+            {
+                var isFound = false;
+                foreach (var child in currentNode.ChildNodes)
+                {
+                    if (child.Name == pathPart)
+                    {
+                        currentNode = child;
+                        isFound = true;
+                        break;
+                    }
+                }
+
+                if (!isFound)
+                    return null;
+            }
+
+            return currentNode;
+        }
+
+        /// <summary>
+        /// Get text which was matched by given terminal node
+        /// </summary>
+        /// <param name="terminal">Terminal node which text will be returned</param>
+        /// <returns>Terminal text if node is terminal, null otherwise</returns>
+        protected string GetTerminalText(Node terminal)
+        {
+            if (terminal.Match == null)
+                return null;
+
+            return terminal.Match.MatchedData;
+        }
+
+        #endregion
+
+        #region Irony AST utilities
 
         protected string getName(ParseTreeNode node)
         {
@@ -68,7 +116,7 @@ namespace SharpServer.Compiling
             var path = pathParts.Take(pathParts.Length - 1);
 
             //get node where children will be searched
-            var node = getNode(parent, path.ToArray());
+            var node = GetNode(parent, path.ToArray());
 
             node = skipUnnamedChildren(node);
 
@@ -136,7 +184,7 @@ namespace SharpServer.Compiling
             }
         }
 
-        protected ParseTreeNode getNode(ParseTreeNode root, params string[] pathParts)
+        protected ParseTreeNode GetNode(ParseTreeNode root, params string[] pathParts)
         {
             var node = root;
             foreach (var pathPart in pathParts)
@@ -198,7 +246,7 @@ namespace SharpServer.Compiling
             return terminals.ToArray();
         }
 
-        protected string getTerminalText(ParseTreeNode terminal)
+        protected string GetTerminalText(ParseTreeNode terminal)
         {
             if (terminal.Token == null)
             {
@@ -209,7 +257,7 @@ namespace SharpServer.Compiling
 
         protected string getSubTerminal(ParseTreeNode node, string defaultValue = null, params string[] pathParts)
         {
-            node = getNode(node, pathParts);
+            node = GetNode(node, pathParts);
 
             if (node.ChildNodes.Count != 1)
             {
@@ -219,7 +267,7 @@ namespace SharpServer.Compiling
             if (termNode.Token == null)
                 //is not terminal
                 return defaultValue;
-            return getTerminalText(termNode);
+            return GetTerminalText(termNode);
         }
 
         protected string[] getTerminals(string name, ParseTreeNode parent, string defaultValue = null)

@@ -18,7 +18,7 @@ namespace SharpServer.UnitTesting
             var block = @"
 a:hover,#id:visited,p{
  margin: 10px 0;
-};
+}
 ";
             //output block will be same
             block.AssertSCSS(block);
@@ -35,7 +35,7 @@ a{
 ".AssertSCSS(@"
 a{
     color: #abcdef;
-};
+}
 ");
  
         }
