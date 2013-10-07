@@ -37,7 +37,10 @@ namespace SharpServer.Compiling
             if (emitter.HasError)
             {
                 //TODO error handling
-                return null;
+
+                var errorBytes = Encoding.UTF8.GetBytes(emitter.ErrorMessage);
+
+                return (response) => response.Write(errorBytes);
             }
 
             var instructions = emitter.GetEmittedResult();

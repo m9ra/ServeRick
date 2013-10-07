@@ -30,12 +30,15 @@ namespace SharpServer.Languages.HAML
         {
             var tree = Parser.Parse(source);
             var root = tree.Root;
+
+            var parseOutput = Output.AsString(tree);
             if (root == null)
             {
-                emitter.ReportParseError("Cannot parse");
+                emitter.ReportParseError(parseOutput);
                 return;
             }
 
+            Console.WriteLine(parseOutput);
 
             var compiler = new Compiler(root, emitter);
             compiler.compile();
@@ -128,9 +131,18 @@ namespace SharpServer.Languages.HAML
 
         private Instruction compileCode(ParseTreeNode code)
         {
-            var statement = getChild("statement", code);
+            var statements = getChild("statement", code);
 
-            return compileStatement(statement);
+            //TODO multiple statemets handling
+       /*     Instruction lastStatement = null;
+            foreach (var statement in statements.ChildNodes)
+            {
+                lastStatement = compileStatement(statement);
+            }
+            
+            return lastStatement;*/
+
+            return compileStatement(statements);
         }
 
         private Instruction compileStatement(ParseTreeNode statement)

@@ -21,7 +21,7 @@ namespace TestWebApp
         readonly string _rootPath;
 
         private readonly string[] _publicExtensions = new[]{
-            "jpg","css","scss"
+            "png","jpg","css","scss"
         };
 
         internal SimpleControllerManager(WebApplication app, string rootPath)
@@ -78,11 +78,12 @@ namespace TestWebApp
                 case "scss":
                     return CompileSCSS(file);
                 case "css":
+                case "png":
                 case "jpg":
                 case "txt":
                     return  SendRaw(file, ext);
                 default:
-                    throw new NotImplementedException();
+                    return null;
             }
         } 
     }

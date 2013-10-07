@@ -19,5 +19,10 @@ namespace TestWebApp
         {
             return "<img src=\"" + file + "\"/>";
         }
+
+        public static string print(string text)
+        {
+            return text;
+        }
     }
 }

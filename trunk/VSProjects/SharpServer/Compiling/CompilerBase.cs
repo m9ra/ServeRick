@@ -15,6 +15,20 @@ namespace SharpServer.Compiling
         #region AST utilities
 
         /// <summary>
+        /// Print node representation to console
+        /// </summary>
+        /// <param name="node">Root node of printed tree</param>
+        /// <param name="level">Level of indentation</param>
+        static protected void Print(Node node, int level = 0)
+        {
+            Console.WriteLine("".PadLeft(level * 2, ' ') + node);
+            foreach (var child in node.ChildNodes)
+            {
+                Print(child, level + 1);
+            }
+        }
+
+        /// <summary>
         /// Get first node, found from root, through given path
         /// </summary>
         /// <param name="root">Root node, where searching starts</param>
@@ -55,6 +69,7 @@ namespace SharpServer.Compiling
 
             return terminal.Match.MatchedData;
         }
+
 
         #endregion
 

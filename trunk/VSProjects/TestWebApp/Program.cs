@@ -12,7 +12,13 @@ namespace TestWebApp
     {
         static void Main(string[] args)
         {
-            var webApp = new TestWeb();
+            if (args.Length != 1)
+            {
+                Console.WriteLine("Expects path to root folder of web");
+                return;
+            }
+
+            var webApp = new TestWeb(args[0]);
             ServerEnvironment.AddManager(webApp);
             ServerEnvironment.Start();
 

@@ -16,6 +16,8 @@ namespace Parsing
 
         public string Text { get { return Source.Text; } }
 
+        public string CurrentText { get { return Source.Text.Substring(Index); } }
+
         public bool EOF { get { return Source.Text.Length <= Index; } }
         public bool BOF { get { return Index == 0; } }
 

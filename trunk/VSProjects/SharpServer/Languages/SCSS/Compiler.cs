@@ -11,12 +11,34 @@ using SharpServer.Languages.HAML.Compiling;
 
 namespace SharpServer.Languages.SCSS
 {
+    /// <summary>
+    /// Compiler for css language
+    /// </summary>
     class Compiler : CompilerBase
     {
-        private static readonly Parsing.Parser Parser = new Parsing.Parser(new SCSS.Grammar());
-        readonly Node _root;
+        /// <summary>
+        /// Parser used for parsing input code
+        /// </summary>
+        private static readonly Parser Parser = new Parser(new SCSS.Grammar());
+
+        /// <summary>
+        /// Emitter where compiled code is emitted
+        /// </summary>
         readonly Emitter E;
+
+        /// <summary>
+        /// Root node of parsed input
+        /// </summary>
+        readonly Node _root;
+
+        /// <summary>
+        /// Discovered css blocks, identified by specifiers
+        /// </summary>
         readonly Dictionary<string, CssBlock> _blocks = new Dictionary<string, CssBlock>();
+
+        /// <summary>
+        /// Declared variables with their coresponding values
+        /// </summary>
         readonly Dictionary<string, string> _variables = new Dictionary<string, string>();
 
         private Compiler(Node root, Emitter emitter)
@@ -25,31 +47,32 @@ namespace SharpServer.Languages.SCSS
             _root = root;
         }
 
+        /// <summary>
+        /// Compile given source using emitter
+        /// </summary>
+        /// <param name="source">Source input to be compiled</param>
+        /// <param name="emitter">Emitter where compiled code is emitted</param>
         public static void Compile(string source, Emitter emitter)
         {
-            source = source.Trim();
+            source = source.Trim().Replace("\r"," ");
             var root = Parser.Parse(source);
 
-            if(root==null){
+            if (root == null)
+            {
                 //TODO error output
                 emitter.ReportParseError("Parsing failed during to syntax error");
             }
 
-            print(root);
-                     
+            Print(root);
+
             var compiler = new Compiler(root, emitter);
             compiler.compile();
         }
-        
-        static void print(Node node, int level = 0)
-        {
-            Console.WriteLine("".PadLeft(level * 2, ' ') + node);
-            foreach (var child in node.ChildNodes)
-            {
-                print(child, level + 1);
-            }
-        }
 
+
+        /// <summary>
+        /// Discover and emit blocks from parsed tree
+        /// </summary>
         private void compile()
         {
             var definitionsNode = GetNode(_root, "definitions");
@@ -57,6 +80,12 @@ namespace SharpServer.Languages.SCSS
 
             foreach (var block in _blocks.Values)
             {
+                if (block.IsEmpty)
+                {
+                    //dont output blocks without any definitions
+                    continue;
+                }
+
                 var constant = E.Constant(block.ToCSS());
                 E.Write(constant);
             }
@@ -65,12 +94,11 @@ namespace SharpServer.Languages.SCSS
         /// <summary>
         /// Discover top level definitions
         /// </summary>
-        /// <param name="definitionsNode"></param>
+        /// <param name="definitionsNode">Top level definitions node</param>
         private void discoverDefinitions(Node definitionsNode)
         {
             foreach (var definitionNode in definitionsNode.ChildNodes)
             {
-
                 switch (definitionNode.Name)
                 {
                     case "variable_def":
@@ -79,30 +107,48 @@ namespace SharpServer.Languages.SCSS
                     case "block_def":
                         discoverBlock(definitionNode, null);
                         break;
+                    case "comment_def":
+                        //there is nothing to do
+                        break;
                     default:
-                        throw new NotSupportedException("Unknown definition");
+                        throw new NotSupportedException("Unknown definition: " + definitionNode);
                 }
             }
         }
 
         /// <summary>
-        /// Discover top level block
+        /// Discover css block according to its parent
         /// </summary>
-        /// <param name="blockNode"></param>
-        private void discoverBlock(Node blockNode, Node parentBlock)
-        {
-            if (parentBlock != null)
-                throw new NotImplementedException();
+        /// <param name="blockNode">Discovered block</param>
+        /// <param name="parentBlock">Parent of discovered block (null if there is no parent)</param>
+        private void discoverBlock(Node blockNode, CssBlock parentBlock)
+        {            
+            var block = getBlock(blockNode,parentBlock);
 
-            var block = getBlock(blockNode);
-
-            _blocks.Add(block.BlockHead, block);
+            if (_blocks.ContainsKey(block.Head))
+            {
+                _blocks[block.Head].AddDefinitions(block.Definitions);
+            }
+            else
+            {
+                _blocks.Add(block.Head, block);
+            }
         }
 
-        private CssBlock getBlock(Node blockNode)
+        /// <summary>
+        /// Get css block representation from given node
+        /// </summary>
+        /// <param name="blockNode">Node representing css block</param>
+        /// <returns>Created css block</returns>
+        private CssBlock getBlock(Node blockNode,CssBlock parentBlock)
         {
             var specifiersNode = GetNode(blockNode, "specifiers");
             var specifiers = getSpecifiers(specifiersNode);
+
+            if (parentBlock != null)
+            {
+                specifiers.SetParent(parentBlock.Specifiers);
+            }
 
             var block = new CssBlock(specifiers);
 
@@ -116,12 +162,26 @@ namespace SharpServer.Languages.SCSS
                     case "style_def":
                         addStyle(definitionNode, block);
                         break;
+                    case "block_def":
+                        discoverBlock(definitionNode, block);
+                        break;
+                    case "comment_def":
+                        //there is nothing to do with comments
+                        break;
+
+                    default:
+                        throw new NotSupportedException("Unsupported definition: " + definitionNode);
                 }
             }
 
             return block;
         }
 
+        /// <summary>
+        /// Get specifier list representation of given node
+        /// </summary>
+        /// <param name="specifiersNode">Node representing specifier list</param>
+        /// <returns>Specifier list for given node</returns>
         private SpecifierList getSpecifiers(Node specifiersNode)
         {
             var result = new SpecifierList();
@@ -135,7 +195,11 @@ namespace SharpServer.Languages.SCSS
             return result;
         }
 
-
+        /// <summary>
+        /// Get specifier representation of given node
+        /// </summary>
+        /// <param name="specifierNode">Node representing specifier</param>
+        /// <returns>String representation of specifier</returns>
         private string getSpecifier(Node specifierNode)
         {
             var childs = specifierNode.ChildNodes;
@@ -163,6 +227,10 @@ namespace SharpServer.Languages.SCSS
             }
         }
 
+        /// <summary>
+        /// Define variable declared by given definition into global scope
+        /// </summary>
+        /// <param name="variableDefinition">Definition of variable</param>
         private void defineVariable(Node variableDefinition)
         {
             var name = GetTerminalText(variableDefinition.ChildNodes[0]);
@@ -171,6 +239,11 @@ namespace SharpServer.Languages.SCSS
             _variables[name] = value;
         }
 
+        /// <summary>
+        /// Add style defined by given styleDefinition into given block
+        /// </summary>
+        /// <param name="styleDefinition">Definition of added style</param>
+        /// <param name="block">Block where definition will be added</param>
         private void addStyle(Node styleDefinition, CssBlock block)
         {
             var keyNode = styleDefinition.ChildNodes[0];

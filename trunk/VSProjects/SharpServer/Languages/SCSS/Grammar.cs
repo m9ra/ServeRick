@@ -27,6 +27,7 @@ namespace SharpServer.Languages.SCSS
             var block_def = NT("block_def");
             var variable_def = NT("variable_def");
             var style_def = NT("style_def");
+            var comment_def = NT("comment_def");
 
             var specifiers = NT("specifiers");
             var specifier = NT("specifier");
@@ -40,19 +41,20 @@ namespace SharpServer.Languages.SCSS
             var class_specifier = NT("class_specifier");
             var tag_specifier = NT("tag_specifier");
 
-            var raw_value = T_REG("[^}{\\r\\n:;,]+", "raw_value");
-            var identifier = T_REG("[a-zA-Z][a-zA-Z1-90_-]*", "identifier");
-            //identifier.AllChars += "-";
+            var raw_value = T_REG("[^}{\\r\\n:;]+", "raw_value");
+            var identifier = T_REG("[a-zA-Z][a-zA-Z1-90_()-]*", "identifier");
+
+            var line_comment = T_REG("[^\n]*[\n]?", "line_comment");
+            var multiline_comment = T_REG("( [^*] | [*][^/] )*", "multiline_comment");
 
             this.Root = file;
             file.Rule = definitions;
-
-            //  definitions.Rule = definition + ";" + (definitions | Empty);
+            
             definitions.Rule = MakeStarRule(definition);
 
-            definition.Rule = variable_def | block_def | style_def;
+            definition.Rule = variable_def | block_def | style_def | comment_def;
 
-            block_def.Rule = specifiers + "{" + definitions + "}" + Q(";");
+            block_def.Rule = specifiers + "{" + definitions + "}";
             variable_def.Rule = "$" + identifier + ":" + raw_value + ";";
             style_def.Rule = identifier + ":" + raw_value + ";";
 
@@ -67,7 +69,9 @@ namespace SharpServer.Languages.SCSS
             child_relation.Rule = specifier + specifier;
             pseudo_relation.Rule = specifier + ":" + identifier;
 
-            MarkPunctuation("$", ",", ":", ";", "{", "}", "#", ".", ">","");
+            comment_def.Rule = ("//" + line_comment) | ("/*" + multiline_comment + "*/");
+
+            MarkPunctuation("$", ",", ":", ";", "{", "}", "#", ".", ">","*/","/*","//", "");
             MarkTransient(definition, specifier, relation);
         }
     }

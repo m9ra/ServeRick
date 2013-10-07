@@ -10,7 +10,7 @@ namespace SharpServer
 {
     static class Output
     {
-        public static string DisplayTree(ParseTree tree)
+        public static string AsString(ParseTree tree)
         {
             var output = new StringBuilder();
 

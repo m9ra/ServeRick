@@ -10,11 +10,17 @@ namespace TestWebApp
 {
     class TestWeb : WebApplication
     {
+        readonly string _rootPath;
+
+        internal TestWeb(string rootPath)
+        {
+            _rootPath = rootPath+"/";
+        }
+
         protected override ControllerManager createManager()
         {
-            var manager = new SimpleControllerManager(this, "www/");
+            var manager = new SimpleControllerManager(this, _rootPath);
             manager.AddAll();
-            //      manager.AddPath("application.haml");
 
             return manager;
         }

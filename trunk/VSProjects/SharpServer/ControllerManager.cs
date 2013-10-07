@@ -276,6 +276,8 @@ namespace SharpServer
                     return "text/css";
                 case "jpg":
                     return "image/jpeg";
+                case "png":
+                    return "image/png";
                 case "txt":
                     return "text/plain";
                 case "html":
