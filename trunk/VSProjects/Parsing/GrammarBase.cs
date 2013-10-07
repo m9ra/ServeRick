@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Parsing.Terms;
+
 namespace Parsing
 {
     public abstract class GrammarBase
@@ -69,6 +71,11 @@ namespace Parsing
         protected Terminal T_REG(string pattern, string name=null)
         {
             return new PatternTerminal(pattern, name);
+        }
+
+        protected Terminal T_SPEC(string tokenName)
+        {
+            return new SpecialTerminal(tokenName);
         }
 
         /// <summary>
@@ -171,6 +178,21 @@ namespace Parsing
         protected void MarkPunctuation(params string[] punctuation)
         {
             _punctuation.UnionWith(punctuation);
+        }
+
+        internal protected virtual IEnumerable<Token> OutlineTokens(IEnumerable<Token> tokens)
+        {
+            yield return Token.Special("BOF", 0);
+
+            Token last = null;
+            foreach (var token in tokens)
+            {
+                last = token;
+                yield return token;
+            }
+
+            var eofPosition = last == null ? 0 : last.EndPosition;
+            yield return Token.Special("EOF",eofPosition);
         }
 
         /// <summary>

@@ -6,28 +6,30 @@ using System.Threading.Tasks;
 
 using System.Text.RegularExpressions;
 
+using Parsing.Source;
+
 namespace Parsing
 {
-    public class PatternTerminal:Terminal
+    public class PatternTerminal : Terminal
     {
         Regex _match;
-        public PatternTerminal(string pattern,string name)
-            :base(name)
+        public PatternTerminal(string pattern, string name)
+            : base(name)
         {
-            _match = new Regex(@"\G"+pattern, RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
+            _match = new Regex(@"\G" + pattern, RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
         }
 
         protected internal override TerminalMatch Match(SourceContext context)
         {
             context = context.SkipWhitespaces();
-            var match=_match.Match(context.Text,context.Index);
+            var match = _match.Match(context.Text, context.Index);
 
             if (!match.Success)
-                return new TerminalMatch(null,null);
+                return new TerminalMatch(null, null, null);
 
             var shifted = context.Shift(match.Value.Length);
 
-            return new TerminalMatch(shifted, match.Value);
+            return new TerminalMatch(shifted, context.Token, match.Value);
         }
     }
 }

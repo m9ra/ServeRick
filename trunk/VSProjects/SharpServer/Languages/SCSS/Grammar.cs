@@ -48,7 +48,7 @@ namespace SharpServer.Languages.SCSS
             var multiline_comment = T_REG("( [^*] | [*][^/] )*", "multiline_comment");
 
             this.Root = file;
-            file.Rule = definitions;
+            file.Rule = definitions+T_SPEC("EOF");
             
             definitions.Rule = MakeStarRule(definition);
 

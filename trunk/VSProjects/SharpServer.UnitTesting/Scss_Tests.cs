@@ -31,7 +31,7 @@ a:hover,#id:visited,p{
 $variable: #abcdef;
 a{
     color: $variable;
-};
+}
 ".AssertSCSS(@"
 a{
     color: #abcdef;

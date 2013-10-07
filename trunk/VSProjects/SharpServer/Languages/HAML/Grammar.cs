@@ -147,15 +147,12 @@ namespace SharpServer.Languages.HAML
             #endregion
         }
 
-
         public override void CreateTokenFilters(LanguageData language, TokenFilterList filters)
         {
             var outlineFilter = new CodeOutlineFilter(language.GrammarData,
                  OutlineOptions.ProduceIndents | OutlineOptions.CheckBraces, ToTerm(@"\")); // "\" is continuation symbol
             filters.Add(outlineFilter);
         }
-
-
 
         public override void ReportParseError(ParsingContext context)
         {

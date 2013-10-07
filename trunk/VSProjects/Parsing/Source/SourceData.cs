@@ -4,21 +4,68 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Parsing
+namespace Parsing.Source
 {
     class SourceData
     {
-        internal readonly Source Source;
+        private readonly Dictionary<int, IncommingEdges> _incommingEdges = new Dictionary<int, IncommingEdges>();
+
+        /// <summary>
+        /// Contains contexts for every index in input. At every index there is first token on stream (multiple tokens on same index can start)
+        /// </summary>
+        private readonly SourceContext[] _contexts;
+
+        private SourceContext _lastContext;
+
+        internal readonly string Text;
 
         internal readonly Dictionary<int, Dictionary<Terminal, TerminalMatch>> Matches = new Dictionary<int, Dictionary<Terminal, TerminalMatch>>();
 
-        private readonly Dictionary<int, IncommingEdges> _incommingEdges = new Dictionary<int, IncommingEdges>();
+        internal SourceContext StartContext { get { return GetSourceContext(0); } }
 
-        private readonly Dictionary<int, SourceContext> _contexts = new Dictionary<int, SourceContext>();
-
-        internal SourceData(Source source, GrammarBase grammar)
+        internal SourceData(string text, TokenStream sourceTokens)
         {
-            Source = source;
+            Text = text;
+            _contexts = new SourceContext[text.Length];
+
+            prepareContexts(sourceTokens);
+        }
+
+        private void registerContext(int index, Token token)
+        {
+            _lastContext = new SourceContext(this, index, token, _lastContext);
+
+            var context = _contexts[index];
+            if (context == null || context.Token.StartPosition != index)
+                //set context if there is no context or contained context is started elsewhere
+                _contexts[index] = _lastContext;
+        }
+
+        private void prepareContexts(TokenStream sourceTokens)
+        {
+            var lastTokenEnd = 0;
+            var token = sourceTokens.NextToken();
+            //create contexts with token chains
+            while (token != null)
+            {
+                var isRegistered = false;
+                while (token!=null && lastTokenEnd >= token.EndPosition)
+                {
+                    token = sourceTokens.NextToken();
+                    registerContext(lastTokenEnd, token);
+                    isRegistered = true;
+                }
+
+                if (!isRegistered)
+                {
+                    registerContext(lastTokenEnd, token);
+                }
+
+                ++lastTokenEnd;
+            }
+
+            if (lastTokenEnd != _contexts.Length)
+                throw new NotSupportedException("Input text is not covered by tokens");
         }
 
         /// <summary>
@@ -28,11 +75,11 @@ namespace Parsing
         /// <returns></returns>
         internal IEnumerable<TerminalLabel> WaitingLabels(int index)
         {
-            var incomming=_incommingEdges[index];
+            var incomming = _incommingEdges[index];
 
             return incomming.WaitingTerminals;
         }
-        
+
         internal bool Connect(CompleteEdge edge)
         {
             //var outcomming = edge.StartContext.OutgoingEdges;
@@ -64,14 +111,11 @@ namespace Parsing
 
         internal SourceContext GetSourceContext(int index)
         {
-            SourceContext context;
-            if (!_contexts.TryGetValue(index, out context))
-            {
-                context = new SourceContext(this, index);
-                _contexts[index] = context;
-            }
+            if (index >= _contexts.Length)
+                //TODO repair context, to not need this
+                index = _contexts.Length - 1;
 
-            return context;
+            return _contexts[index];
         }
     }
 }

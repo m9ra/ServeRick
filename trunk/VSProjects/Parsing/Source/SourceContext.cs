@@ -4,29 +4,40 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Parsing
+namespace Parsing.Source
 {
     public class SourceContext
     {
         private readonly SourceData _data;
 
-        public readonly int Index;
-
-        public Source Source { get { return _data.Source; } }
-
-        public string Text { get { return Source.Text; } }
-
-        public string CurrentText { get { return Source.Text.Substring(Index); } }
-
-        public bool EOF { get { return Source.Text.Length <= Index; } }
-        public bool BOF { get { return Index == 0; } }
-
         internal IncommingEdges IncommingEdges { get { return _data.Incomming(Index); } }
 
-        internal SourceContext(SourceData data, int currentIndex)
+        public readonly int Index;
+
+        public readonly Token Token;
+
+        public string Text { get { return _data.Text; } }
+
+        public string CurrentText { get { return _data.Text.Substring(Index); } }
+
+        public bool EOF { get { return _data.Text.Length <= Index + 1; } }
+
+        public bool BOF { get { return Index == 0; } }
+
+        public readonly SourceContext PreviousContext;
+
+        public SourceContext NextContext { get; private set; }
+
+        internal SourceContext(SourceData data, int currentIndex, Token sourceToken, SourceContext previousContext)
         {
             _data = data;
             Index = currentIndex;
+            PreviousContext = previousContext;
+            Token = sourceToken;
+            if (PreviousContext != null)
+            {
+                PreviousContext.NextContext = this;
+            }
         }
 
         internal TerminalMatch Match(Terminal terminal)
@@ -48,12 +59,24 @@ namespace Parsing
             return result;
         }
 
+        internal TerminalMatch MatchSpecial(string specialTokenName)
+        {
+            if (Token.Name == specialTokenName)
+            {
+                return new TerminalMatch(NextContext,Token,Token.Name);
+            }
+            else
+            {
+                return new TerminalMatch(null, Token, Token.Name);
+            }
+        }
+
         internal SourceContext Shift(string data)
         {
-            if (Source.Text.Length - Index < data.Length)
+            if (Text.Length - Index < data.Length)
                 return null;
 
-            if (Source.Text.Substring(Index, data.Length) == data)
+            if (Text.Substring(Index, data.Length) == data)
             {
                 return _data.GetSourceContext(Index + data.Length);
             }
@@ -67,15 +90,15 @@ namespace Parsing
 
         internal SourceContext SkipWhitespaces()
         {
-            for (int i = Index; i < Source.Text.Length; ++i)
+            for (int i = Index; i < Text.Length; ++i)
             {
-                if (!char.IsWhiteSpace(Source.Text,i))
+                if (!char.IsWhiteSpace(Text, i))
                     return _data.GetSourceContext(i);
             }
 
             return _data.GetSourceContext(Text.Length);
         }
-            
+
 
         internal IEnumerable<CompleteEdge> GetInterpretations()
         {
@@ -98,14 +121,15 @@ namespace Parsing
         {
             foreach (var label in labels)
             {
-                var edge = new ActiveEdge(label,this, this);
+                var edge = new ActiveEdge(label, this, this);
                 _data.Connect(edge);
             }
         }
 
         public override string ToString()
         {
-            return "[Pos]"+Index;
+            return "[Pos]" + Index;
         }
+
     }
 }

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Parsing.Source;
+
 namespace Parsing
 {
     /// <summary>
@@ -26,11 +28,17 @@ namespace Parsing
         /// </summary>
         public readonly string MatchedData;
 
-        internal TerminalMatch(SourceContext matchEnd,string matchedData)
+        /// <summary>
+        /// Token where matched data has been found
+        /// </summary>
+        public readonly Token MatchedToken;
+
+        internal TerminalMatch(SourceContext matchEnd, Token matchedToken, string matchedData)
         {
             MatchEnd = matchEnd;
             Success = matchEnd != null;
             MatchedData = matchedData;
+            MatchedToken = matchedToken;
         }
 
         public override string ToString()

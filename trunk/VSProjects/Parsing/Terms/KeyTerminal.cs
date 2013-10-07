@@ -4,13 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Parsing.Source;
+
 namespace Parsing
 {
-    class KeyTerminal:Terminal
+    class KeyTerminal : Terminal
     {
         public readonly string Key;
 
-        public KeyTerminal(string key,string name)
+        public KeyTerminal(string key, string name)
             : base(name)
         {
             Key = key;
@@ -18,15 +20,15 @@ namespace Parsing
 
         protected internal override TerminalMatch Match(SourceContext context)
         {
-            context=context.SkipWhitespaces();
+            context = context.SkipWhitespaces();
             var shifted = context.Shift(Key);
 
-            return new TerminalMatch(shifted,Key);
+            return new TerminalMatch(shifted, context.Token, Key);
         }
 
         public override string ToString()
         {
-            return Key;        
+            return Key;
         }
     }
 }

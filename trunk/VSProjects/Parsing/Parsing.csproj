@@ -47,6 +47,8 @@
     <Compile Include="Edges\CompleteEdge.cs" />
     <Compile Include="Labels\CompleteLabel.cs" />
     <Compile Include="Edges\Edge.cs" />
+    <Compile Include="Terms\SpecialTerminal.cs" />
+    <Compile Include="Token.cs" />
     <Compile Include="Terms\EmptyTerminal.cs" />
     <Compile Include="GrammarBase.cs" />
     <Compile Include="GrammarSequence.cs" />
@@ -58,7 +60,6 @@
     <Compile Include="Terms\PatternTerminal.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GrammarRule.cs" />
-    <Compile Include="Source\Source.cs" />
     <Compile Include="Source\SourceContext.cs" />
     <Compile Include="Source\SourceData.cs" />
     <Compile Include="Labels\EdgeLabel.cs" />
@@ -67,6 +68,7 @@
     <Compile Include="Edges\TerminalEdge.cs" />
     <Compile Include="Labels\TerminalLabel.cs" />
     <Compile Include="TerminalMatch.cs" />
+    <Compile Include="Source\TokenStream.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

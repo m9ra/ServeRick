@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 using System.Diagnostics;
 
+using Parsing.Source;
+
 namespace Parsing
 {
     /// <summary>
@@ -86,7 +88,6 @@ namespace Parsing
         public Node Parse(string text)
         {
             var w = Stopwatch.StartNew();
-            var source = new Source(text);
 
             //initialize
             _agenda.Clear();
@@ -94,8 +95,11 @@ namespace Parsing
             _nextWordContexts.Clear();
             _result = null;
 
-            var sourceData = new SourceData(source, _grammar);
-            var startContext = source.CreateStartContext(sourceData);
+            var inputTokens = _grammar.OutlineTokens(new[] { Token.Text(text, 0) });
+            var tokenStream = new TokenStream(inputTokens);
+
+            var sourceData = new SourceData(text, tokenStream);
+            var startContext = sourceData.StartContext;
             startContext.AddSelfEdgesFrom(_rootTransitions);
 
             _nextWordContexts.Add(startContext);

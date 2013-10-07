@@ -6,18 +6,18 @@ using System.Threading.Tasks;
 
 using Parsing.Source;
 
-namespace Parsing
+namespace Parsing.Terms
 {
-    public class EmptyTerminal : Terminal
+    class SpecialTerminal:Terminal
     {
-        public EmptyTerminal()
-            : base("EmptyTerminal")
+        internal SpecialTerminal(string specialTokenName)
+            :base(specialTokenName)
         {
         }
 
         protected internal override TerminalMatch Match(SourceContext context)
         {
-            return new TerminalMatch(context, context.Token, "");
+            return context.MatchSpecial(Name);
         }
     }
 }
