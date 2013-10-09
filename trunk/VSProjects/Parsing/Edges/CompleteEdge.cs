@@ -17,11 +17,11 @@ namespace Parsing
 
         public bool IsFinal { get { return CompleteLabel.IsFinal; } }
 
-        protected CompleteEdge(TerminalLabel completeLabel, SourceContext startContext, SourceContext endContext)
+        protected CompleteEdge(TerminalLabel terminalLabel, SourceContext startContext, SourceContext endContext)
             : base(startContext, endContext)
         {
-            Parent = completeLabel.Terminal;
-            CompleteLabel = completeLabel;
+            Parent = terminalLabel.Terminal;
+            CompleteLabel = terminalLabel;
         }
 
 

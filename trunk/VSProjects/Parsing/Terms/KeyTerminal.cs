@@ -21,6 +21,9 @@ namespace Parsing
         protected internal override TerminalMatch Match(SourceContext context)
         {
             context = context.SkipWhitespaces();
+            if (context == null)
+                return TerminalMatch.Failed();
+
             var shifted = context.Shift(Key);
 
             return new TerminalMatch(shifted, context.Token, Key);

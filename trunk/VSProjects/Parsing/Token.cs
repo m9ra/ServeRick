@@ -31,11 +31,17 @@ namespace Parsing
             Data = data;
             StartPosition = start;
 
-            if(IsSpecial){
+            if (IsSpecial)
+            {
                 EndPosition = StartPosition;
-            }else{
-                EndPosition = StartPosition + Length - 1;
             }
+            else
+            {
+                EndPosition = StartPosition + Length;
+            }
+
+            if (EndPosition < StartPosition)
+                throw new NotSupportedException("End cannot be before start");
         }
 
         public static Token Special(string tokenName, int startPosition)
@@ -50,6 +56,9 @@ namespace Parsing
             return token;
         }
 
-
+        public override string ToString()
+        {
+            return string.Format("[{0},{1}]{2}", Name, StartPosition, Data);
+        }
     }
 }

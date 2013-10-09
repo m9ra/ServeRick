@@ -43,6 +43,11 @@ namespace Parsing
             Kind = kind;
         }
 
+        public override string ToString()
+        {
+            return Name;
+        }
+
         public static implicit operator GrammarRule(Term t)
         {
             return new GrammarRule(new GrammarSequence(t));

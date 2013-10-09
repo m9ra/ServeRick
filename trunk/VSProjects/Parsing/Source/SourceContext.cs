@@ -30,6 +30,10 @@ namespace Parsing.Source
 
         internal SourceContext(SourceData data, int currentIndex, Token sourceToken, SourceContext previousContext)
         {
+
+            if (sourceToken == null)
+                throw new ArgumentNullException("sourceToken");
+
             _data = data;
             Index = currentIndex;
             PreviousContext = previousContext;
@@ -61,14 +65,30 @@ namespace Parsing.Source
 
         internal TerminalMatch MatchSpecial(string specialTokenName)
         {
-            if (Token.Name == specialTokenName)
+            var context = this.Token.IsSpecial ? this : this.SkipSpecialTokenWhitespaces();
+            /*    while (context != null && context.Token.IsSpecial)
+                {
+                    var token = context.Token;
+                    if (token.Name == specialTokenName)
+                    {
+                        if (context.NextContext != null)
+                            context = context.NextContext;
+
+                        return new TerminalMatch(context, token, null);
+                    }
+
+                    context = context.NextContext;
+                }*/
+
+            if (context.Token.IsSpecial && context.Token.Name == specialTokenName)
             {
-                return new TerminalMatch(NextContext,Token,Token.Name);
+                if (context.NextContext != null)
+                    context = context.NextContext;
+
+                return new TerminalMatch(context, context.Token, null);
             }
-            else
-            {
-                return new TerminalMatch(null, Token, Token.Name);
-            }
+
+            return new TerminalMatch(null, null, null);
         }
 
         internal SourceContext Shift(string data)
@@ -90,20 +110,57 @@ namespace Parsing.Source
 
         internal SourceContext SkipWhitespaces()
         {
-            for (int i = Index; i < Text.Length; ++i)
+            if (this.Token.IsSpecial)
+                //cant cross special token
+                return null;
+
+            var context = this;
+            while (context.NextContext != null)
             {
-                if (!char.IsWhiteSpace(Text, i))
-                    return _data.GetSourceContext(i);
+                if (!char.IsWhiteSpace(Text, context.Index))
+                    break;
+
+                context = context.NextContext;
             }
 
-            return _data.GetSourceContext(Text.Length);
+            var nextContext = context;
+            while (nextContext.Index == context.Index)
+            {
+                if (nextContext.Token.IsSpecial)
+                    return null;
+
+                nextContext = nextContext.NextContext;
+            }
+
+            return context;
+        }
+
+        internal SourceContext SkipSpecialTokenWhitespaces()
+        {
+            if (Token.IsSpecial)
+                return this;
+
+            var token = this.Token;
+            while (!token.IsSpecial)
+            {
+                token = token.Child;
+            }
+
+            for (int i = Index; i < token.EndPosition; ++i)
+            {
+                if (!char.IsWhiteSpace(Text, i))
+                    return this;
+            }
+
+            return _data.GetSourceContext(token.StartPosition);
         }
 
 
         internal IEnumerable<CompleteEdge> GetInterpretations()
         {
             var result = new List<CompleteEdge>();
-            foreach (var label in _data.WaitingLabels(Index))
+            var labels = _data.WaitingLabels(Index).ToArray();
+            foreach (var label in labels)
             {
                 var terminalMatch = label.Terminal.Match(this);
                 if (terminalMatch.Success)
@@ -111,6 +168,11 @@ namespace Parsing.Source
             }
 
             return result;
+        }
+
+        internal void CleanWaitingLabels()
+        {
+            _data.ClearWaintingLabels(Index);
         }
 
         /// <summary>
@@ -130,6 +192,5 @@ namespace Parsing.Source
         {
             return "[Pos]" + Index;
         }
-
     }
 }

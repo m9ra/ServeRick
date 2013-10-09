@@ -14,8 +14,7 @@ namespace Parsing
             : base(name,TermKind.Terminal)
         {}
 
-        internal protected abstract TerminalMatch Match(SourceContext context);      
+        internal protected abstract TerminalMatch Match(SourceContext context);
 
-        
     }
 }

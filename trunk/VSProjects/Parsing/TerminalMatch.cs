@@ -41,6 +41,11 @@ namespace Parsing
             MatchedToken = matchedToken;
         }
 
+        public static TerminalMatch Failed()
+        {
+            return new TerminalMatch(null, null, null);
+        }
+
         public override string ToString()
         {
             var info = Success ? "'" + MatchedData + "'" : "Fail";

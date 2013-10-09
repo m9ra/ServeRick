@@ -12,7 +12,10 @@ namespace Parsing
 {
     public class PatternTerminal : Terminal
     {
-        Regex _match;
+        private readonly Regex _match;
+
+        private readonly HashSet<string> _excludes = new HashSet<string>();
+
         public PatternTerminal(string pattern, string name)
             : base(name)
         {
@@ -22,14 +25,24 @@ namespace Parsing
         protected internal override TerminalMatch Match(SourceContext context)
         {
             context = context.SkipWhitespaces();
+            if (context==null)
+                return TerminalMatch.Failed();
+
             var match = _match.Match(context.Text, context.Index);
+            var value = match.Value;
 
-            if (!match.Success)
-                return new TerminalMatch(null, null, null);
+            if (!match.Success || _excludes.Contains(value))
+                return TerminalMatch.Failed();
 
-            var shifted = context.Shift(match.Value.Length);
+            var shifted = context.Shift(value.Length);
 
-            return new TerminalMatch(shifted, context.Token, match.Value);
+            return new TerminalMatch(shifted, context.Token, value);
+        }
+
+        public PatternTerminal Exclude(string word)
+        {
+            _excludes.Add(word);
+            return this;
         }
     }
 }

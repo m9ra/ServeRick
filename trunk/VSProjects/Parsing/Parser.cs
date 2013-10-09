@@ -126,8 +126,8 @@ namespace Parsing
             {
                 var constituent = _agenda.Dequeue();
                 var incommingEdges = constituent.StartContext.IncommingEdges;
-                var extensibleEdges = incommingEdges.ExtensibleWith(constituent);
-
+                var extensibleEdges = incommingEdges.ExtensibleWith(constituent).ToArray();
+                incommingEdges = null;
                 foreach (var edge in extensibleEdges)
                 {
                     if (edge.Label.WillComplete)
@@ -193,32 +193,23 @@ namespace Parsing
                 return false;
             }
 
+            //clean waiting labels behind interpretations processing (multiple contexts on same position can occur)
+            foreach (var nextWordContext in _nextWordContexts)
+            {
+                nextWordContext.CleanWaitingLabels();
+            }
+
             //fill agenda with discovered interpretations
             //prepare next word contexts for reading input
+            
             _nextWordContexts.Clear();
             foreach (var interpretation in _interpretations)
             {
                 _agenda.Enqueue(interpretation);
                 sourceData.Connect(interpretation);
-
-                if (_interpretations.Count < 2 || interpretation.EndContext != interpretation.StartContext)
-
-                    _nextWordContexts.Add(interpretation.EndContext);
+                
+                _nextWordContexts.Add(interpretation.EndContext);
             }
-
-            //cleanup
-            /*if (_interpretations.Count > 10)
-                        {
-                            for (int i = 0; i < _interpretations.Count; ++i)
-                            {
-                                var interpretation = _interpretations[i];
-                                if (interpretation.EndContext == interpretation.StartContext)
-                                {
-                                    _interpretations.RemoveAt(i);
-                                    i--;
-                                }        
-                            }
-                        }*/
 
             return true;
         }

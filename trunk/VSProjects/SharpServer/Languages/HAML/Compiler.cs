@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Irony.Parsing;
+using System.Text.RegularExpressions;
+
+using Parsing;
 
 using SharpServer.Compiling;
 using SharpServer.Languages.HAML.Compiling;
@@ -14,13 +16,12 @@ namespace SharpServer.Languages.HAML
     class Compiler : CompilerBase
     {
         static readonly Grammar HamlGrammar = new HAML.Grammar();
-        static readonly LanguageData HamlLang = new LanguageData(HamlGrammar);
-        static readonly Parser Parser = new Parser(HamlLang);
+        static readonly Parser Parser = new Parser(HamlGrammar);
 
-        readonly ParseTreeNode _root;
+        readonly Node _root;
         readonly Emitter E;
 
-        private Compiler(ParseTreeNode root, Emitter emitter)
+        private Compiler(Node root, Emitter emitter)
         {
             E = emitter;
             _root = root;
@@ -28,17 +29,17 @@ namespace SharpServer.Languages.HAML
 
         public static void Compile(string source, Emitter emitter)
         {
-            var tree = Parser.Parse(source);
-            var root = tree.Root;
+            source = source.Trim().Replace("\r", "").Replace("\t", "    ");
+            source = Regex.Replace(source, @"^\s+$[\r\n]*", "", RegexOptions.Multiline);
 
-            var parseOutput = Output.AsString(tree);
+            var root = Parser.Parse(source);
+
+            Print(root);
             if (root == null)
             {
-                emitter.ReportParseError(parseOutput);
+                emitter.ReportParseError("Cannot parse");
                 return;
             }
-
-            Console.WriteLine(parseOutput);
 
             var compiler = new Compiler(root, emitter);
             compiler.compile();
@@ -50,9 +51,9 @@ namespace SharpServer.Languages.HAML
         }
 
         #region Generating methods
-        private Instruction compileBlock(ParseTreeNode block)
+        private Instruction compileBlock(Node block)
         {
-            var name = getName(block);
+            var name = block.Name;
             switch (name)
             {
                 case "view":
@@ -66,11 +67,11 @@ namespace SharpServer.Languages.HAML
             }
         }
 
-        private Instruction compileView(ParseTreeNode view)
+        private Instruction compileView(Node view)
         {
             var blocks = compileBlocks(view);
 
-            var doctype = findNode(view, "doctype");
+            var doctype = GetDescendant(view, "doctype");
             if (doctype != null)
             {
                 //TODO resolve doctype type
@@ -81,14 +82,14 @@ namespace SharpServer.Languages.HAML
             return blocks;
         }
 
-        private Instruction compileBlocks(ParseTreeNode parent)
+        private Instruction compileBlocks(Node parent)
         {
-            var blocks = getChilds("blocks.block", parent);
+            var blocks = GetDescendants(parent, "blocks", "block");
 
             var compiledBlocks = new List<Instruction>();
             foreach (var block in blocks)
             {
-                var resolved = stepToChild(block);
+                var resolved = StepToChild(block);
 
                 var compiledBlock = compileBlock(resolved);
                 compiledBlocks.Add(compiledBlock);
@@ -97,13 +98,13 @@ namespace SharpServer.Languages.HAML
             return E.Concat(compiledBlocks);
         }
 
-        private Instruction compileContentBlock(ParseTreeNode contentBlock)
+        private Instruction compileContentBlock(Node contentBlock)
         {
-            var headNode = getChild("head", contentBlock);
+            var headNode = GetDescendant(contentBlock, "head");
             var tag = createTag(headNode);
 
 
-            var contentNode = getChild("content", contentBlock);
+            var contentNode = GetDescendant(contentBlock, "content");
             var content = compileContent(contentNode);
             if (tag == null)
                 //empty tag declaration
@@ -113,42 +114,43 @@ namespace SharpServer.Languages.HAML
             return tag.ToInstruction();
         }
 
-        private Instruction compileContent(ParseTreeNode contentNode)
+        private Instruction compileContent(Node contentNode)
         {
             if (contentNode == null)
                 return null;
-            var rawContent = getSubTerminal(contentNode);
+
+            var rawContent = GetTerminalText(contentNode,"rawOutput");
             if (rawContent != null)
             {
                 return E.Constant(rawContent);
             }
             else
             {
-                var code = getChild("code", contentNode);
+                var code = GetDescendant(contentNode, "code");
                 return compileCode(code);
             }
         }
 
-        private Instruction compileCode(ParseTreeNode code)
+        private Instruction compileCode(Node code)
         {
-            var statements = getChild("statement", code);
+            var statements = GetDescendant(code, "statement");
 
             //TODO multiple statemets handling
-       /*     Instruction lastStatement = null;
-            foreach (var statement in statements.ChildNodes)
-            {
-                lastStatement = compileStatement(statement);
-            }
+            /*     Instruction lastStatement = null;
+                 foreach (var statement in statements.ChildNodes)
+                 {
+                     lastStatement = compileStatement(statement);
+                 }
             
-            return lastStatement;*/
+                 return lastStatement;*/
 
             return compileStatement(statements);
         }
 
-        private Instruction compileStatement(ParseTreeNode statement)
+        private Instruction compileStatement(Node statement)
         {
-            var child = stepToChild(statement);
-            var statementName = getName(child);
+            var child = StepToChild(statement);
+            var statementName = child.Name;
             switch (statementName)
             {
                 case "expression":
@@ -165,16 +167,16 @@ namespace SharpServer.Languages.HAML
             }
         }
 
-        private bool containsYield(ParseTreeNode child)
+        private bool containsYield(Node child)
         {
-            return findNode(child, "yield") != null;
+            return GetDescendant(child, "yield") != null;
         }
 
 
 
-        private Instruction compileContainerBlock(ParseTreeNode containerBlock)
+        private Instruction compileContainerBlock(Node containerBlock)
         {
-            var headNode = getChild("head", containerBlock);
+            var headNode = GetDescendant(containerBlock, "head");
             var tag = createTag(headNode);
 
             var blocks = compileBlocks(containerBlock);
@@ -188,23 +190,23 @@ namespace SharpServer.Languages.HAML
         #endregion
 
         #region Expression resolving
-        private RValue resolveRValue(ParseTreeNode node)
+        private RValue resolveRValue(Node node)
         {
-            var name = getName(node);
+            var name = node.Name;
             switch (name)
             {
                 case "call":
                     var argValues = getArguments(node);
-                    var callName = getSubTerminal(node, null, "callName");
+                    var callName = GetSubTerminalText(node.ChildNodes[0]);
                     return new CallValue(callName, argValues, E);
                 case "expression":
-                    return resolveRValue(stepToChild(node));
+                    return resolveRValue(StepToChild(node));
                 case "symbol":
                     return resolveSymbol(node);
                 case "shortKey":
                     return resolveShortKey(node);
                 case "value":
-                    var literal = getSubTerminal(node);
+                    var literal = GetSubTerminalText(node);
                     return resolveLiteralValue(literal);
                 case "hash":
                     return resolveHashValue(node);
@@ -218,16 +220,16 @@ namespace SharpServer.Languages.HAML
             }
         }
 
-        private RValue[] getArguments(ParseTreeNode callNode)
+        private RValue[] getArguments(Node callNode)
         {
-            var argsNode = GetNode(callNode, "argList", "args");
+            var argsNode = GetDescendant(callNode, "argList", "args");
 
             var args = new List<RValue>();
 
             while (argsNode != null)
             {
                 var argNode = argsNode;
-                if (argsNode.Term.Name == "args")
+                if (argsNode.Name == "args")
                 {
                     argNode = argsNode.ChildNodes[0];
                 }
@@ -237,13 +239,13 @@ namespace SharpServer.Languages.HAML
                 if (argsNode.ChildNodes.Count == 1)
                     break;
 
-                argsNode = findNode(argsNode.ChildNodes[1], "args");
+                argsNode = GetDescendant(argsNode.ChildNodes[1], "args");
             }
 
             return args.ToArray();
         }
 
-        private RValue resolveSymbol(ParseTreeNode symbolNode)
+        private RValue resolveSymbol(Node symbolNode)
         {
             if (symbolNode == null)
                 return null;
@@ -251,7 +253,7 @@ namespace SharpServer.Languages.HAML
             return new LiteralValue(GetTerminalText(symbolNode).Substring(1), E);
         }
 
-        private RValue resolveShortKey(ParseTreeNode shortKeyNode)
+        private RValue resolveShortKey(Node shortKeyNode)
         {
             var keyText = GetTerminalText(shortKeyNode);
             //remove ending :
@@ -275,24 +277,24 @@ namespace SharpServer.Languages.HAML
             return new LiteralValue(literal, E);
         }
 
-        private RValue resolveKeyPair(ParseTreeNode pairNode)
+        private RValue resolveKeyPair(Node pairNode)
         {
             var key = resolveRValue(pairNode.ChildNodes[0]);
             var value = resolveRValue(pairNode.ChildNodes[1]);
             return new PairValue(key, value, E);
         }
 
-        private RValue resolveYield(ParseTreeNode yieldNode)
+        private RValue resolveYield(Node yieldNode)
         {
-            var symbolNode = findNode(yieldNode, "symbol");
+            var symbolNode = GetDescendant(yieldNode, "symbol");
             var symbol = resolveSymbol(symbolNode);
 
             return new YieldValue(symbol, E);
         }
 
-        private RValue resolveHashValue(ParseTreeNode hashNode)
+        private RValue resolveHashValue(Node hashNode)
         {
-            var pairs = findNodes(hashNode, "keyPair").ToArray();
+            var pairs = GetDescendants(hashNode, "keyPairs", "keyPair");
             var pairValues = new List<RValue>();
             foreach (var pair in pairs)
             {
@@ -305,9 +307,12 @@ namespace SharpServer.Languages.HAML
 
         #region Semantic translation
 
-        private TagValue createTag(ParseTreeNode headNode)
+        private TagValue createTag(Node headNode)
         {
-            var hashNode = findNode(headNode, "hash");
+            if (headNode == null)
+                return null;
+
+            var hashNode = GetDescendant(headNode, "hash");
             var hash = hashNode == null ? null : resolveRValue(hashNode);
             var tag = getTagName(headNode);
             var id = getId(headNode);
@@ -327,9 +332,9 @@ namespace SharpServer.Languages.HAML
             return new TagValue(tag, classAttrib, id, hash, E);
         }
 
-        private RValue getClassAttrib(ParseTreeNode headNode)
+        private RValue getClassAttrib(Node headNode)
         {
-            var classes = findTerminals("class", headNode);
+            var classes = GetTerminalTexts(headNode, "attributes", "class", "identifier");
 
             if (classes.Length == 0)
                 return null;
@@ -338,38 +343,30 @@ namespace SharpServer.Languages.HAML
             return new LiteralValue(classAttrib, E);
         }
 
-        private RValue getTagName(ParseTreeNode headNode)
+        private RValue getTagName(Node headNode)
         {
-            string tag = null;
-            if (headNode.ChildNodes.Count != 0)
-            {
-                var tagNode = headNode.ChildNodes[0];
-                tag = GetTerminalText(tagNode.ChildNodes[0]);
-            }
-
-            if (tag == null)
-            {
-                return null;
-            }
-
-            return new LiteralValue(tag, E);
-        }
-
-        private RValue getId(ParseTreeNode headNode)
-        {
-            var terms = findTerminals("id", headNode);
+            var terms = GetTerminalTexts(headNode, "tag", "identifier");
             if (terms.Length < 1)
                 return null;
 
             return new LiteralValue(terms[0], E);
         }
 
-        private Dictionary<string, RValue> parseHash(ParseTreeNode hashNode)
+        private RValue getId(Node headNode)
+        {
+            var terms = GetTerminalTexts(headNode, "attributes", "id", "identifier");
+            if (terms.Length < 1)
+                return null;
+
+            return new LiteralValue(terms[0], E);
+        }
+
+        private Dictionary<string, RValue> parseHash(Node hashNode)
         {
             var result = new Dictionary<string, RValue>();
             if (hashNode != null)
             {
-                var pairs = findNodes(hashNode, "keyPair");
+                var pairs = GetDescendants(hashNode, "keyPair");
 
                 foreach (var pair in pairs)
                 {

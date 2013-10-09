@@ -4,27 +4,32 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Irony;
-using Irony.Parsing;
-using Irony.Ast;
-using Irony.Parsing.Construction;
-
-using SharpServer.Compiling;
+using Parsing;
 
 namespace SharpServer.Languages.HAML
 {
-    [Language("HAML", "1.0", "Testing implementation for HAML")]
     public class Grammar : GrammarBase
     {
-        NonTerminal hash = new NonTerminal("hash");
+        NonTerminal hash;
+
+        readonly Terminal INDENT;
+
+        readonly Terminal DEDENT;
+
+        readonly Terminal EOL;
 
         public Grammar()
         {
+            INDENT = T_SPEC("INDENT");
+            DEDENT = T_SPEC("DEDENT");
+            EOL = T_SPEC("EOL");
+
+            hash = NT("hash");
+
             var statement = generateStatementGrammar();
             generateTemplateGrammar(statement);
 
-            MarkPunctuation("=", "!!!", ".", "#", "%", "render", "=>", ",", ")", "(", "}", "{");
-            this.LanguageFlags = LanguageFlags.NewLineBeforeEOF;
+            MarkPunctuation("=", "!!!", ".", "#", "%", "render", "=>", ",", ")", "(", "}", "{", "");
         }
 
         private NonTerminal generateStatementGrammar()
@@ -48,16 +53,17 @@ namespace SharpServer.Languages.HAML
             var value = NT("value");
 
 
-            var symbol = new RegexBasedTerminal("symbol", ":[a-zA-Z][a-zA-Z01-9_]*");
-            var shortKey = new RegexBasedTerminal("shortKey", "[a-zA-Z][a-zA-Z01-9_]*:");
-            var identifier = new RegexBasedTerminal("identifier", "[a-zA-Z][a-zA-Z01-9_]*");
-            identifier.Priority = TerminalPriority.Low;
+            var symbol = T_REG(":[a-zA-Z][a-zA-Z01-9_]*", "symbol");
+            var shortKey = T_REG("[a-zA-Z][a-zA-Z01-9_]*:", "shortKey");
+            var identifier = T_REG("[a-zA-Z][a-zA-Z01-9_]*", "identifier").Exclude("yield");
+            var numberLiteral = T_REG("/d+", "number");
+            var stringLiteral = T_REG(@""" [^""]* """, "string");
 
             #endregion
 
             //statement
             statement.Rule = render | expression;
-            render.Rule = T_HIGH("render") + argList;
+            render.Rule = "render" + argList;
 
             //arguments
             argList.Rule = ("(" + args + ")") | args | Empty;
@@ -69,12 +75,12 @@ namespace SharpServer.Languages.HAML
 
             //expression           
             yield.Rule = "yield" + (symbol | Empty);
-            expression.Rule = yield | identifier | keyPair | symbol | value | call;
+            expression.Rule = yield | keyPair | symbol | value | call | identifier;
             keyPair.Rule = (symbol + "=>" + expression) | (shortKey + expression);
-            keyPairs.Rule = (keyPair + "," + keyPairs) | keyPair;
+            keyPairs.Rule = MakeStarRule(keyPair, ",");
 
             //literals
-            value.Rule = new NumberLiteral("number") | new StringLiteral("string", @"""");
+            value.Rule = stringLiteral | numberLiteral;
 
             //hash
             hash.Rule = "{" + keyPairs + "}";
@@ -107,9 +113,8 @@ namespace SharpServer.Languages.HAML
             var cls = NT("class");
             var tag = NT("tag");
 
-            var identifier = new RegexBasedTerminal("identifier", "[a-zA-Z][a-zA-Z01-9]*");
-            var rawOutput = new RegexBasedTerminal("rawOutput", "[^\\r\\n]+");
-            rawOutput.Priority = TerminalPriority.Low;
+            var identifier = T_REG("[a-zA-Z][a-zA-Z01-9]*", "identifier");
+            var rawOutput = T_REG("[^!%#={.][^\\r\\n]*", "rawOutput");
 
             #endregion
 
@@ -117,51 +122,141 @@ namespace SharpServer.Languages.HAML
 
             //block rules
             block.Rule = containerBlock | contentBlock;
-            blocks.Rule = MakeStarRule(blocks, block);
+            blocks.Rule = MakeStarRule(block);
 
-            containerBlock.Rule = head + Eos + (Indent + blocks + Dedent);
-            contentBlock.Rule = head + ((content + Eos) | Eos);
+            containerBlock.Rule = head + EOL + INDENT + blocks + DEDENT;
+            contentBlock.Rule = (head + EOL + Q(INDENT + content + DEDENT)) | (Q(head) + content + EOL);
 
             //content rules
             content.Rule = code | rawOutput;
             code.Rule = "=" + statement;
 
             //head rules
-            head.Rule = tag + attribs | tag | attribs | Empty;
+            head.Rule = (tag + Q(hash) + Q(attribs)) | attribs;
 
             //attribute rules            
             attrib.Rule = id | cls;
-            attribs.Rule = MakePlusRule(attribs, attrib);
+            attribs.Rule = MakePlusRule(attrib);
 
             id.Rule = "#" + identifier;
             cls.Rule = "." + identifier;
 
             //tag rules
-            tag.Rule = "%" + identifier + (Empty | hash);
+            tag.Rule = "%" + identifier;
 
             //root
-            doctype.Rule = "!!!" + (identifier | Empty) + Eos;
-            view.Rule = (doctype | Empty) + blocks;
+            doctype.Rule = "!!!" + (identifier | Empty);
+            view.Rule = BOF + (doctype + EOL | Empty) + blocks + EOF;
             this.Root = view;
+
+            MarkTransient(attrib);
 
             #endregion
         }
 
-        public override void CreateTokenFilters(LanguageData language, TokenFilterList filters)
+
+        protected override IEnumerable<Token> OutlineTokens(IEnumerable<Token> tokens)
         {
-            var outlineFilter = new CodeOutlineFilter(language.GrammarData,
-                 OutlineOptions.ProduceIndents | OutlineOptions.CheckBraces, ToTerm(@"\")); // "\" is continuation symbol
-            filters.Add(outlineFilter);
+            //let tokens process by standard way
+            tokens = base.OutlineTokens(tokens);
+
+            var result = new List<Token>();
+            var indentLevel = 0;
+            foreach (var token in tokens)
+            {
+                if (token.IsSpecial)
+                {
+                    if (token.Name == "EOF")
+                    {
+                        for (int i = 0; i < indentLevel; ++i)
+                            result.Add(Token.Special("DEDENT", token.StartPosition));
+                    }
+
+                    result.Add(token);
+                }
+                else
+                {
+                    //split data tokens according to lines and set indentation
+                    result.AddRange(splitToken(token, ref indentLevel));
+                }
+            }
+
+            return result;
         }
 
-        public override void ReportParseError(ParsingContext context)
+        private IEnumerable<Token> splitToken(Token token, ref int indentLevel)
         {
-            base.ReportParseError(context);
+            var result = new List<Token>();
+            var previousLineStartOffset = -1;
+            var currentCharIndex = 0;
+            var globalStart = token.StartPosition;
+            while (currentCharIndex < token.Length)
+            {
+                var lineStart = currentCharIndex + globalStart;
+                var textStartOffset = findTextStartOffset(token, currentCharIndex);
+                var textStart = currentCharIndex + textStartOffset + globalStart;
+
+                Token indentation = null;
+                if (previousLineStartOffset >= 0)
+                {
+                    if (previousLineStartOffset < textStartOffset)
+                    {
+                        ++indentLevel;
+                        indentation = Token.Special("INDENT", textStart);
+                    }
+                    else if (previousLineStartOffset > textStartOffset)
+                    {
+                        --indentLevel;
+                        indentation = Token.Special("DEDENT", textStart);
+                    }
+                }
+                previousLineStartOffset = textStartOffset;
+
+                var lineLength = findLineEndOffset(token, textStart);
+                var lineEnd = textStart + lineLength;
+
+                var bol = Token.Special("BOL", lineStart);
+                var line = Token.Text(token.Data.Substring(textStart, lineLength), textStart);
+                var eol = Token.Special("EOL", lineEnd);
+
+                if (lineStart < textStart)
+                    result.Add(Token.Text(token.Data.Substring(lineStart, textStart - lineStart), lineStart));
+                //       result.Add(bol);
+                if (indentation != null)
+                    result.Add(indentation);
+
+
+                result.Add(line);
+                result.Add(eol);
+
+                currentCharIndex = lineEnd - globalStart;
+            }
+
+            return result;
         }
 
-        public override void OnScannerSelectTerminal(ParsingContext context)
+        private int findLineEndOffset(Token token, int start)
         {
-            base.OnScannerSelectTerminal(context);
+            for (var i = start; i < token.Length; ++i)
+            {
+                if (token.Data[i] == '\n')
+                    return i - start + 1;
+            }
+
+            return token.Length - start;
+        }
+
+        private int findTextStartOffset(Token token, int start)
+        {
+            for (var i = start; i < token.Length; ++i)
+            {
+                var currentChar = token.Data[i];
+
+                if (!char.IsWhiteSpace(currentChar))
+                    return i - start;
+            }
+
+            return token.Length - start;
         }
     }
 }

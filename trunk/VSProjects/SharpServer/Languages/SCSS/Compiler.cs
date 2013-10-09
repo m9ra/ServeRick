@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Parsing;
 
 using SharpServer.Compiling;
-using SharpServer.Languages.HAML.Compiling;
+
 
 namespace SharpServer.Languages.SCSS
 {
@@ -75,7 +75,7 @@ namespace SharpServer.Languages.SCSS
         /// </summary>
         private void compile()
         {
-            var definitionsNode = GetNode(_root, "definitions");
+            var definitionsNode = GetDescendant(_root, "definitions");
             discoverDefinitions(definitionsNode);
 
             foreach (var block in _blocks.Values)
@@ -142,7 +142,7 @@ namespace SharpServer.Languages.SCSS
         /// <returns>Created css block</returns>
         private CssBlock getBlock(Node blockNode,CssBlock parentBlock)
         {
-            var specifiersNode = GetNode(blockNode, "specifiers");
+            var specifiersNode = GetDescendant(blockNode, "specifiers");
             var specifiers = getSpecifiers(specifiersNode);
 
             if (parentBlock != null)
@@ -152,7 +152,7 @@ namespace SharpServer.Languages.SCSS
 
             var block = new CssBlock(specifiers);
 
-            foreach (var definitionNode in GetNode(blockNode, "definitions").ChildNodes)
+            foreach (var definitionNode in GetDescendant(blockNode, "definitions").ChildNodes)
             {
                 switch (definitionNode.Name)
                 {

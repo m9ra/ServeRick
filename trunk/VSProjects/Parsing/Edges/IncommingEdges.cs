@@ -55,5 +55,10 @@ namespace Parsing
 
             return true;
         }
+
+        internal void ClearWaitingTerminals()
+        {
+            _waitingTerminals.Clear();
+        }
     }
 }

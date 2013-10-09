@@ -26,13 +26,16 @@ namespace Parsing.Source
         internal SourceData(string text, TokenStream sourceTokens)
         {
             Text = text;
-            _contexts = new SourceContext[text.Length];
+            _contexts = new SourceContext[text.Length + 1];
 
             prepareContexts(sourceTokens);
         }
 
         private void registerContext(int index, Token token)
         {
+            if (index > token.EndPosition || index < token.StartPosition)
+                throw new NotSupportedException("Invalid token cover");
+
             _lastContext = new SourceContext(this, index, token, _lastContext);
 
             var context = _contexts[index];
@@ -43,29 +46,17 @@ namespace Parsing.Source
 
         private void prepareContexts(TokenStream sourceTokens)
         {
-            var lastTokenEnd = 0;
             var token = sourceTokens.NextToken();
-            //create contexts with token chains
-            while (token != null)
+            for (var index = 0; index < _contexts.Length; ++index)
             {
-                var isRegistered = false;
-                while (token!=null && lastTokenEnd >= token.EndPosition)
+                registerContext(index, token);
+                if (token.EndPosition <= index)
                 {
                     token = sourceTokens.NextToken();
-                    registerContext(lastTokenEnd, token);
-                    isRegistered = true;
+                    if (token != null && token.StartPosition == index)
+                        --index;
                 }
-
-                if (!isRegistered)
-                {
-                    registerContext(lastTokenEnd, token);
-                }
-
-                ++lastTokenEnd;
             }
-
-            if (lastTokenEnd != _contexts.Length)
-                throw new NotSupportedException("Input text is not covered by tokens");
         }
 
         /// <summary>
@@ -76,8 +67,14 @@ namespace Parsing.Source
         internal IEnumerable<TerminalLabel> WaitingLabels(int index)
         {
             var incomming = _incommingEdges[index];
+            var terminals = incomming.WaitingTerminals;
+            return terminals;
+        }
 
-            return incomming.WaitingTerminals;
+        internal void ClearWaintingLabels(int index)
+        {
+            var incomming = _incommingEdges[index];
+            incomming.ClearWaitingTerminals();
         }
 
         internal bool Connect(CompleteEdge edge)
@@ -112,8 +109,7 @@ namespace Parsing.Source
         internal SourceContext GetSourceContext(int index)
         {
             if (index >= _contexts.Length)
-                //TODO repair context, to not need this
-                index = _contexts.Length - 1;
+                return _lastContext;
 
             return _contexts[index];
         }

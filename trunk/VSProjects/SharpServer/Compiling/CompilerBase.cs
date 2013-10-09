@@ -34,8 +34,11 @@ namespace SharpServer.Compiling
         /// <param name="root">Root node, where searching starts</param>
         /// <param name="path">Path specifiing names of child hierarchy</param>
         /// <returns>Founded node, or null if no suitable node is found</returns>
-        protected Node GetNode(Node root, params string[] path)
+        protected Node GetDescendant(Node root, params string[] path)
         {
+            if (path.Length == 0)
+                return root;
+
             var currentNode = root;
             foreach (var pathPart in path)
             {
@@ -57,19 +60,82 @@ namespace SharpServer.Compiling
             return currentNode;
         }
 
+        protected IEnumerable<Node> GetDescendants(Node root, params string[] path)
+        {
+            var node = GetDescendant(root, OmitLastPart(path));
+
+            if (node == null)
+                return new Node[0];
+
+            var childName = path.Last();
+
+
+            var result = new List<Node>();
+            foreach (var child in node.ChildNodes)
+            {
+                if (child.Name == childName)
+                    result.Add(child);
+            }
+
+            return result;
+        }
+
+        protected string[] GetTerminalTexts(Node root, params string[] path)
+        {
+            var node = GetDescendant(root, OmitLastPart(path));
+
+            if (node == null)
+                return new string[0];
+
+            var result = new List<string>();
+            foreach (var child in node.ChildNodes)
+            {
+                var text = GetTerminalText(child);
+                if (text == null)
+                    continue;
+
+                result.Add(text);
+            }
+
+            return result.ToArray();
+        }
+
+        protected Node StepToChild(Node parent)
+        {
+            if (parent.ChildNodes.Count != 1)
+                throw new NotSupportedException("Cannot step to child");
+
+            return parent.ChildNodes[0];
+        }
+
         /// <summary>
         /// Get text which was matched by given terminal node
         /// </summary>
-        /// <param name="terminal">Terminal node which text will be returned</param>
+        /// <param name="root">Terminal node which text will be returned</param>
         /// <returns>Terminal text if node is terminal, null otherwise</returns>
-        protected string GetTerminalText(Node terminal)
+        protected string GetTerminalText(Node root, params string[] path)
         {
-            if (terminal.Match == null)
+            var terminal = GetDescendant(root, path);
+
+            if (terminal==null || terminal.Match == null)
                 return null;
 
             return terminal.Match.MatchedData;
         }
 
+        protected string GetSubTerminalText(Node terminalParent)
+        {
+            var terminal = StepToChild(terminalParent);
+            if (terminal == null)
+                return null;
+
+            return GetTerminalText(terminal);
+        }
+
+        private string[] OmitLastPart(string[] pathParts)
+        {
+            return pathParts.Take(pathParts.Length - 1).ToArray();
+        }
 
         #endregion
 

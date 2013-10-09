@@ -48,8 +48,8 @@ namespace SharpServer.Languages.SCSS
             var multiline_comment = T_REG("( [^*] | [*][^/] )*", "multiline_comment");
 
             this.Root = file;
-            file.Rule = definitions+T_SPEC("EOF");
-            
+            file.Rule = BOF + definitions + EOF;
+
             definitions.Rule = MakeStarRule(definition);
 
             definition.Rule = variable_def | block_def | style_def | comment_def;
@@ -71,7 +71,7 @@ namespace SharpServer.Languages.SCSS
 
             comment_def.Rule = ("//" + line_comment) | ("/*" + multiline_comment + "*/");
 
-            MarkPunctuation("$", ",", ":", ";", "{", "}", "#", ".", ">","*/","/*","//", "");
+            MarkPunctuation("$", ",", ":", ";", "{", "}", "#", ".", ">", "*/", "/*", "//", "");
             MarkTransient(definition, specifier, relation);
         }
     }
