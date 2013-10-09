@@ -24,19 +24,29 @@ namespace Parsing
 
         protected internal override TerminalMatch Match(SourceContext context)
         {
-            context = context.SkipWhitespaces();
-            if (context==null)
-                return TerminalMatch.Failed();
+            var startContext = context.SkipWhitespaces();
+            if (startContext == null)
+                return TerminalMatch.Failed;
 
-            var match = _match.Match(context.Text, context.Index);
+            var match = _match.Match(startContext.Text, startContext.Index);
             var value = match.Value;
 
             if (!match.Success || _excludes.Contains(value))
-                return TerminalMatch.Failed();
+                return TerminalMatch.Failed;
 
-            var shifted = context.Shift(value.Length);
+            var currentContext = startContext;
+            while (currentContext.Index < startContext.Index + value.Length-1)
+            {
+                if (currentContext.Token.IsSpecial)
+                {
+                    //pattern terminal cannot cross special tokens
+                    return TerminalMatch.Failed;
+                }
 
-            return new TerminalMatch(shifted, context.Token, value);
+                currentContext = currentContext.NextContext;
+            }
+
+            return new TerminalMatch(currentContext.NextContext, value);
         }
 
         public PatternTerminal Exclude(string word)

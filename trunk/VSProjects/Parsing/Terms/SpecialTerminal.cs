@@ -8,16 +8,17 @@ using Parsing.Source;
 
 namespace Parsing.Terms
 {
-    class SpecialTerminal:Terminal
+    class SpecialTerminal : Terminal
     {
         internal SpecialTerminal(string specialTokenName)
-            :base(specialTokenName)
+            : base(specialTokenName)
         {
         }
 
         protected internal override TerminalMatch Match(SourceContext context)
         {
-            return context.MatchSpecial(Name);
+            var currentContext = context.SkipSpecialTokenWhitespaces();
+            return currentContext.MatchSpecial(Name);
         }
     }
 }

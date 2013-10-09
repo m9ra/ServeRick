@@ -8,8 +8,6 @@ namespace Parsing.Source
 {
     class SourceData
     {
-        private readonly Dictionary<int, IncommingEdges> _incommingEdges = new Dictionary<int, IncommingEdges>();
-
         /// <summary>
         /// Contains contexts for every index in input. At every index there is first token on stream (multiple tokens on same index can start)
         /// </summary>
@@ -17,26 +15,30 @@ namespace Parsing.Source
 
         private SourceContext _lastContext;
 
+        private SourceContext _startContext;
+
         internal readonly string Text;
 
         internal readonly Dictionary<int, Dictionary<Terminal, TerminalMatch>> Matches = new Dictionary<int, Dictionary<Terminal, TerminalMatch>>();
 
-        internal SourceContext StartContext { get { return GetSourceContext(0); } }
+        internal SourceContext StartContext { get { return _startContext; } }
 
         internal SourceData(string text, TokenStream sourceTokens)
         {
             Text = text;
-            _contexts = new SourceContext[text.Length + 1];
+            _contexts = new SourceContext[text.Length];
 
             prepareContexts(sourceTokens);
         }
-
+               
         private void registerContext(int index, Token token)
         {
             if (index > token.EndPosition || index < token.StartPosition)
                 throw new NotSupportedException("Invalid token cover");
-
+                        
             _lastContext = new SourceContext(this, index, token, _lastContext);
+            if (_startContext == null)
+                _startContext = _lastContext;
 
             var context = _contexts[index];
             if (context == null || context.Token.StartPosition != index)
@@ -57,61 +59,6 @@ namespace Parsing.Source
                         --index;
                 }
             }
-        }
-
-        /// <summary>
-        /// Terminals that are requested by some incomming edges on given index
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        internal IEnumerable<TerminalLabel> WaitingLabels(int index)
-        {
-            var incomming = _incommingEdges[index];
-            var terminals = incomming.WaitingTerminals;
-            return terminals;
-        }
-
-        internal void ClearWaintingLabels(int index)
-        {
-            var incomming = _incommingEdges[index];
-            incomming.ClearWaitingTerminals();
-        }
-
-        internal bool Connect(CompleteEdge edge)
-        {
-            //var outcomming = edge.StartContext.OutgoingEdges;
-            var incomming = edge.EndContext.IncommingEdges;
-
-            return incomming.Connect(edge);
-            //outcomming.Connect(edge);
-        }
-
-        internal bool Connect(ActiveEdge edge)
-        {
-            //var outcomming= edge.StartContext.OutgoingEdges;
-            var incomming = edge.EndContext.IncommingEdges;
-
-            return incomming.Connect(edge);
-            //outcomming.Connect(edge);
-        }
-
-        internal IncommingEdges Incomming(int index)
-        {
-            IncommingEdges edges;
-            if (!_incommingEdges.TryGetValue(index, out edges))
-            {
-                edges = new IncommingEdges();
-                _incommingEdges[index] = edges;
-            }
-            return edges;
-        }
-
-        internal SourceContext GetSourceContext(int index)
-        {
-            if (index >= _contexts.Length)
-                return _lastContext;
-
-            return _contexts[index];
         }
     }
 }

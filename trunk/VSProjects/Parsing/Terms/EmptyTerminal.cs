@@ -17,7 +17,7 @@ namespace Parsing
 
         protected internal override TerminalMatch Match(SourceContext context)
         {
-            return new TerminalMatch(context, context.Token, "");
+            return new TerminalMatch(context, "");
         }
     }
 }

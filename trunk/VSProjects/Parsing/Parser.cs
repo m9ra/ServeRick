@@ -106,21 +106,20 @@ namespace Parsing
 
             while (_result == null)
             {
-                if (!scan(sourceData))
+                if (!scan())
                     break;
 
-                processAgenda(sourceData);
+                processAgenda();
             }
 
             w.Stop();
             Console.WriteLine("{0}ms", w.ElapsedMilliseconds);
             return buildOutput(_result);
         }
-
-
+        
         #region Parsing algorigthm (TODO: will be heavily modified and refactored)
 
-        private void processAgenda(SourceData sourceData)
+        private void processAgenda()
         {
             while (_agenda.Count > 0)
             {
@@ -132,36 +131,39 @@ namespace Parsing
                 {
                     if (edge.Label.WillComplete)
                     {
-                        complete(sourceData, constituent, edge);
+                        complete(constituent, edge);
                     }
                     else
                     {
-                        predict(sourceData, constituent, edge);
+                        predict(constituent, edge);
                     }
                 }
             }
         }
 
-        private static void predict(SourceData sourceData, CompleteEdge constituent, ActiveEdge edge)
+        private static void predict(CompleteEdge constituent, ActiveEdge edge)
         {
             //TODO check if new possible interpretation of input is added
             var newEdge = edge.ExtendBy(constituent);
-            if (sourceData.Connect(newEdge))
+            var endContext = newEdge.EndContext;
+
+            if (endContext.Connect(newEdge))
             {
                 foreach (var transition in newEdge.Label.Transitions)
                 {
                     var transitionEdge = new ActiveEdge(transition, newEdge);
-                    sourceData.Connect(transitionEdge);
+                    endContext.Connect(transitionEdge);
                 }
             }
         }
 
-        private void complete(SourceData sourceData, CompleteEdge constituent, ActiveEdge edge)
+        private void complete(CompleteEdge constituent, ActiveEdge edge)
         {
             //new constituent will be created
             var newConstituent = edge.CompleteBy(constituent);
+            var endContext = newConstituent.EndContext;
 
-            if (sourceData.Connect(newConstituent))
+            if (endContext.Connect(newConstituent))
             {
                 //constituent doesn't exists in the graph yet
                 _agenda.Enqueue(newConstituent);
@@ -176,7 +178,7 @@ namespace Parsing
 
         }
 
-        private bool scan(SourceData sourceData)
+        private bool scan()
         {
             //read input interpretations
             _interpretations.Clear();
@@ -201,13 +203,13 @@ namespace Parsing
 
             //fill agenda with discovered interpretations
             //prepare next word contexts for reading input
-            
+
             _nextWordContexts.Clear();
             foreach (var interpretation in _interpretations)
             {
                 _agenda.Enqueue(interpretation);
-                sourceData.Connect(interpretation);
-                
+
+                interpretation.EndContext.Connect(interpretation);
                 _nextWordContexts.Add(interpretation.EndContext);
             }
 

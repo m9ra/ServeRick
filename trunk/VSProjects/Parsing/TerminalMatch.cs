@@ -29,21 +29,23 @@ namespace Parsing
         public readonly string MatchedData;
 
         /// <summary>
-        /// Token where matched data has been found
+        /// Match used for unsucessfull matchings
         /// </summary>
-        public readonly Token MatchedToken;
+        public static readonly TerminalMatch Failed = new TerminalMatch();
 
-        internal TerminalMatch(SourceContext matchEnd, Token matchedToken, string matchedData)
+        private TerminalMatch()
         {
-            MatchEnd = matchEnd;
-            Success = matchEnd != null;
-            MatchedData = matchedData;
-            MatchedToken = matchedToken;
+            Success = false;
         }
 
-        public static TerminalMatch Failed()
+        internal TerminalMatch(SourceContext matchEnd, string matchedData)
         {
-            return new TerminalMatch(null, null, null);
+            if (matchEnd == null)
+                throw new ArgumentNullException("matchEnd");
+
+            Success = true;
+            MatchEnd = matchEnd;
+            MatchedData = matchedData;
         }
 
         public override string ToString()

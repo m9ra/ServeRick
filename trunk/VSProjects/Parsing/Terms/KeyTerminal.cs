@@ -15,18 +15,32 @@ namespace Parsing
         public KeyTerminal(string key, string name)
             : base(name)
         {
+            if (key.Length < 1)
+                throw new NotSupportedException("Cannot match empty key, use empty  statemet instead");
             Key = key;
         }
 
         protected internal override TerminalMatch Match(SourceContext context)
         {
-            context = context.SkipWhitespaces();
-            if (context == null)
-                return TerminalMatch.Failed();
+            var currentContext = context.SkipWhitespaces();
+            
+            for (var i = 0; i < Key.Length; ++i)
+            {
+                if (currentContext == null || currentContext.Token.IsSpecial)
+                {
+                    return TerminalMatch.Failed;
+                }
 
-            var shifted = context.Shift(Key);
+                var currentChar = currentContext.IndexedChar;
+                if (currentChar != Key[i])
+                {
+                    return TerminalMatch.Failed;
+                }
 
-            return new TerminalMatch(shifted, context.Token, Key);
+                currentContext = currentContext.NextContext;
+            }
+
+            return new TerminalMatch(currentContext, Key);
         }
 
         public override string ToString()

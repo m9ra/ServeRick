@@ -145,8 +145,8 @@ namespace SharpServer.Languages.HAML
             tag.Rule = "%" + identifier;
 
             //root
-            doctype.Rule = "!!!" + (identifier | Empty);
-            view.Rule = BOF + (doctype + EOL | Empty) + blocks + EOF;
+            doctype.Rule = "!!!" + Q(identifier);
+            view.Rule = BOF + Q(doctype + EOL) + blocks + EOF;
             this.Root = view;
 
             MarkTransient(attrib);
@@ -190,7 +190,7 @@ namespace SharpServer.Languages.HAML
             var previousLineStartOffset = -1;
             var currentCharIndex = 0;
             var globalStart = token.StartPosition;
-            while (currentCharIndex < token.Length)
+            while (currentCharIndex < token.Length - 1)
             {
                 var lineStart = currentCharIndex + globalStart;
                 var textStartOffset = findTextStartOffset(token, currentCharIndex);
@@ -213,11 +213,10 @@ namespace SharpServer.Languages.HAML
                 previousLineStartOffset = textStartOffset;
 
                 var lineLength = findLineEndOffset(token, textStart);
-                var lineEnd = textStart + lineLength;
 
                 var bol = Token.Special("BOL", lineStart);
                 var line = Token.Text(token.Data.Substring(textStart, lineLength), textStart);
-                var eol = Token.Special("EOL", lineEnd);
+                var eol = Token.Special("EOL", line.EndPosition);
 
                 if (lineStart < textStart)
                     result.Add(Token.Text(token.Data.Substring(lineStart, textStart - lineStart), lineStart));
@@ -229,7 +228,7 @@ namespace SharpServer.Languages.HAML
                 result.Add(line);
                 result.Add(eol);
 
-                currentCharIndex = lineEnd - globalStart;
+                currentCharIndex = line.EndPosition - globalStart+1;
             }
 
             return result;
