@@ -41,6 +41,9 @@ namespace Parsing.Source
             if (sourceToken == null)
                 throw new ArgumentNullException("sourceToken");
 
+            if (currentIndex >= data.Text.Length && !sourceToken.IsSpecial)
+                throw new ArgumentOutOfRangeException("currentIndex");
+
             _data = data;
             IncommingEdges = new IncommingEdges();
             Index = currentIndex;

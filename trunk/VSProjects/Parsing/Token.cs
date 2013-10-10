@@ -37,9 +37,7 @@ namespace Parsing
             }
             else
             {
-                //TODO this has pure semantic, refactor it
-                var length = Length == 0 ? 0 : Length - 1; 
-                EndPosition = StartPosition + length;
+                EndPosition = StartPosition + Length;
             }
 
             if (EndPosition < StartPosition)

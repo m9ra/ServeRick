@@ -51,6 +51,19 @@ namespace SharpServer.UnitTesting
 
         }
 
+
+        [TestMethod]
+        public void HAML_MultipleDedent()
+        {
+            @"
+%a 
+ %b
+  %c
+%d
+ %e
+".AssertHAML(@"<a><b> <c/> </b></a>  <d><e/></d>");
+        }
+
         [TestMethod]
         public void HAML_ImplicitTag()
         {

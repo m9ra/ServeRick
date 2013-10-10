@@ -26,16 +26,17 @@ namespace Parsing.Source
         internal SourceData(string text, TokenStream sourceTokens)
         {
             Text = text;
-            _contexts = new SourceContext[text.Length];
+            //length is increased for end position
+            _contexts = new SourceContext[text.Length + 1];
 
             prepareContexts(sourceTokens);
         }
-               
+
         private void registerContext(int index, Token token)
         {
             if (index > token.EndPosition || index < token.StartPosition)
                 throw new NotSupportedException("Invalid token cover");
-                        
+
             _lastContext = new SourceContext(this, index, token, _lastContext);
             if (_startContext == null)
                 _startContext = _lastContext;
@@ -48,17 +49,24 @@ namespace Parsing.Source
 
         private void prepareContexts(TokenStream sourceTokens)
         {
-            var token = sourceTokens.NextToken();
-            for (var index = 0; index < _contexts.Length; ++index)
+            Token token;
+            while ((token = sourceTokens.NextToken()) != null)
             {
-                registerContext(index, token);
-                if (token.EndPosition <= index)
+                if (token.StartPosition == token.EndPosition)
                 {
-                    token = sourceTokens.NextToken();
-                    if (token != null && token.StartPosition == index)
-                        --index;
+                    registerContext(token.StartPosition, token);
+                }
+                else
+                {
+                    for (var i = token.StartPosition; i < token.EndPosition; ++i)
+                    {
+                        registerContext(i, token);
+                    }
                 }
             }
+
+            if (sourceTokens.NextToken() != null)
+                throw new NotSupportedException("Tokens are out of range");
         }
     }
 }

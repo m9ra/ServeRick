@@ -30,7 +30,6 @@ namespace SharpServer.Languages.HAML
         public static void Compile(string source, Emitter emitter)
         {
             source = source.Trim().Replace("\r", "").Replace("\t", "    ");
-            source = Regex.Replace(source, @"^\s+$[\r\n]*", "", RegexOptions.Multiline);
 
             var root = Parser.Parse(source);
 

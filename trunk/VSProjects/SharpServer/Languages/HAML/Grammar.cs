@@ -160,102 +160,10 @@ namespace SharpServer.Languages.HAML
             //let tokens process by standard way
             tokens = base.OutlineTokens(tokens);
 
-            var result = new List<Token>();
-            var indentLevel = 0;
-            foreach (var token in tokens)
-            {
-                if (token.IsSpecial)
-                {
-                    if (token.Name == "EOF")
-                    {
-                        for (int i = 0; i < indentLevel; ++i)
-                            result.Add(Token.Special("DEDENT", token.StartPosition));
-                    }
-
-                    result.Add(token);
-                }
-                else
-                {
-                    //split data tokens according to lines and set indentation
-                    result.AddRange(splitToken(token, ref indentLevel));
-                }
-            }
+            var outliner = new IndentOutliner(tokens, 4);
+            var result = outliner.Outline();
 
             return result;
-        }
-
-        private IEnumerable<Token> splitToken(Token token, ref int indentLevel)
-        {
-            var result = new List<Token>();
-            var previousLineStartOffset = -1;
-            var currentCharIndex = 0;
-            var globalStart = token.StartPosition;
-            while (currentCharIndex < token.Length - 1)
-            {
-                var lineStart = currentCharIndex + globalStart;
-                var textStartOffset = findTextStartOffset(token, currentCharIndex);
-                var textStart = currentCharIndex + textStartOffset + globalStart;
-
-                Token indentation = null;
-                if (previousLineStartOffset >= 0)
-                {
-                    if (previousLineStartOffset < textStartOffset)
-                    {
-                        ++indentLevel;
-                        indentation = Token.Special("INDENT", textStart);
-                    }
-                    else if (previousLineStartOffset > textStartOffset)
-                    {
-                        --indentLevel;
-                        indentation = Token.Special("DEDENT", textStart);
-                    }
-                }
-                previousLineStartOffset = textStartOffset;
-
-                var lineLength = findLineEndOffset(token, textStart);
-
-                var bol = Token.Special("BOL", lineStart);
-                var line = Token.Text(token.Data.Substring(textStart, lineLength), textStart);
-                var eol = Token.Special("EOL", line.EndPosition);
-
-                if (lineStart < textStart)
-                    result.Add(Token.Text(token.Data.Substring(lineStart, textStart - lineStart), lineStart));
-                //       result.Add(bol);
-                if (indentation != null)
-                    result.Add(indentation);
-
-
-                result.Add(line);
-                result.Add(eol);
-
-                currentCharIndex = line.EndPosition - globalStart+1;
-            }
-
-            return result;
-        }
-
-        private int findLineEndOffset(Token token, int start)
-        {
-            for (var i = start; i < token.Length; ++i)
-            {
-                if (token.Data[i] == '\n')
-                    return i - start + 1;
-            }
-
-            return token.Length - start;
-        }
-
-        private int findTextStartOffset(Token token, int start)
-        {
-            for (var i = start; i < token.Length; ++i)
-            {
-                var currentChar = token.Data[i];
-
-                if (!char.IsWhiteSpace(currentChar))
-                    return i - start;
-            }
-
-            return token.Length - start;
         }
     }
 }
