@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Parsing
 {
-    class IncommingEdges
+    public class IncommingEdges
     {
         private HashSet<ActiveEdge> _activeEdges = new HashSet<ActiveEdge>();
         private HashSet<CompleteEdge> _completeEdges = new HashSet<CompleteEdge>();
@@ -14,7 +14,7 @@ namespace Parsing
         
         private Dictionary<Term, HashSet<ActiveEdge>> _extensibleEdges = new Dictionary<Term, HashSet<ActiveEdge>>();
 
-        public IEnumerable<TerminalLabel> WaitingTerminals { get { return _waitingTerminals; } }
+        public IEnumerable<TerminalLabel> WaitingLabels { get { return _waitingTerminals; } }
 
         internal IEnumerable<ActiveEdge> ExtensibleWith(CompleteEdge edge)
         {         

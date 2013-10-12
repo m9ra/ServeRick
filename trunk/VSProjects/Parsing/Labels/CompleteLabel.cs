@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Parsing
 {
-    class CompleteLabel
+    public class CompleteLabel
     {
         /// <summary>
         /// Nonterminal which created this label from its grammar sequence                

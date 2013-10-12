@@ -5,27 +5,120 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Parsing;
+using Parsing.Source;
 using Irony.Parsing;
 
 namespace SharpServer.Compiling
 {
     class CompilerBase
     {
+        /// <summary>
+        /// Emitter where compiled code is emitted
+        /// </summary>
+        protected readonly Emitter E;
+
+        /// <summary>
+        /// Root node of parsed input
+        /// </summary>
+        protected readonly Node Root;
+
+        /// <summary>
+        /// Initialize compiler
+        /// </summary>
+        /// <param name="emitter">Emitter where compiled code is emitted</param>
+        protected CompilerBase(Node root, Emitter emitter)
+        {
+            Root = root;
+            E = emitter;
+        }
 
         #region AST utilities
+
+        /// <summary>
+        /// Print parsed data representation
+        /// </summary>
+        /// <param name="data">Data to be printed</param>
+        /// <returns>String representation of printed data</returns>
+        static protected string Print(SourceData data)
+        {
+            if (data.Root == null)
+            {
+                return PrintError(data);
+            }
+            else
+            {
+                return Print(data.Root);
+            }
+        }
+
+        /// <summary>
+        /// Print errors from parsed data
+        /// </summary>
+        /// <param name="data">Data to be printed</param>
+        /// <returns>String representation of printed error</returns>
+        static protected string PrintError(SourceData data)
+        {
+            var context = data.StartContext;
+            var waitingContexts = new List<SourceContext>();
+
+            while (context != null)
+            {
+                if (context.IncommingEdges.WaitingLabels.Any())
+                {
+                    waitingContexts.Add(context);
+                }
+
+                context = context.NextContext;
+            }
+
+            if (waitingContexts.Count == 0)
+                throw new NotImplementedException("Error when there is no waiting source context");
+
+            var errors = new List<SyntaxError>();
+            foreach (var waitingContext in waitingContexts)
+            {
+                var terminals = from label in waitingContext.IncommingEdges.WaitingLabels select label.Terminal;
+                var waitingTerms = string.Join("', '", (object[])terminals.ToArray());
+                var description = string.Format("expected: '{0}'", waitingTerms);
+
+                var error = new SyntaxError(waitingContext, description);
+                errors.Add(error);
+            }
+
+            return PrintErrors(errors);
+        }
+
+        /// <summary>
+        /// Print errors from parsed data
+        /// </summary>
+        /// <param name="errors">Errors to be printed</param>
+        /// <returns>String representation of errors</returns>
+        static protected string PrintErrors(IEnumerable<SyntaxError> errors)
+        {
+            var output = new StringBuilder();
+            foreach (var error in errors)
+            {
+                output.AppendFormat("{0} at '{1}',\nNear: '{2}'",error.Description,error.Location,error.NearPreview);
+            }
+
+            return output.ToString();
+        }
 
         /// <summary>
         /// Print node representation to console
         /// </summary>
         /// <param name="node">Root node of printed tree</param>
         /// <param name="level">Level of indentation</param>
-        static protected void Print(Node node, int level = 0)
+        static protected string Print(Node node, int level = 0)
         {
-            Console.WriteLine("".PadLeft(level * 2, ' ') + node);
+            var output = new StringBuilder();
+            output.AppendLine("".PadLeft(level * 2, ' ') + node);
             foreach (var child in node.ChildNodes)
             {
-                Print(child, level + 1);
+                output.Append(Print(child, level + 1));
             }
+
+            return output.ToString();
         }
 
         /// <summary>
@@ -60,6 +153,12 @@ namespace SharpServer.Compiling
             return currentNode;
         }
 
+        /// <summary>
+        /// Get descendants at path relative to root
+        /// </summary>
+        /// <param name="root">Root node for path</param>
+        /// <param name="path">Path for root children traversing</param>
+        /// <returns>Found nodes</returns>
         protected IEnumerable<Node> GetDescendants(Node root, params string[] path)
         {
             var node = GetDescendant(root, OmitLastPart(path));
@@ -80,6 +179,12 @@ namespace SharpServer.Compiling
             return result;
         }
 
+        /// <summary>
+        /// Get texts from terminals at given path relative to root
+        /// </summary>
+        /// <param name="root">Root node for path</param>
+        /// <param name="path">Path for root children traversing</param>
+        /// <returns>Found terminal texts</returns>
         protected string[] GetTerminalTexts(Node root, params string[] path)
         {
             var node = GetDescendant(root, OmitLastPart(path));
@@ -100,14 +205,6 @@ namespace SharpServer.Compiling
             return result.ToArray();
         }
 
-        protected Node StepToChild(Node parent)
-        {
-            if (parent.ChildNodes.Count != 1)
-                throw new NotSupportedException("Cannot step to child");
-
-            return parent.ChildNodes[0];
-        }
-
         /// <summary>
         /// Get text which was matched by given terminal node
         /// </summary>
@@ -117,12 +214,17 @@ namespace SharpServer.Compiling
         {
             var terminal = GetDescendant(root, path);
 
-            if (terminal==null || terminal.Match == null)
+            if (terminal == null || terminal.Match == null)
                 return null;
 
             return terminal.Match.MatchedData;
         }
 
+        /// <summary>
+        /// Get terminal text from child of terminalParent
+        /// </summary>
+        /// <param name="terminalParent">Parent of terminal</param>
+        /// <returns>Text matched by terminal</returns>
         protected string GetSubTerminalText(Node terminalParent)
         {
             var terminal = StepToChild(terminalParent);
@@ -132,6 +234,24 @@ namespace SharpServer.Compiling
             return GetTerminalText(terminal);
         }
 
+        /// <summary>
+        /// Step to single child of parent
+        /// </summary>
+        /// <param name="parent">Parent of returned children</param>
+        /// <returns>Child of given parent</returns>
+        protected Node StepToChild(Node parent)
+        {
+            if (parent.ChildNodes.Count != 1)
+                throw new NotSupportedException("Cannot step to child");
+
+            return parent.ChildNodes[0];
+        }
+
+        /// <summary>
+        /// Omit last part in path
+        /// </summary>
+        /// <param name="pathParts">Path parts</param>
+        /// <returns>Path without last part</returns>
         private string[] OmitLastPart(string[] pathParts)
         {
             return pathParts.Take(pathParts.Length - 1).ToArray();

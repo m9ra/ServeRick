@@ -84,8 +84,8 @@ namespace Parsing
         /// TODO: Error reporting
         /// </summary>
         /// <param name="text">Text input for parsing</param>
-        /// <returns>AST Tree node on success, null otherwise</returns>
-        public Node Parse(string text)
+        /// <returns>Parse source data</returns>
+        public SourceData Parse(string text)
         {
             var w = Stopwatch.StartNew();
 
@@ -114,9 +114,12 @@ namespace Parsing
 
             w.Stop();
             Console.WriteLine("{0}ms", w.ElapsedMilliseconds);
-            return buildOutput(_result);
+            var root = buildOutput(_result);
+
+            sourceData.Root=root;
+            return sourceData;
         }
-        
+
         #region Parsing algorigthm (TODO: will be heavily modified and refactored)
 
         private void processAgenda()

@@ -10,7 +10,7 @@ namespace Parsing.Source
     {
         private readonly SourceData _data;
 
-        internal readonly IncommingEdges IncommingEdges;
+        public readonly IncommingEdges IncommingEdges;
 
         public readonly int Index;
 
@@ -152,7 +152,7 @@ namespace Parsing.Source
         internal IEnumerable<CompleteEdge> GetInterpretations()
         {
             var result = new List<CompleteEdge>();
-            var labels = IncommingEdges.WaitingTerminals.ToArray();
+            var labels = IncommingEdges.WaitingLabels.ToArray();
             foreach (var label in labels)
             {
                 var terminalMatch = label.Terminal.Match(this);

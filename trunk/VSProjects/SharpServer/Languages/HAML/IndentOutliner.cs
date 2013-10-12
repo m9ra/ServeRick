@@ -14,10 +14,19 @@ namespace SharpServer.Languages.HAML
     /// </summary>
     class IndentOutliner
     {
+        /// <summary>
+        /// Marker for Indentation tokens
+        /// </summary>
         public static readonly string Indent = "INDENT";
 
+        /// <summary>
+        /// Marker for Dedentation tokens
+        /// </summary>
         public static readonly string Dedent = "DEDENT";
 
+        /// <summary>
+        /// Marker for End of line tokens
+        /// </summary>
         public static readonly string EOL = "EOL";
 
         /// <summary>
@@ -35,12 +44,24 @@ namespace SharpServer.Languages.HAML
         /// </summary>
         private readonly IEnumerable<Token> _inputTokens;
 
+        /// <summary>
+        /// Line start of currently processed line
+        /// </summary>
         private int _currentLineStart;
 
+        /// <summary>
+        /// Text start of currently processed linie
+        /// </summary>
         private int _currentTextStart;
 
+        /// <summary>
+        /// Indentation level of currently processed line
+        /// </summary>
         private int _currentIndentationLevel;
 
+        /// <summary>
+        /// Indentation level of last processed line
+        /// </summary>
         private int _lastIndentation;
 
 

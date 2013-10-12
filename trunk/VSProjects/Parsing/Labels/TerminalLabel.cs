@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Parsing
 {
-    class TerminalLabel:CompleteLabel
+    public class TerminalLabel:CompleteLabel
     {
-        internal readonly Terminal Terminal;
+        public readonly Terminal Terminal;
 
         public TerminalLabel(Terminal currentTerminal,GrammarSequence sequence)
             :base(sequence)

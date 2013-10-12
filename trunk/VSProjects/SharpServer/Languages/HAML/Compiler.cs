@@ -13,43 +13,54 @@ using SharpServer.Languages.HAML.Compiling;
 
 namespace SharpServer.Languages.HAML
 {
+    /// <summary>
+    /// Compiler for HAML parsed tree
+    /// </summary>
     class Compiler : CompilerBase
     {
+        /// <summary>
+        /// HAML Grammar for parser
+        /// </summary>
         static readonly Grammar HamlGrammar = new HAML.Grammar();
+
+        /// <summary>
+        /// HAML parser
+        /// </summary>
         static readonly Parser Parser = new Parser(HamlGrammar);
 
-        readonly Node _root;
-        readonly Emitter E;
-
         private Compiler(Node root, Emitter emitter)
+            : base(root, emitter)
         {
-            E = emitter;
-            _root = root;
         }
 
         public static void Compile(string source, Emitter emitter)
         {
             source = source.Trim().Replace("\r", "").Replace("\t", "    ");
 
-            var root = Parser.Parse(source);
+            var data = Parser.Parse(source);
 
-            Print(root);
-            if (root == null)
+            var parseOutput = Print(data);
+            Console.WriteLine(parseOutput);
+            if (data.Root == null)
             {
-                emitter.ReportParseError("Cannot parse");
+                emitter.ReportParseError(parseOutput);
                 return;
             }
 
-            var compiler = new Compiler(root, emitter);
+            var compiler = new Compiler(data.Root, emitter);
             compiler.compile();
         }
 
+        /// <summary>
+        /// Emit blocks from parsed tree
+        /// </summary>
         private void compile()
         {
-            E.Write(compileBlock(_root));
+            E.Write(compileBlock(Root));
         }
 
         #region Generating methods
+
         private Instruction compileBlock(Node block)
         {
             var name = block.Name;
@@ -118,7 +129,7 @@ namespace SharpServer.Languages.HAML
             if (contentNode == null)
                 return null;
 
-            var rawContent = GetTerminalText(contentNode,"rawOutput");
+            var rawContent = GetTerminalText(contentNode, "rawOutput");
             if (rawContent != null)
             {
                 return E.Constant(rawContent);
@@ -170,8 +181,6 @@ namespace SharpServer.Languages.HAML
         {
             return GetDescendant(child, "yield") != null;
         }
-
-
 
         private Instruction compileContainerBlock(Node containerBlock)
         {

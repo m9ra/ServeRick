@@ -10,19 +10,32 @@ namespace SharpServer.Languages.HAML
 {
     public class Grammar : GrammarBase
     {
-        NonTerminal hash;
-
+        /// <summary>
+        /// Special terminal for indentation
+        /// </summary>
         readonly Terminal INDENT;
 
+        /// <summary>
+        /// Special terminal for dedentation
+        /// </summary>
         readonly Terminal DEDENT;
 
+        /// <summary>
+        /// Special terminal for end of line
+        /// </summary>
         readonly Terminal EOL;
+
+        /// <summary>
+        /// Nonterminal for hash expression
+        /// </summary>
+        NonTerminal hash;
+
 
         public Grammar()
         {
-            INDENT = T_SPEC("INDENT");
-            DEDENT = T_SPEC("DEDENT");
-            EOL = T_SPEC("EOL");
+            INDENT = T_SPEC(IndentOutliner.Indent);
+            DEDENT = T_SPEC(IndentOutliner.Dedent);
+            EOL = T_SPEC(IndentOutliner.EOL);
 
             hash = NT("hash");
 

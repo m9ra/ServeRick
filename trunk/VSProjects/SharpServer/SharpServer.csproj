@@ -87,6 +87,7 @@
     <Compile Include="Compiling\LanguageToolChain.cs" />
     <Compile Include="Compiling\MethodMatcher.cs" />
     <Compile Include="Compiling\ResponseHandlerProvider.cs" />
+    <Compile Include="Compiling\SyntaxError.cs" />
     <Compile Include="Compiling\WebMethods.cs" />
     <Compile Include="Controller.cs" />
     <Compile Include="ControllerManager.cs" />

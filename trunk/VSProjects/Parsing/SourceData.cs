@@ -4,25 +4,27 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Parsing.Source
+using Parsing.Source;
+
+namespace Parsing
 {
-    class SourceData
+   public class SourceData
     {
         /// <summary>
         /// Contains contexts for every index in input. At every index there is first token on stream (multiple tokens on same index can start)
         /// </summary>
         private readonly SourceContext[] _contexts;
 
-        private SourceContext _lastContext;
-
-        private SourceContext _startContext;
-
-        internal readonly string Text;
-
         internal readonly Dictionary<int, Dictionary<Terminal, TerminalMatch>> Matches = new Dictionary<int, Dictionary<Terminal, TerminalMatch>>();
 
-        internal SourceContext StartContext { get { return _startContext; } }
+        public readonly string Text;
 
+        public SourceContext LastContext { get; private set; }
+
+        public SourceContext StartContext { get; private set; }
+
+        public Node Root { get; internal set; }
+        
         internal SourceData(string text, TokenStream sourceTokens)
         {
             Text = text;
@@ -37,14 +39,14 @@ namespace Parsing.Source
             if (index > token.EndPosition || index < token.StartPosition)
                 throw new NotSupportedException("Invalid token cover");
 
-            _lastContext = new SourceContext(this, index, token, _lastContext);
-            if (_startContext == null)
-                _startContext = _lastContext;
+            LastContext = new SourceContext(this, index, token, LastContext);
+            if (StartContext == null)
+                StartContext = LastContext;
 
             var context = _contexts[index];
             if (context == null || context.Token.StartPosition != index)
                 //set context if there is no context or contained context is started elsewhere
-                _contexts[index] = _lastContext;
+                _contexts[index] = LastContext;
         }
 
         private void prepareContexts(TokenStream sourceTokens)

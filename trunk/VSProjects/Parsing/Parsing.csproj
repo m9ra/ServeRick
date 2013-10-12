@@ -61,7 +61,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GrammarRule.cs" />
     <Compile Include="Source\SourceContext.cs" />
-    <Compile Include="Source\SourceData.cs" />
+    <Compile Include="SourceData.cs" />
     <Compile Include="Labels\EdgeLabel.cs" />
     <Compile Include="Terms\Term.cs" />
     <Compile Include="Terms\Terminal.cs" />

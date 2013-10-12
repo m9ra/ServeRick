@@ -22,16 +22,6 @@ namespace SharpServer.Languages.SCSS
         private static readonly Parser Parser = new Parser(new SCSS.Grammar());
 
         /// <summary>
-        /// Emitter where compiled code is emitted
-        /// </summary>
-        readonly Emitter E;
-
-        /// <summary>
-        /// Root node of parsed input
-        /// </summary>
-        readonly Node _root;
-
-        /// <summary>
         /// Discovered css blocks, identified by specifiers
         /// </summary>
         readonly Dictionary<string, CssBlock> _blocks = new Dictionary<string, CssBlock>();
@@ -42,9 +32,8 @@ namespace SharpServer.Languages.SCSS
         readonly Dictionary<string, string> _variables = new Dictionary<string, string>();
 
         private Compiler(Node root, Emitter emitter)
+            :base(root,emitter)
         {
-            E = emitter;
-            _root = root;
         }
 
         /// <summary>
@@ -54,18 +43,18 @@ namespace SharpServer.Languages.SCSS
         /// <param name="emitter">Emitter where compiled code is emitted</param>
         public static void Compile(string source, Emitter emitter)
         {
-            source = source.Trim().Replace("\r"," ");
-            var root = Parser.Parse(source);
+            source = source.Trim().Replace("\r", " ");
+            var data = Parser.Parse(source);
 
-            if (root == null)
+            var parseOutput = Print(data);
+            Console.WriteLine(parseOutput);
+            if (data.Root == null)
             {
-                //TODO error output
-                emitter.ReportParseError("Parsing failed during to syntax error");
+                emitter.ReportParseError(parseOutput);
+                return;
             }
 
-            Print(root);
-
-            var compiler = new Compiler(root, emitter);
+            var compiler = new Compiler(data.Root, emitter);
             compiler.compile();
         }
 
@@ -75,7 +64,7 @@ namespace SharpServer.Languages.SCSS
         /// </summary>
         private void compile()
         {
-            var definitionsNode = GetDescendant(_root, "definitions");
+            var definitionsNode = GetDescendant(Root, "definitions");
             discoverDefinitions(definitionsNode);
 
             foreach (var block in _blocks.Values)
@@ -122,8 +111,8 @@ namespace SharpServer.Languages.SCSS
         /// <param name="blockNode">Discovered block</param>
         /// <param name="parentBlock">Parent of discovered block (null if there is no parent)</param>
         private void discoverBlock(Node blockNode, CssBlock parentBlock)
-        {            
-            var block = getBlock(blockNode,parentBlock);
+        {
+            var block = getBlock(blockNode, parentBlock);
 
             if (_blocks.ContainsKey(block.Head))
             {
@@ -140,7 +129,7 @@ namespace SharpServer.Languages.SCSS
         /// </summary>
         /// <param name="blockNode">Node representing css block</param>
         /// <returns>Created css block</returns>
-        private CssBlock getBlock(Node blockNode,CssBlock parentBlock)
+        private CssBlock getBlock(Node blockNode, CssBlock parentBlock)
         {
             var specifiersNode = GetDescendant(blockNode, "specifiers");
             var specifiers = getSpecifiers(specifiersNode);
