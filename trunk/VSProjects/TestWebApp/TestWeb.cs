@@ -16,20 +16,25 @@ namespace TestWebApp
         {
             _rootPath = rootPath+"/";
         }
-
-        protected override ControllerManager createManager()
-        {
-            var manager = new SimpleControllerManager(this, _rootPath);
-            manager.AddAll();
-
-            return manager;
-        }
-
+        
         protected override Type[] getHelpers()
         {
             return new[]{
                 typeof(WebHelper)
             };
+        }
+
+        protected override ResponseManagerBase createResponseManager()
+        {
+            var manager = new SimpleControllerManager(this, _rootPath);
+            manager.AddDirectoryContent("");
+
+            return manager;
+        }
+
+        protected override InputManagerBase createInputManager()
+        {
+            return new InputManager();
         }
     }
 }

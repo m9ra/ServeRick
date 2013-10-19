@@ -14,7 +14,7 @@ using SharpServer.Compiling;
 
 namespace SharpServer
 {
-    public abstract class ControllerManager
+    public abstract class ResponseManagerBase
     {
         object _L_itemRefresh = new object();
 
@@ -28,6 +28,16 @@ namespace SharpServer
         /// Response handlers for file requests
         /// </summary>
         readonly Dictionary<string, WebItem> _files = new Dictionary<string, WebItem>();
+
+        /// <summary>
+        /// Extensions that are published directly via URI
+        /// </summary>
+        readonly HashSet<string> _publicExtensions = new HashSet<string>();
+
+        /// <summary>
+        /// Root for resource loading
+        /// </summary>
+        readonly string _rootPath;
 
         /// <summary>
         /// File for missing file action
@@ -44,20 +54,98 @@ namespace SharpServer
         /// </summary>
         protected ResponseHandlerProvider HandlerProvider { get { return Application.HandlerProvider; } }
 
-        public ControllerManager(WebApplication application, params Type[] controllers)
+        public ResponseManagerBase(WebApplication application, string rootPath, params Type[] controllers)
         {
+            _rootPath = rootPath + Path.DirectorySeparatorChar;
             Application = application;
             foreach (var controller in controllers)
             {
                 foreach (var action in controller.GetMethods())
                 {
-                    if (action.DeclaringType.IsSubclassOf(typeof(Controller)))
+                    if (action.DeclaringType.IsSubclassOf(typeof(ResponseController)))
                         registerAction(action);
                 }
             }
         }
 
+        #region Resource loading routines
+
+        public void AddDirectoryContent(string relativeDirPath)
+        {
+            //TODO hook directory for listening changes
+            foreach (var file in Directory.EnumerateFiles(_rootPath + relativeDirPath))
+            {
+                var relativeFilePath = relativeDirPath + Path.GetFileName(file);
+                AddFileResource(relativeFilePath);
+            }
+        }
+
+        public void AddFileResource(string relativePath)
+        {
+            var handler = getWebItem(relativePath);
+
+            RegisterFile(relativePath, handler);
+
+            if (isPublic(relativePath))
+            {
+                var uri = getUri(relativePath);
+                PublishAction(uri, handler);
+            }
+        }
+
+        protected virtual string getUri(string relativeFilePath)
+        {
+            return "/" + relativeFilePath;
+        }
+
+        private bool isPublic(string relativeFilePath)
+        {
+            var ext = Path.GetExtension(relativeFilePath).Substring(1);
+            return _publicExtensions.Contains(ext);
+        }
+
+        private WebItem getWebItem(string relativeFilePath)
+        {
+            var file = _rootPath + relativeFilePath;
+            var ext = Path.GetExtension(file).Substring(1);
+
+            switch (ext.ToLower())
+            {
+                case "haml":
+                    return CompileHAML(file);
+                case "scss":
+                    return CompileSCSS(file);
+                case "css":
+                case "png":
+                case "jpg":
+                case "txt":
+                    return SendRaw(file, ext);
+                default:
+                    return null;
+            }
+        }
+
+        #endregion
+
         #region Controller manager services
+
+
+        protected void PublicExtensions(params string[] extensions)
+        {
+            _publicExtensions.UnionWith(extensions);
+        }
+
+        protected void ErrorPage(int errorCode, string relativeFilePath)
+        {
+            switch (errorCode)
+            {
+                case 404:
+                    _404 = getWebItem(relativeFilePath);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+        }
 
         /// <summary>
         /// Publish file item with given uri
@@ -101,11 +189,11 @@ namespace SharpServer
 
         protected WebItem Compile(string file, string language)
         {
-            var item = new WebItem(file);            
+            var item = new WebItem(file);
             fillItem(item, () =>
             {
                 var source = getSource(item.FilePath);
-                var contentType=getCompilationMime(language);
+                var contentType = getCompilationMime(language);
 
                 //TODO resolve source format
                 var handler = HandlerProvider.Compile(language, source);
@@ -247,7 +335,7 @@ namespace SharpServer
 
             var actionMethod = Expression.Block(new[] { controllerVar },
                 Expression.Assign(controllerVar, controller),
-                Expression.Call(controllerVar, typeof(Controller).GetMethod("SetResponse", BindingFlags.NonPublic | BindingFlags.Instance), managerConstant, responseParam),
+                Expression.Call(controllerVar, typeof(ResponseController).GetMethod("SetResponse", BindingFlags.NonPublic | BindingFlags.Instance), managerConstant, responseParam),
                 Expression.Call(controllerVar, action)
             );
 

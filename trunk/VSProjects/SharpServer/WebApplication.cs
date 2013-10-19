@@ -12,7 +12,9 @@ namespace SharpServer
     {
         public readonly ResponseHandlerProvider HandlerProvider;
 
-        protected abstract ControllerManager createManager();
+        protected abstract ResponseManagerBase createResponseManager();
+
+        protected abstract InputManagerBase createInputManager();
 
         protected abstract Type[] getHelpers();
 
@@ -23,8 +25,15 @@ namespace SharpServer
             HandlerProvider = new ResponseHandlerProvider(webHelpers);
         }
         
-        internal ControllerManager CreateManager(){
-            var manager=createManager();
+        internal ResponseManagerBase CreateResponseManager(){
+            var manager=createResponseManager();
+
+            return manager;
+        }
+
+        internal InputManagerBase CreateInputManager()
+        {
+            var manager = createInputManager();
 
             return manager;
         }

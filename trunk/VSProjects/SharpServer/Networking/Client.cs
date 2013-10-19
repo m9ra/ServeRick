@@ -46,7 +46,9 @@ namespace SharpServer.Networking
         /// <summary>
         /// Response object is used for creating response for client
         /// </summary>
-        public Response Response { get; set; }
+        public Response Response { get; internal set; }
+
+        public InputController Input { get; internal set; }
 
         public HttpRequest Request { get { return Parser.Request; } }
 

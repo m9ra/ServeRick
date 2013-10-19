@@ -19,7 +19,7 @@ namespace TestWebApp
             }
 
             var webApp = new TestWeb(args[0]);
-            ServerEnvironment.AddManager(webApp);
+            ServerEnvironment.AddApplication(webApp);
             ServerEnvironment.Start();
 
             ConsoleKeyInfo keyInfo;

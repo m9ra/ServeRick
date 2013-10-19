@@ -147,6 +147,10 @@ namespace SharpServer.Compiling
         private ResponseHandler compile()
         {
             var compiled = compileChunks();
+            if (compiled.Count == 0)
+            {
+                return (r) => { };
+            }
             var output = Expression.Block(compiled);
             return Expression.Lambda<ResponseHandler>(output, ResponseParameter).Compile();
         }

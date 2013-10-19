@@ -6,26 +6,24 @@ using System.Threading.Tasks;
 
 using System.Threading;
 
-using SharpServer.Networking;
-
-namespace SharpServer.Responsing
+namespace SharpServer.Networking
 {
-    class ResponseProcessor
+    class InputProcessor
     {
-        readonly Queue<ResponseWorkItem> _toProcess = new Queue<ResponseWorkItem>();
+        readonly Queue<InputWorkItem> _toProcess = new Queue<InputWorkItem>();
 
         readonly object _L_toProcess = new object();
 
         readonly Thread _executionThread;
 
 
-        internal ResponseProcessor()
+        internal InputProcessor()
         {
             _executionThread = new Thread(_run);
             _executionThread.Start();
         }
 
-        internal void EnqueueWork(ResponseWorkItem work)
+        internal void EnqueueWork(InputWorkItem work)
         {
             lock (_L_toProcess)
             {
@@ -38,19 +36,20 @@ namespace SharpServer.Responsing
         {
             for (; ; )
             {
-                ResponseWorkItem work;
+                InputWorkItem work;
                 lock (_L_toProcess)
                 {
                     if (_toProcess.Count == 0)
                         //there is nothing to process.. wait
                         Monitor.Wait(_L_toProcess);
 
-                    work= _toProcess.Dequeue();
+                    work = _toProcess.Dequeue();
                 }
 
-                var response = work.Client.Response;
-                response.RunWork(work);
+                var input = work.Client.Input;
+                throw new NotImplementedException();
             }
         }
     }
+
 }

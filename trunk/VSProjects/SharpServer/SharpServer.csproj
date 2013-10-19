@@ -89,8 +89,13 @@
     <Compile Include="Compiling\ResponseHandlerProvider.cs" />
     <Compile Include="Compiling\SyntaxError.cs" />
     <Compile Include="Compiling\WebMethods.cs" />
-    <Compile Include="Controller.cs" />
-    <Compile Include="ControllerManager.cs" />
+    <Compile Include="InputController.cs" />
+    <Compile Include="InputManagerBase.cs" />
+    <Compile Include="Networking\HttpInput.cs" />
+    <Compile Include="Networking\InputProcessor.cs" />
+    <Compile Include="Networking\InputWorkItem.cs" />
+    <Compile Include="ResponseController.cs" />
+    <Compile Include="ResponseManagerBase.cs" />
     <Compile Include="Languages\HAML\Compiler.cs" />
     <Compile Include="Languages\HAML\Grammar.cs" />
     <Compile Include="Languages\HAML\Compiling\RValues.cs" />

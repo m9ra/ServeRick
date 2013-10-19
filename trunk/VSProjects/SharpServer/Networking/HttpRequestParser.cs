@@ -54,11 +54,12 @@ namespace SharpServer.Networking
         /// Add data recieved from client. 
         /// </summary>
         /// <param name="buffer">Buffer which data will be added.</param>        
-        public void AppendData(byte[] buffer, int inputLength)
+        /// <returns>Offset where non processed data starts</returns>
+        public int AppendData(byte[] buffer, int inputLength)
         {
             if (buffer == null)
                 //there is nothing to add
-                return;
+                return 0;
 
             RecievedBytes += inputLength;
 
@@ -69,12 +70,7 @@ namespace SharpServer.Networking
                 processedDataLength = appendDataToHead(buffer, inputLength);
             }
 
-            //remaining data will be pasted into body
-            if (processedDataLength < inputLength)
-            {
-                var dataLength=inputLength-processedDataLength;
-                Request.AppendContentData(processedDataLength,dataLength, buffer);
-            }
+            return processedDataLength;
         }
 
         #region Completitions handlers
@@ -160,7 +156,7 @@ namespace SharpServer.Networking
 
             }
 
-            //ale given data readed into header
+            //ale given data read into header
             return length;
         }
 

@@ -8,14 +8,20 @@ namespace SharpServer.UnitTesting.WebTools
 {
     class TestWebApp:WebApplication
     {
-        protected override ControllerManager createManager()
-        {
-            throw new NotImplementedException();
-        }
 
         protected override Type[] getHelpers()
         {
             return new Type[0];
+        }
+
+        protected override ResponseManagerBase createResponseManager()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override InputManagerBase createInputManager()
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -26,23 +26,31 @@ namespace SharpServer
         readonly Downloader _downloader;
 
         /// <summary>
-        /// Manager of available controllers
+        /// Manager of available response controllers
         /// </summary>
-        readonly ControllerManager _controllers;
+        readonly ResponseManagerBase _responseManager;
+
+        /// <summary>
+        /// Manager of available input controllers
+        /// </summary>
+        readonly InputManagerBase _inputManager;
 
         /// <summary>
         /// TODO: There will be multiple processors
         /// </summary>
-        readonly ResponseProcessor _processor;
+        readonly ResponseProcessor _responseProcessor;
 
-        internal HttpServer(ControllerManager controllers, NetworkConfiguration networkConfiguration, MemoryConfiguration memoryConfiguration)
+        readonly InputProcessor _inputProcessor;
+
+        internal HttpServer(WebApplication application, NetworkConfiguration networkConfiguration, MemoryConfiguration memoryConfiguration)
         {
             var provider = new BufferProvider(memoryConfiguration.ClientBufferSize, memoryConfiguration.MaximalClientMemoryUsage);
 
             _accepter = new Accepter(networkConfiguration, provider, _acceptClient);
-            _downloader = new Downloader(_onHeadCompleted);
-            _processor = new ResponseProcessor();
-            _controllers = controllers;
+            _downloader = new Downloader(_onHeadCompleted,_onContentCompleted);
+            _responseProcessor = new ResponseProcessor();
+            _responseManager = application.CreateResponseManager();
+            _inputManager = application.CreateInputManager();
         }
 
         /// <summary>
@@ -68,15 +76,47 @@ namespace SharpServer
         /// Callback for on head completed event
         /// </summary>
         /// <param name="client">Client which head has been downloaded</param>
-        private void _onHeadCompleted(Client client)
-        {
-            //Send to response processor
-            //TODO selecting processor according to session data
-
+        private void _onHeadCompleted(Client client, byte[] data, int dataOffset, int dataLength)
+        {            
             Log.Trace("HttpServer._onHeadCompleted {0}", client);
 
-            client.Response = new Response(client, _processor);
-            _controllers.Handle(client);
+            if (client.Request.ContentLength > 0)
+            {
+                //Send to input processor
+                var inputController = _inputManager.CreateController(client);
+                client.Input = inputController;
+                inputController.AcceptData(data, dataOffset, dataLength);
+
+                if (inputController.ContinueDownloading)
+                {
+                    _downloader.DownloadContent(client);
+                }
+                else
+                {
+                    _onContentCompleted(client);
+                }
+            }
+            else
+            {
+                //Send to response processor
+                _onRequestCompleted(client);
+            }
+        }
+
+        private void _onContentCompleted(Client client){
+            _onRequestCompleted(client);
+        }
+
+        /// <summary>
+        /// Callback for on request completed event
+        /// </summary>
+        /// <param name="client"></param>
+        private void _onRequestCompleted(Client client)
+        {
+            //TODO selecting processor according to session data
+
+            client.Response = new Response(client, _responseProcessor);
+            _responseManager.Handle(client);
         }
     }
 }

@@ -24,20 +24,19 @@ namespace SharpServer
 {
     public static class ServerEnvironment
     {
-        static List<WebApplication> _list = new List<WebApplication>();
+        static List<WebApplication> _applications = new List<WebApplication>();
 
         public static void Start()
         {
             LoadToolchains();
 
-            if (_list.Count != 1)
+            if (_applications.Count != 1)
                 throw new NotImplementedException();
 
             var netConfig = new NetworkConfiguration(4000, IPAddress.Any);
             var memConfig = new MemoryConfiguration(4096, 2 << 20);
-            var controllers = _list[0].CreateManager();
 
-            var server = new HttpServer(controllers, netConfig, memConfig);
+            var server = new HttpServer(_applications[0], netConfig, memConfig);
             server.Start();
         }
 
@@ -50,9 +49,9 @@ namespace SharpServer
             ResponseHandlerProvider.Register(scssChain);
         }
 
-        public static void AddManager(WebApplication webApp)
+        public static void AddApplication(WebApplication webApp)
         {
-            _list.Add(webApp);
+            _applications.Add(webApp);
         }
     }
 }

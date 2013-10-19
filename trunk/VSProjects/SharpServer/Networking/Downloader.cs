@@ -10,7 +10,9 @@ namespace SharpServer.Networking
     /// Delegate used for events when head downloading is completed
     /// </summary>
     /// <param name="client">Client which head downloading is completed</param>
-    delegate void OnHeadCompleted(Client client);
+    delegate void OnHeadCompleted(Client client, byte[] buffer, int dataOffset, int dataLength);
+
+    delegate void OnContentDownloaded(Client client);
 
     /// <summary>
     /// Provides download services on client requests
@@ -22,9 +24,12 @@ namespace SharpServer.Networking
         /// </summary>
         readonly OnHeadCompleted _onHeadCompleted;
 
-        internal Downloader(OnHeadCompleted headCompleted)
+        readonly OnContentDownloaded _onContentDownloaded;
+
+        internal Downloader(OnHeadCompleted headCompleted, OnContentDownloaded contentDownloaded)
         {
             _onHeadCompleted = headCompleted;
+            _onContentDownloaded = contentDownloaded;
         }
 
         /// <summary>
@@ -34,6 +39,11 @@ namespace SharpServer.Networking
         internal void DownloadHead(Client client)
         {
             client.Recieve(_processHead);
+        }
+
+        internal void DownloadContent(Client client)
+        {
+            client.Recieve(_processContent);
         }
 
         /// <summary>
@@ -46,10 +56,11 @@ namespace SharpServer.Networking
         {
             Log.Trace("Downloader._processHead client: {0}, dataLength: {1}", client, dataLength);
 
-            client.Parser.AppendData(data, dataLength);
+            var notProcessedOffset=client.Parser.AppendData(data, dataLength);
             if (client.Parser.IsHeadComplete)
             {
-                _onHeadCompleted(client);
+                var remainingLength = dataLength - notProcessedOffset;
+                _onHeadCompleted(client,data,notProcessedOffset,remainingLength);
                 return;
             }
 
@@ -61,6 +72,23 @@ namespace SharpServer.Networking
             }
 
             DownloadHead(client);
+        }
+
+        private void _processContent(Client client, byte[] data, int dataLength)
+        {
+            Log.Trace("Downloader._processContent client: {0}, dataLength: {1}", client, dataLength);
+
+            var input=client.Input;
+
+            input.AcceptData(data, 0, dataLength);
+            if (input.ContinueDownloading)
+            {
+                client.Recieve(_processContent);
+            }
+            else
+            {
+                _onContentDownloaded(client);
+            }
         }
     }
 }

@@ -126,7 +126,7 @@ namespace SharpServer.Languages.HAML
             var cls = NT("class");
             var tag = NT("tag");
 
-            var identifier = T_REG("[a-zA-Z][a-zA-Z01-9]*", "identifier");
+            var identifier = T_REG("[a-zA-Z_][a-zA-Z01-9_]*", "identifier");
             var rawOutput = T_REG("[^!%#={.][^\\r\\n]*", "rawOutput");
 
             #endregion

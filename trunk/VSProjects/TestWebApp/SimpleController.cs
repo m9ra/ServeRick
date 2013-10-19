@@ -8,7 +8,7 @@ using SharpServer;
 
 namespace TestWebApp
 {
-    class SimpleController : Controller
+    class SimpleController : ResponseController
     {
         public void index()
         {

@@ -8,15 +8,15 @@ using System.Diagnostics;
 
 namespace SharpServer
 {
-    public abstract class Controller
+    public abstract class ResponseController
     {
         private ResponseHandler _layout = null;
 
         protected Response Response { get; private set; }
 
-        protected ControllerManager Manager { get; private set; }
+        protected ResponseManagerBase Manager { get; private set; }
 
-        internal void SetResponse(ControllerManager manager, Response response)
+        internal void SetResponse(ResponseManagerBase manager, Response response)
         {
             Response = response;
             Manager = manager;
