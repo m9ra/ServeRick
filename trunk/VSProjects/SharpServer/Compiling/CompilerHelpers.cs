@@ -16,7 +16,7 @@ namespace SharpServer.Compiling
             return data.ToString();
         }
 
-        public static Dictionary<TKey, TVal> CreateDictionary<TKey,TVal>(IEnumerable<KeyValuePair<TKey, TVal>> pairs)
+        public static Dictionary<TKey, TVal> CreateDictionary<TKey, TVal>(IEnumerable<KeyValuePair<TKey, TVal>> pairs)
         {
             var dict = new Dictionary<TKey, TVal>();
             foreach (var pair in pairs)
@@ -27,7 +27,7 @@ namespace SharpServer.Compiling
             return dict;
         }
 
-        public static Dictionary<Key,Value> SetValue<Key,Value>(Dictionary<Key,Value> container, Key key, Value value)
+        public static Dictionary<Key, Value> SetValue<Key, Value>(Dictionary<Key, Value> container, Key key, Value value)
         {
             container[key] = value;
             return container;
@@ -63,6 +63,11 @@ namespace SharpServer.Compiling
         public static void Yield(Response response, string identifier)
         {
             response.Yield(identifier);
+        }
+
+        public static object Param(Response response, string identifier)
+        {
+            return response.GetParam(identifier);
         }
     }
 }

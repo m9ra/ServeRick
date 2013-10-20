@@ -10,9 +10,7 @@ namespace SharpServer.Compiling
 {
     abstract class InstructionVisitor
     {
-        public virtual void VisitInstruction(Instruction x)
-        {
-        }
+        public abstract void VisitInstruction(Instruction x);
 
         public virtual void VisitConstant(ConstantInstruction x)
         {
@@ -25,6 +23,16 @@ namespace SharpServer.Compiling
             {
                 arg.VisitMe(this);
             }
+            VisitInstruction(x);
+        }
+
+        public virtual void VisitMethodCall(MethodCallInstruction x)
+        {
+            foreach (var arg in x.Arguments)
+            {
+                arg.VisitMe(this);
+            }
+            VisitInstruction(x.ThisObject);
             VisitInstruction(x);
         }
 
@@ -68,6 +76,11 @@ namespace SharpServer.Compiling
         }
 
         public virtual void VisitResponse(ResponseInstruction x)
+        {
+            VisitInstruction(x);
+        }
+
+        public virtual void VisitParam(ParamInstruction x)
         {
             VisitInstruction(x);
         }

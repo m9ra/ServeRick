@@ -33,8 +33,33 @@ namespace SharpServer.Languages.HAML.Compiling
 
         internal override Instruction ToInstruction()
         {
-            var identifierInstr=Identifier==null?null: Identifier.ToInstruction();
+            var identifierInstr = Identifier == null ? null : Identifier.ToInstruction();
             return E.Yield(identifierInstr);
+        }
+    }
+
+    class ResponseCallValue : RValue
+    {
+        internal readonly RValue[] Args;
+
+        internal readonly string CallName;
+
+        internal ResponseCallValue(string callName, RValue[] args, Emitter emitter)
+            : base(emitter)
+        {
+            Args = args;
+            CallName = callName;
+        }
+
+        internal override Instruction ToInstruction()
+        {
+            var argExprs = new List<Instruction>();
+            foreach (var arg in Args)
+            {
+                argExprs.Add(arg.ToInstruction());
+            }
+
+            return E.ResponseCall(CallName, argExprs.ToArray());
         }
     }
 
@@ -59,6 +84,21 @@ namespace SharpServer.Languages.HAML.Compiling
             }
 
             return E.Call(CallName, argExprs.ToArray());
+        }
+    }
+
+    class ParamValue : RValue
+    {
+        internal readonly string ParamName;
+        internal ParamValue(string paramName, Emitter emitter)
+            :base(emitter)
+        {
+            ParamName = paramName;
+        }
+
+        internal override Instruction ToInstruction()
+        {
+            return E.GetParam(ParamName);
         }
     }
 
@@ -151,7 +191,7 @@ namespace SharpServer.Languages.HAML.Compiling
             var tag = E.Tag(TagName.ToInstruction());
             var attributes = createAttributes();
 
-            tag.SetAttributes(attributes);            
+            tag.SetAttributes(attributes);
             tag.SetContent(_content);
 
             return tag;

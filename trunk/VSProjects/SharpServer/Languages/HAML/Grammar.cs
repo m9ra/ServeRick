@@ -30,6 +30,7 @@ namespace SharpServer.Languages.HAML
         /// </summary>
         NonTerminal hash;
 
+        NonTerminal param;
 
         public Grammar()
         {
@@ -38,11 +39,12 @@ namespace SharpServer.Languages.HAML
             EOL = T_SPEC(IndentOutliner.EOL);
 
             hash = NT("hash");
+            param = NT("param");
 
             var statement = generateStatementGrammar();
             generateTemplateGrammar(statement);
 
-            MarkPunctuation("=", "!!!", ".", "#", "%", "render", "=>", ",", ")", "(", "}", "{", "");
+            MarkPunctuation("=", "!!!", ".", "#", "%", "render", "=>", ",", ")", "(", "}", "{", "@", "");
         }
 
         private NonTerminal generateStatementGrammar()
@@ -88,7 +90,7 @@ namespace SharpServer.Languages.HAML
 
             //expression           
             yield.Rule = "yield" + (symbol | Empty);
-            expression.Rule = yield | keyPair | symbol | value | call | identifier;
+            expression.Rule = yield | keyPair | symbol | value | call | identifier | param;
             keyPair.Rule = (symbol + "=>" + expression) | (shortKey + expression);
             keyPairs.Rule = MakeStarRule(keyPair, ",");
 
@@ -126,6 +128,11 @@ namespace SharpServer.Languages.HAML
             var cls = NT("class");
             var tag = NT("tag");
 
+            var paramDeclarations = NT("paramDeclarations");
+            var paramDeclaration = NT("paramDeclaration");
+
+
+            var type = T_REG("\\w+", "type");
             var identifier = T_REG("[a-zA-Z_][a-zA-Z01-9_]*", "identifier");
             var rawOutput = T_REG("[^!%#={.][^\\r\\n]*", "rawOutput");
 
@@ -159,8 +166,13 @@ namespace SharpServer.Languages.HAML
 
             //root
             doctype.Rule = "!!!" + Q(identifier);
-            view.Rule = BOF + Q(doctype + EOL) + blocks + EOF;
+            view.Rule = BOF + paramDeclarations + Q(doctype + EOL) + blocks + EOF;
             this.Root = view;
+
+            //params
+            paramDeclarations.Rule = MakeStarRule(paramDeclaration);
+            paramDeclaration.Rule = param + type + EOL;
+            param.Rule = "@" + identifier;
 
             MarkTransient(attrib);
 

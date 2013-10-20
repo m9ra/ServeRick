@@ -78,6 +78,8 @@
     <Compile Include="Compiling\Instructions\CallInstruction.cs" />
     <Compile Include="Compiling\Instructions\ConstantInstruction.cs" />
     <Compile Include="Compiling\Instructions\ConcatInstruction.cs" />
+    <Compile Include="Compiling\Instructions\ParamInstruction.cs" />
+    <Compile Include="Compiling\Instructions\MethodCallInstruction.cs" />
     <Compile Include="Compiling\Instructions\EmittedItem.cs" />
     <Compile Include="Compiling\Instructions\PairInstruction.cs" />
     <Compile Include="Compiling\Instructions\ResponseInstruction.cs" />
@@ -86,14 +88,12 @@
     <Compile Include="Compiling\InstructionVisitor.cs" />
     <Compile Include="Compiling\LanguageToolChain.cs" />
     <Compile Include="Compiling\MethodMatcher.cs" />
+    <Compile Include="Compiling\ParamDeclaration.cs" />
     <Compile Include="Compiling\ResponseHandlerProvider.cs" />
     <Compile Include="Compiling\SyntaxError.cs" />
     <Compile Include="Compiling\WebMethods.cs" />
     <Compile Include="InputController.cs" />
     <Compile Include="InputManagerBase.cs" />
-    <Compile Include="Networking\HttpInput.cs" />
-    <Compile Include="Networking\InputProcessor.cs" />
-    <Compile Include="Networking\InputWorkItem.cs" />
     <Compile Include="ResponseController.cs" />
     <Compile Include="ResponseManagerBase.cs" />
     <Compile Include="Languages\HAML\Compiler.cs" />

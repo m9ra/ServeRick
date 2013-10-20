@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 using System.Diagnostics;
 
+using SharpServer.Networking;
+
 namespace SharpServer
 {
     public abstract class ResponseController
@@ -13,6 +15,8 @@ namespace SharpServer
         private ResponseHandler _layout = null;
 
         protected Response Response { get; private set; }
+
+        protected HttpRequest Request { get { return Response.Client.Request; } }
 
         protected ResponseManagerBase Manager { get; private set; }
 
@@ -37,6 +41,21 @@ namespace SharpServer
             var handler = GetHandler(fileName);
             ContentFor("", handler);
             Response.Render(_layout);
+        }
+
+        protected string GET(string varName)
+        {
+            return Request.GetGET(varName);
+        }
+
+        protected string POST(string varName)
+        {
+            return Request.GetPOST(varName);
+        }
+
+        protected void SetParam(string paramName, string paramValue)
+        {
+            Response.SetParam(paramName, paramValue);
         }
 
         protected ResponseHandler GetHandler(string fileName)

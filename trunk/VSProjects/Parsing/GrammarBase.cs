@@ -118,7 +118,7 @@ namespace Parsing
         /// <param name="rule">Rule where plus notation is applied</param>
         /// <param name="delimiter">Delimiter of rule occurances</param>
         /// <returns>Created rule</returns>
-        protected GrammarRule MakePlusRule(GrammarRule rule, string delimiter = null)
+        protected GrammarRule MakePlusRule(GrammarRule rule, GrammarRule delimiter = null)
         {
             var T = new NonTerminal(null);
             if (delimiter == null)
@@ -138,7 +138,7 @@ namespace Parsing
         /// <param name="rule">Rule where star notation is applied</param>
         /// <param name="delimiter">Delimiter of rule occurances</param>
         /// <returns>Created rule</returns>
-        protected GrammarRule MakeStarRule(GrammarRule rule, string delimiter = null)
+        protected GrammarRule MakeStarRule(GrammarRule rule, GrammarRule delimiter = null)
         {
             return Q(MakePlusRule(rule, delimiter));
         }

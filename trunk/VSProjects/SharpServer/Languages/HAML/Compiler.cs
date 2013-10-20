@@ -79,6 +79,18 @@ namespace SharpServer.Languages.HAML
 
         private Instruction compileView(Node view)
         {
+            var declarations = GetDescendant(view, "paramDeclarations");
+            if (declarations != null)
+            {
+                foreach (var declaration in declarations.ChildNodes)
+                {
+                    var name = GetTerminalText(declaration,"param","identifier");
+                    var type = GetTerminalText(declaration,"type");
+
+                    E.DeclareParam(name, type);
+                }
+            }
+
             var blocks = compileBlocks(view);
 
             var doctype = GetDescendant(view, "doctype");
@@ -89,6 +101,7 @@ namespace SharpServer.Languages.HAML
 
                 return E.Concat(new Instruction[] { doctypeString, blocks });
             }
+
             return blocks;
         }
 
@@ -204,9 +217,7 @@ namespace SharpServer.Languages.HAML
             switch (name)
             {
                 case "call":
-                    var argValues = getArguments(node);
-                    var callName = GetSubTerminalText(node.ChildNodes[0]);
-                    return new CallValue(callName, argValues, E);
+                    return resolveCall(node);
                 case "expression":
                     return resolveRValue(StepToChild(node));
                 case "symbol":
@@ -222,10 +233,25 @@ namespace SharpServer.Languages.HAML
                     return resolveKeyPair(node);
                 case "yield":
                     return resolveYield(node);
-
+                case "param":
+                    return resolveParam(node);
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+        private RValue resolveParam(Node node)
+        {
+            var paramName = GetSubTerminalText(node);
+            return new ParamValue(paramName, E);
+        }
+
+        private RValue resolveCall(Node node)
+        {
+            var argValues = getArguments(node);
+            var callName = GetSubTerminalText(node.ChildNodes[0]);
+
+            return new CallValue(callName, argValues, E);
         }
 
         private RValue[] getArguments(Node callNode)

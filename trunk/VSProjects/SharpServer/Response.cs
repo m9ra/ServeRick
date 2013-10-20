@@ -15,22 +15,27 @@ namespace SharpServer
     /// This is just testing implementation that will be heavily changed
     /// </summary>
     public class Response
-    {
-        private readonly Client _client;
+    {        
         private readonly ResponseProcessor _processor;
         private readonly Dictionary<string, ResponseHandler> _contentsFor = new Dictionary<string, ResponseHandler>();
-        protected readonly Dictionary<string, string> _responseHeaders = new Dictionary<string, string>();
-
+        /// <summary>
+        /// TODO strongly typed parameters
+        /// </summary>
+        private readonly Dictionary<string, string> _parameters = new Dictionary<string, string>();
+        private readonly Queue<ResponseWorkItem> _workItems = new Queue<ResponseWorkItem>();
+        protected readonly Dictionary<string, string> _responseHeaders = new Dictionary<string, string>();        
 
         private bool _headersSent = false;
         private string _statusLine = "HTTP/1.1 200 OK";
 
         protected Queue<byte[]> _toSend = new Queue<byte[]>();
-        Queue<ResponseWorkItem> _workItems = new Queue<ResponseWorkItem>();
+        
+
+        internal readonly Client Client;
 
         internal Response(Client client, ResponseProcessor processor)
         {
-            _client = client;
+            Client = client;
             _processor = processor;
 
             _responseHeaders["Server"] = "SharpServer";
@@ -70,7 +75,7 @@ namespace SharpServer
 
         public void Render(ResponseHandler handler)
         {
-            var work = new ResponseWorkItem(_client, handler);
+            var work = new ResponseWorkItem(Client, handler);
             _workItems.Enqueue(work);
         }
 
@@ -83,6 +88,8 @@ namespace SharpServer
                 return;
             }
         }
+
+        
 
         internal void ContentFor(string yieldIdentifier, ResponseHandler handler)
         {
@@ -102,7 +109,7 @@ namespace SharpServer
 
         internal void EnqueueToProcessor(ResponseHandler handler)
         {
-            var work = new ResponseWorkItem(_client, handler);
+            var work = new ResponseWorkItem(Client, handler);
             _processor.EnqueueWork(work);
         }
 
@@ -121,14 +128,14 @@ namespace SharpServer
             if (_toSend.Count == 0 && _workItems.Count == 0)
             {
                 //there is no other work
-                _client.Close();
+                Client.Close();
 
                 //TODO: there will be possible enqueuing of next work items
                 return;
             }
 
             var data = _toSend.Dequeue();
-            _client.Send(data, sendQueue);
+            Client.Send(data, sendQueue);
         }
 
         private void sendHeaders()
@@ -144,7 +151,19 @@ namespace SharpServer
 
             builder.AppendLine();
             var bytes = Encoding.ASCII.GetBytes(builder.ToString());
-            _client.Send(bytes, sendQueue);
+            Client.Send(bytes, sendQueue);
+        }
+
+        internal void SetParam(string paramName, string paramValue)
+        {
+            _parameters[paramName] = paramValue;
+        }
+
+        public object GetParam(string paramName)
+        {
+            string result;
+            _parameters.TryGetValue(paramName, out result);
+            return result;
         }
     }
 }

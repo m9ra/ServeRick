@@ -77,6 +77,11 @@ namespace SharpServer.Compiling
             result(_compiler.ResponseParameter);
         }
 
+        public override void VisitParam(ParamInstruction x)
+        {
+            result(_compiler.Param(x.Declaration.Name));
+        }
+
         public override void VisitPair(PairInstruction x)
         {
             var key = getValue(x.Key);

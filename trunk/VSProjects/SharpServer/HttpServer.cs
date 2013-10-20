@@ -40,8 +40,6 @@ namespace SharpServer
         /// </summary>
         readonly ResponseProcessor _responseProcessor;
 
-        readonly InputProcessor _inputProcessor;
-
         internal HttpServer(WebApplication application, NetworkConfiguration networkConfiguration, MemoryConfiguration memoryConfiguration)
         {
             var provider = new BufferProvider(memoryConfiguration.ClientBufferSize, memoryConfiguration.MaximalClientMemoryUsage);

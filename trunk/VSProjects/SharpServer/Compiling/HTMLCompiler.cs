@@ -27,24 +27,35 @@ namespace SharpServer.Compiling
         private readonly List<EmittedItem> _emitted = new List<EmittedItem>();
         private readonly StringBuilder _staticWrites = new StringBuilder();
 
+        private readonly Dictionary<string, ParameterExpression> _paramStorages = new Dictionary<string, ParameterExpression>();
+
         /// <summary>
         /// Run compilation of given instruction (All write instructions are sended to output in pure HTML)
         /// </summary>
-        /// <param name="instruction">Instruction to be compiled</param>
+        /// <param name="root">Instruction to be compiled</param>
         /// <returns>Compiled response handler</returns>
-        public static ResponseHandler Compile(Instruction instruction)
+        public static ResponseHandler Compile(Instruction root, IEnumerable<ParamDeclaration> parameters)
         {
-            var compiler = new HTMLCompiler();
-            instruction.VisitMe(compiler);
+            var compiler = new HTMLCompiler(parameters);
+            root.VisitMe(compiler);
 
             return compiler.compile();
+        }
+
+        private HTMLCompiler(IEnumerable<ParamDeclaration> parameters)
+        {
+            foreach (var declaration in parameters)
+            {
+                var name = declaration.Name;
+                var storage = Expression.Variable(declaration.Type, name);
+                _paramStorages.Add(name, storage);
+            }
         }
 
         public Expression GetValue(Instruction instruction)
         {
             if (instruction == null)
                 return null;
-
 
             var value = HTMLValues.GetValue(instruction, this);
 
@@ -56,26 +67,31 @@ namespace SharpServer.Compiling
             return value;
         }
 
-        public Expression CallMethod(bool precompute,string name, params Expression[] args)
+        internal Expression Param(string paramName)
         {
-            return CallMethod(precompute,name, (IEnumerable<Expression>)args);
+            return _paramStorages[paramName];
+        }
+
+        public Expression CallMethod(bool precompute, string name, params Expression[] args)
+        {
+            return CallMethod(precompute, name, (IEnumerable<Expression>)args);
         }
 
         public Expression CallMethod(bool precompute, string name, IEnumerable<Expression> args)
         {
             var method = ResponseHandlerProvider.CompilerHelpers.GetMethod(name);
-            return CallMethod(precompute,method.Info, args);
+            return CallMethod(precompute, method.Info, args);
         }
 
         public Expression CallMethod(bool precompute, MethodInfo methodInfo, IEnumerable<Expression> args)
         {
             var matcher = new MethodMatcher(methodInfo, args);
-            var call=matcher.CreateCall();
+            var call = matcher.CreateCall();
 
             if (precompute)
                 return precomputeExpression(call);
 
-            return call;    
+            return call;
         }
 
         #region Instruction visitor overrides
@@ -106,6 +122,11 @@ namespace SharpServer.Compiling
             emit(expr);
         }
 
+        public override void VisitMethodCall(MethodCallInstruction x)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void VisitConcat(ConcatInstruction x)
         {
             foreach (var chunk in x.Chunks)
@@ -120,7 +141,7 @@ namespace SharpServer.Compiling
             var name = GetValue(x.Name);
             var attributes = GetValue(x.Attributes);
 
-            var stringyAttributes = attributes == null ? Expression.Constant("") : attributesToString(attributes,x.Attributes.IsStatic());
+            var stringyAttributes = attributes == null ? Expression.Constant("") : attributesToString(attributes, x.Attributes.IsStatic());
 
             if (x.Content == null)
             {
@@ -146,19 +167,34 @@ namespace SharpServer.Compiling
 
         private ResponseHandler compile()
         {
-            var compiled = compileChunks();
+            var compiled = new List<Expression>();
+            compileDeclarations(compiled);
+            compileChunks(compiled);
             if (compiled.Count == 0)
             {
                 return (r) => { };
             }
-            var output = Expression.Block(compiled);
+
+
+            var output = Expression.Block(_paramStorages.Values.ToArray(), compiled);
             return Expression.Lambda<ResponseHandler>(output, ResponseParameter).Compile();
         }
 
-        private List<Expression> compileChunks()
+        private void compileDeclarations(List<Expression> compiled)
         {
-            var compiled = new List<Expression>();
+            foreach (var storage in _paramStorages.Values)
+            {
+                var nameExpr = Expression.Constant(storage.Name);
 
+                var getParam = CallMethod(false, "Param", ResponseParameter, nameExpr);
+                getParam = Expression.Convert(getParam, storage.Type);
+                var assign = Expression.Assign(storage, getParam);
+                compiled.Add(assign);
+            }
+        }
+
+        private void compileChunks(List<Expression> output)
+        {
             var buffer = new StringBuilder();
             foreach (var chunk in _emitted)
             {
@@ -171,18 +207,17 @@ namespace SharpServer.Compiling
                         continue;
                     }
 
-                    flushBuffer(buffer, compiled);
-                    compiled.Add(writeBytes(chunk.Expression));
+                    flushBuffer(buffer, output);
+                    output.Add(writeBytes(chunk.Expression));
                 }
                 else
                 {
-                    flushBuffer(buffer, compiled);
-                    compiled.Add(chunk.Expression);
+                    flushBuffer(buffer, output);
+                    output.Add(chunk.Expression);
                 }
             }
 
-            flushBuffer(buffer, compiled);
-            return compiled;
+            flushBuffer(buffer, output);
         }
 
         private void flushBuffer(StringBuilder data, List<Expression> compiled)
@@ -226,9 +261,9 @@ namespace SharpServer.Compiling
             }
         }
 
-        private Expression attributesToString(Expression attributesContainer,bool precompute)
+        private Expression attributesToString(Expression attributesContainer, bool precompute)
         {
-            return CallMethod(precompute,"AttributesToString", attributesContainer);
+            return CallMethod(precompute, "AttributesToString", attributesContainer);
         }
 
         private void emitWrite(Expression statement)
@@ -250,5 +285,7 @@ namespace SharpServer.Compiling
         }
 
         #endregion
+
+
     }
 }

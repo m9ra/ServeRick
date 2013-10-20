@@ -44,7 +44,7 @@ namespace SharpServer.Compiling
             }
 
             var instructions = emitter.GetEmittedResult();
-            return HTMLCompiler.Compile(instructions);
+            return HTMLCompiler.Compile(instructions,emitter.Parameters);
         }
     }
 }

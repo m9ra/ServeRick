@@ -22,6 +22,17 @@ namespace SharpServer.Networking
         /// Storage for recieved headers
         /// </summary>
         private Dictionary<string, string> _headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Storage for recieved POST variables
+        /// </summary>
+        protected readonly Dictionary<string, string> _postVariables = new Dictionary<string, string>();
+
+        /// <summary>
+        /// Storage for recieved GET variables
+        /// </summary>
+        protected readonly Dictionary<string, string> _getVariables;
+
         /// <summary>
         /// Counter for bytes that has been recieved as content
         /// </summary>
@@ -79,20 +90,15 @@ namespace SharpServer.Networking
         /// Creates http request of given method, uri and version of http protocol
         /// </summary>
         /// <param name="method">Method for request (POST, GET,..)</param>
-        /// <param name="uri">Uri with query string</param>
+        /// <param name="uri">Uri of request</param>
         /// <param name="httpVersion">Version of http</param>
-        internal HttpRequest(string method, string uri, string httpVersion)
+        internal HttpRequest(string method, string uri, string httpVersion, Dictionary<string, string> getVariables)
         {
-            Method = method.ToUpper();
-
-            var dataStart = uri.IndexOf('?');
-            if (dataStart > 0)
-                //TODO parse GET data
-                URI = uri.Substring(0,dataStart);
-            else
-                //there are no data
-                URI = uri;
+            Method = method.ToUpper();       
+            URI = uri;          
             HttpVersion = httpVersion.ToUpper();
+
+            _getVariables = getVariables;
         }
 
         /// <summary>
@@ -111,6 +117,25 @@ namespace SharpServer.Networking
 
             headerValue = defaultValue;
             return false;
+        }
+
+        /// <summary>
+        /// Get value of give POST variable
+        /// </summary>
+        /// <param name="varName">Name of variable</param>
+        /// <returns>Value of POST variable</returns>
+        public string GetPOST(string varName)
+        {
+            string result;
+            _postVariables.TryGetValue(varName, out result);
+            return result;
+        }
+
+        public string GetGET(string varName)
+        {
+            string result;
+            _getVariables.TryGetValue(varName, out result);
+            return result;
         }
 
         #region Internal API for building request
@@ -155,6 +180,17 @@ namespace SharpServer.Networking
             IsHeadComplete = true;
         }
 
+        /// <summary>
+        /// Set POST variable to given value
+        /// </summary>
+        /// <param name="varName">Name of post variable</param>
+        /// <param name="varValue">Value of post variable</param>
+        internal void SetPOST(string varName, string varValue)
+        {
+            _postVariables[varName] = varValue;
+        }
         #endregion
+
+
     }
 }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using System.Text.RegularExpressions;
+
 namespace SharpServer.Networking
 {
     /// <summary>
@@ -10,6 +12,7 @@ namespace SharpServer.Networking
     /// </summary>
     public class HttpRequestParser
     {
+
         #region Private members
 
         /// <summary>
@@ -30,10 +33,20 @@ namespace SharpServer.Networking
 
         #endregion
 
+        public readonly Regex SplitterGET = new Regex(@"
+        (
+            (?<Name> [^&=]+)
+            =?
+            (?<Value> [^&=]*)
+        )*
+        ", RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
+
+        public bool IsError { get; private set; }
+
         /// <summary>
         /// Determine that all data has been recieved
         /// </summary>
-        public bool IsComplete { get { return Request!=null && Request.IsComplete; } }
+        public bool IsComplete { get { return IsError || (Request != null && Request.IsComplete); } }
 
         /// <summary>
         /// Determine that all data for headers has been recieved
@@ -84,7 +97,14 @@ namespace SharpServer.Networking
             {
                 //first header doesn't have name
                 var toks = _value.ToString().Split(' ');
-                Request = new HttpRequest(toks[0], toks[1], toks[2]);
+                if (toks.Length != 3)
+                {
+                    IsError = true;
+                    Log.Error("Invalid request with query {0}", _value);
+                    return;
+                }
+
+                Request = createRequest(toks[0], toks[1], toks[2]);
             }
             else
             {
@@ -114,12 +134,52 @@ namespace SharpServer.Networking
                 contentLength = int.Parse(contentLengthString);
             }
 
-            Request.CompleteHead(encoding, contentLength);            
+            Request.CompleteHead(encoding, contentLength);
         }
 
         #endregion
 
         #region Processing head character input
+
+        private HttpRequest createRequest(string method, string requestUri, string version)
+        {
+            string uri;
+            var getVariables = new Dictionary<string, string>();
+            var dataStart = requestUri.IndexOf('?');
+            if (dataStart <= 0)
+            {
+                //there are no GET data 
+                uri = requestUri;
+            }
+            else
+            {
+                uri = requestUri.Substring(0, dataStart);
+                var queryString = requestUri.Substring(dataStart + 1);
+                fillGetVars(queryString, getVariables);
+            }
+
+            return new HttpRequest(method, uri, version, getVariables);
+        }
+
+        private void fillGetVars(string queryString, Dictionary<string, string> getVariables)
+        {
+            var match = SplitterGET.Match(queryString);
+            if (!match.Success)
+            {
+                Log.Notice("Invalid query string");
+                return;
+            }
+
+            var names = match.Groups["Name"].Captures;
+            var values = match.Groups["Value"].Captures;
+            for (int i = 0; i < names.Count; ++i)
+            {
+                var name = names[i].Value;
+                var value = values[i].Value;
+
+                getVariables[name] = value;
+            }
+        }
 
         private int appendDataToHead(byte[] buffer, int length)
         {
@@ -127,7 +187,7 @@ namespace SharpServer.Networking
             for (int i = 0; i < length; ++i)
             {
                 var inputChar = (char)buffer[i];
-                
+
                 switch (inputChar)
                 {
                     case '\r':
@@ -188,7 +248,7 @@ namespace SharpServer.Networking
 
         private void newLineHeadChar()
         {
-            if (_name.Length == 0 && Request!=null)
+            if (_name.Length == 0 && Request != null)
             {
                 //end of headers section 
                 //(request hasn't been created yet and last header doesn't have name)

@@ -16,11 +16,20 @@ namespace SharpServer.Compiling
     /// </summary>
     public class Emitter
     {
+        private readonly static Dictionary<string, string> TypeTranslations = new Dictionary<string, string>()
+        {
+            {"string","System.String"}
+        };
+
+        private readonly Dictionary<string, ParamDeclaration> _declarations = new Dictionary<string, ParamDeclaration>();
+
         private readonly LinkedList<Instruction> _emitted = new LinkedList<Instruction>();
 
         private readonly WebMethods _helpers;
 
         public string ErrorMessage { get; private set; }
+
+        public IEnumerable<ParamDeclaration> Parameters { get { return _declarations.Values; } }
 
         public bool HasError { get { return ErrorMessage != null; } }
 
@@ -29,11 +38,27 @@ namespace SharpServer.Compiling
             _helpers = helpers;
         }
 
-
         public void ReportParseError(string errorMessage)
         {
             ErrorMessage = errorMessage;
         }
+
+        #region API for declarations
+
+        public void DeclareParam(string name, string typeName)
+        {
+            if (TypeTranslations.ContainsKey(typeName))
+                typeName = TypeTranslations[typeName];
+
+            var type = Type.GetType(typeName);
+            if (type == null)
+                throw new NotSupportedException("Unknonw type: " + typeName);
+            var declaration = new ParamDeclaration(name, type);
+
+            _declarations.Add(declaration.Name, declaration);
+        }
+
+        #endregion
 
         #region API for emitting statements
 
@@ -58,6 +83,13 @@ namespace SharpServer.Compiling
             return new CallInstruction(methodInfo, args);
         }
 
+        public Instruction ResponseCall(string methodName, Instruction[] args)
+        {
+            var thisObj = new ResponseInstruction();
+            var methodInfo = getResponseMethod(methodName);
+            return new MethodCallInstruction(thisObj, methodInfo, args);
+        }
+
         /// <summary>
         /// Emit instruction representation of value
         /// </summary>
@@ -66,6 +98,13 @@ namespace SharpServer.Compiling
         public Instruction Constant(object value)
         {
             return new ConstantInstruction(value);
+        }
+
+        public Instruction GetParam(string name)
+        {
+            var declaration = _declarations[name];
+
+            return new ParamInstruction(declaration);
         }
 
         #endregion
@@ -99,7 +138,6 @@ namespace SharpServer.Compiling
             return new ContainerInstruction(pairs);
         }
 
-
         internal Instruction WriteInstruction(Instruction output)
         {
             return new WriteInstruction(output);
@@ -129,6 +167,11 @@ namespace SharpServer.Compiling
         private WebMethod getCompilerMethod(string methodName)
         {
             return ResponseHandlerProvider.CompilerHelpers.GetMethod(methodName);
+        }
+
+        private WebMethod getResponseMethod(string methodName)
+        {
+            throw new NotImplementedException();
         }
 
 
