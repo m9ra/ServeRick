@@ -10,6 +10,11 @@ namespace SharpServer.Compiling.Instructions
     {
         public IEnumerable<Instruction> Chunks { get; private set; }
 
+        public override Type ReturnType
+        {
+            get { return typeof(string); }
+        }
+
         public ConcatInstruction(IEnumerable<Instruction> statements)
         {
             Chunks = statements.ToArray();

@@ -16,6 +16,11 @@ namespace SharpServer.Compiling.Instructions
 
         public Instruction Content { get; private set; }
 
+        public override Type ReturnType
+        {
+            get { throw new NotImplementedException("What type tag instruction should be ?"); }
+        }
+
         public TagInstruction(Instruction name)
         {
             Name = name;

@@ -84,8 +84,8 @@ namespace SharpServer.Languages.HAML
             {
                 foreach (var declaration in declarations.ChildNodes)
                 {
-                    var name = GetTerminalText(declaration,"param","identifier");
-                    var type = GetTerminalText(declaration,"type");
+                    var name = GetTerminalText(declaration, "param", "identifier");
+                    var type = GetTerminalText(declaration, "type");
 
                     E.DeclareParam(name, type);
                 }
@@ -185,9 +185,21 @@ namespace SharpServer.Languages.HAML
                         return output;
                     else
                         return E.WriteInstruction(output);
+                case "ifStatement":
+                    var ifBranch = compileBranch(GetDescendant(child, "ifBranch"));
+                    var elseBranch = compileBranch(GetDescendant(child, "elseBranch"));
+                    var condition = resolveRValue(GetDescendant(child, "condition"));
+
+                    var ifStatement = E.If(condition.ToInstruction(), ifBranch, elseBranch);
+                    return ifStatement;
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+        private Instruction compileBranch(Node node)
+        {
+            return E.Constant("NotImplemented branch compilation");
         }
 
         private bool containsYield(Node child)
@@ -235,9 +247,18 @@ namespace SharpServer.Languages.HAML
                     return resolveYield(node);
                 case "param":
                     return resolveParam(node);
+                case "condition":
+                    var conditionValue = resolveRValue(StepToChild(node));
+                    return resolveCondition(conditionValue);
+
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+        private RValue resolveCondition(RValue conditionValue)
+        {
+            return new ConditionValue(conditionValue, E);
         }
 
         private RValue resolveParam(Node node)

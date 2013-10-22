@@ -69,5 +69,18 @@ namespace SharpServer.Compiling
         {
             return response.GetParam(identifier);
         }
+
+        public static bool IsEqual(object obj1, object obj2)
+        {
+            if (obj1 == null)
+                return obj2 == null;
+
+            return obj1.Equals(obj2);
+        }
+
+        public static bool Not(bool value)
+        {
+            return !value;
+        }
     }
 }

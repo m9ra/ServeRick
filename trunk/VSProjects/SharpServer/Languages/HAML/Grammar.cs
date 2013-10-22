@@ -11,40 +11,56 @@ namespace SharpServer.Languages.HAML
     public class Grammar : GrammarBase
     {
         /// <summary>
+        /// Number of spaces for one tabulator
+        /// Is used for indentation
+        /// </summary>
+        readonly int TabWidth = 4;
+
+        /// <summary>
         /// Special terminal for indentation
         /// </summary>
-        readonly Terminal INDENT;
+        readonly Terminal INDENT = T_SPEC(IndentOutliner.Indent);
 
         /// <summary>
         /// Special terminal for dedentation
         /// </summary>
-        readonly Terminal DEDENT;
+        readonly Terminal DEDENT = T_SPEC(IndentOutliner.Dedent);
 
         /// <summary>
         /// Special terminal for end of line
         /// </summary>
-        readonly Terminal EOL;
+        readonly Terminal EOL = T_SPEC(IndentOutliner.EOL);
 
         /// <summary>
         /// Nonterminal for hash expression
         /// </summary>
-        NonTerminal hash;
+        readonly NonTerminal hash = NT("hash");
 
-        NonTerminal param;
+        /// <summary>
+        /// NonTerminal for param usage
+        /// </summary>
+        readonly NonTerminal param = NT("param");
+
+        /// <summary>
+        /// NonTerminal for block definition
+        /// </summary>
+        readonly NonTerminal block = NT("block");
+
+        /// <summary>
+        /// NonTerminal for blocks definition
+        /// </summary>
+        readonly NonTerminal blocks = NT("blocks");
+
+        readonly Terminal codePrefix = T_REG("[-=~]", "codePrefix");
 
         public Grammar()
         {
-            INDENT = T_SPEC(IndentOutliner.Indent);
-            DEDENT = T_SPEC(IndentOutliner.Dedent);
-            EOL = T_SPEC(IndentOutliner.EOL);
-
-            hash = NT("hash");
-            param = NT("param");
-
             var statement = generateStatementGrammar();
             generateTemplateGrammar(statement);
 
-            MarkPunctuation("=", "!!!", ".", "#", "%", "render", "=>", ",", ")", "(", "}", "{", "@", "");
+            MarkPunctuation("", "!!!", ".", "#", "%", "render", "=>", ",",
+                ")", "(", "}", "{", "@", "else", "if"
+                );
         }
 
         private NonTerminal generateStatementGrammar()
@@ -53,8 +69,14 @@ namespace SharpServer.Languages.HAML
 
             var statement = NT("statement");
             var expression = NT("expression");
-
+            var ifStatement = NT("ifStatement");
             var render = NT("render");
+
+            var condition = NT("condition");
+            var ifBranch = NT("ifBranch");
+            var elseBranch = NT("elseBranch");
+            var branch = NT("branch");
+
             var call = NT("call");
             var callName = NT("callName");
             var yield = NT("yield");
@@ -67,18 +89,28 @@ namespace SharpServer.Languages.HAML
 
             var value = NT("value");
 
-
             var symbol = T_REG(":[a-zA-Z][a-zA-Z01-9_]*", "symbol");
             var shortKey = T_REG("[a-zA-Z][a-zA-Z01-9_]*:", "shortKey");
-            var identifier = T_REG("[a-zA-Z][a-zA-Z01-9_]*", "identifier").Exclude("yield");
+            var identifier = T_REG("[a-zA-Z][a-zA-Z01-9_]*", "identifier")
+                .Exclude("yield", "if", "else");
+
             var numberLiteral = T_REG("/d+", "number");
             var stringLiteral = T_REG(@""" [^""]* """, "string");
 
             #endregion
 
             //statement
-            statement.Rule = render | expression;
+            statement.Rule = render | expression | ifStatement;
             render.Rule = "render" + argList;
+
+            //if
+            ifStatement.Rule = "if" + condition + ifBranch + Q(elseBranch);
+            condition.Rule = expression;
+            ifBranch.Rule = branch;
+            elseBranch.Rule = codePrefix + "else" + branch;
+
+            //let last EOL be consumed from parent
+            branch.Rule = statement | (EOL + INDENT + blocks + DEDENT);
 
             //arguments
             argList.Rule = ("(" + args + ")") | args | Empty;
@@ -109,8 +141,6 @@ namespace SharpServer.Languages.HAML
             var view = NT("view");
             var doctype = NT("doctype");
 
-            var blocks = NT("blocks");
-            var block = NT("block");
             var contentBlock = NT("contentBlock");
             var containerBlock = NT("containerBlock");
 
@@ -131,7 +161,6 @@ namespace SharpServer.Languages.HAML
             var paramDeclarations = NT("paramDeclarations");
             var paramDeclaration = NT("paramDeclaration");
 
-
             var type = T_REG("\\w+", "type");
             var identifier = T_REG("[a-zA-Z_][a-zA-Z01-9_]*", "identifier");
             var rawOutput = T_REG("[^!%#={.][^\\r\\n]*", "rawOutput");
@@ -149,7 +178,7 @@ namespace SharpServer.Languages.HAML
 
             //content rules
             content.Rule = code | rawOutput;
-            code.Rule = "=" + statement;
+            code.Rule = codePrefix + statement;
 
             //head rules
             head.Rule = (tag + Q(hash) + Q(attribs)) | attribs;
@@ -185,7 +214,7 @@ namespace SharpServer.Languages.HAML
             //let tokens process by standard way
             tokens = base.OutlineTokens(tokens);
 
-            var outliner = new IndentOutliner(tokens, 4);
+            var outliner = new IndentOutliner(tokens, TabWidth);
             var result = outliner.Outline();
 
             return result;

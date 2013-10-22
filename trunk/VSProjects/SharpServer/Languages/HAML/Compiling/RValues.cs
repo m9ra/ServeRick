@@ -63,6 +63,26 @@ namespace SharpServer.Languages.HAML.Compiling
         }
     }
 
+    class ConditionValue : RValue
+    {
+        internal readonly RValue Value;
+
+        internal ConditionValue(RValue value, Emitter emitter)
+            : base(emitter)
+        {
+            Value = value;
+        }
+
+        internal override Instruction ToInstruction()
+        {
+            var valueInstruction = Value.ToInstruction();
+            var valueType = valueInstruction.ReturnType;
+            var defaultValue = E.DefaultValue(valueType);
+
+            return E.Not(E.IsEqual(valueInstruction, defaultValue));
+        }
+    }
+
     class CallValue : RValue
     {
         internal readonly string CallName;
@@ -91,7 +111,7 @@ namespace SharpServer.Languages.HAML.Compiling
     {
         internal readonly string ParamName;
         internal ParamValue(string paramName, Emitter emitter)
-            :base(emitter)
+            : base(emitter)
         {
             ParamName = paramName;
         }

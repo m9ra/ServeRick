@@ -90,5 +90,17 @@ namespace SharpServer.Compiling
             x.Data.VisitMe(this);
             VisitInstruction(x);
         }
+
+        public virtual void VisitIf(IfInstruction x)
+        {
+            x.Condition.VisitMe(this);
+
+            x.IfBranch.VisitMe(this);
+
+            if (x.ElseBranch != null)
+                x.ElseBranch.VisitMe(this);
+
+            VisitInstruction(x);
+        }
     }
 }

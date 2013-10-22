@@ -24,9 +24,10 @@ namespace SharpServer.Compiling
         private static readonly MethodInfo ConvertBytesMethod = typeof(HTMLCompiler).GetMethod("ConvertBytes", BindingFlags.Static | BindingFlags.NonPublic);
 
         internal readonly ParameterExpression ResponseParameter = Expression.Parameter(ResponseType, "response");
-        private readonly List<EmittedItem> _emitted = new List<EmittedItem>();
+        private readonly List<ExpressionUnit> _emitted = new List<ExpressionUnit>();
         private readonly StringBuilder _staticWrites = new StringBuilder();
 
+        private List<ParameterExpression> _temporaryVariables = new List<ParameterExpression>();
         private readonly Dictionary<string, ParameterExpression> _paramStorages = new Dictionary<string, ParameterExpression>();
 
         /// <summary>
@@ -52,7 +53,7 @@ namespace SharpServer.Compiling
             }
         }
 
-        public Expression GetValue(Instruction instruction)
+        public ExpressionUnit GetValue(Instruction instruction)
         {
             if (instruction == null)
                 return null;
@@ -72,18 +73,18 @@ namespace SharpServer.Compiling
             return _paramStorages[paramName];
         }
 
-        public Expression CallMethod(bool precompute, string name, params Expression[] args)
+        public ExpressionUnit CallMethod(bool precompute, string name, params ExpressionUnit[] args)
         {
-            return CallMethod(precompute, name, (IEnumerable<Expression>)args);
+            return CallMethod(precompute, name, (IEnumerable<ExpressionUnit>)args);
         }
 
-        public Expression CallMethod(bool precompute, string name, IEnumerable<Expression> args)
+        public ExpressionUnit CallMethod(bool precompute, string name, IEnumerable<ExpressionUnit> args)
         {
             var method = ResponseHandlerProvider.CompilerHelpers.GetMethod(name);
             return CallMethod(precompute, method.Info, args);
         }
 
-        public Expression CallMethod(bool precompute, MethodInfo methodInfo, IEnumerable<Expression> args)
+        public ExpressionUnit CallMethod(bool precompute, MethodInfo methodInfo, IEnumerable<ExpressionUnit> args)
         {
             var matcher = new MethodMatcher(methodInfo, args);
             var call = matcher.CreateCall();
@@ -141,7 +142,9 @@ namespace SharpServer.Compiling
             var name = GetValue(x.Name);
             var attributes = GetValue(x.Attributes);
 
-            var stringyAttributes = attributes == null ? Expression.Constant("") : attributesToString(attributes, x.Attributes.IsStatic());
+            var stringyAttributes = attributes == null ?
+                new ExpressionUnit(Expression.Constant("")) :
+                attributesToString(attributes, x.Attributes.IsStatic());
 
             if (x.Content == null)
             {
@@ -155,6 +158,11 @@ namespace SharpServer.Compiling
             }
         }
 
+        public override void VisitIf(IfInstruction x)
+        {
+            var value = GetValue(x);
+            emit(value);
+        }
 
         #endregion
 
@@ -184,40 +192,51 @@ namespace SharpServer.Compiling
         {
             foreach (var storage in _paramStorages.Values)
             {
-                var nameExpr = Expression.Constant(storage.Name);
+                var nameExpr = unit(Expression.Constant(storage.Name));
+                var getParam = CallMethod(false, "Param", unit(ResponseParameter), nameExpr);
 
-                var getParam = CallMethod(false, "Param", ResponseParameter, nameExpr);
-                getParam = Expression.Convert(getParam, storage.Type);
-                var assign = Expression.Assign(storage, getParam);
-                compiled.Add(assign);
+                getParam = new ExpressionUnit(
+                    Expression.Convert(getParam.Value, storage.Type),
+                    getParam.Dependencies);
+
+                var assign = new ExpressionUnit(Expression.Assign(storage, getParam.Value), getParam.Dependencies);
+
+                emit(assign);
             }
         }
 
         private void compileChunks(List<Expression> output)
         {
             var buffer = new StringBuilder();
-            foreach (var chunk in _emitted)
+            foreach (var unit in _emitted)
             {
-                if (chunk.WriteToOutput)
-                {
-                    var constant = chunk.Expression as ConstantExpression;
-                    if (constant != null)
-                    {
-                        buffer.Append(constant.Value);
-                        continue;
-                    }
-
-                    flushBuffer(buffer, output);
-                    output.Add(writeBytes(chunk.Expression));
-                }
-                else
-                {
-                    flushBuffer(buffer, output);
-                    output.Add(chunk.Expression);
-                }
+                compileUnit(output, buffer, unit);
             }
 
             flushBuffer(buffer, output);
+        }
+
+        private void compileUnit(List<Expression> output, StringBuilder outputBuffer, ExpressionUnit unit)
+        {
+            output.AddRange(unit.Dependencies);
+
+            if (unit.WriteToOutput)
+            {
+                var constant = unit.Value as ConstantExpression;
+                if (constant != null)
+                {
+                    outputBuffer.Append(constant.Value);
+                    return;
+                }
+
+                flushBuffer(outputBuffer, output);
+                output.Add(writeBytes(unit.Value));
+            }
+            else
+            {
+                flushBuffer(outputBuffer, output);
+                output.Add(unit.Value);
+            }
         }
 
         private void flushBuffer(StringBuilder data, List<Expression> compiled)
@@ -252,40 +271,69 @@ namespace SharpServer.Compiling
                 if (chunk == null)
                     continue;
 
-                var expr = chunk as Expression;
+                var expr = chunk as ExpressionUnit;
 
                 if (expr == null)
-                    expr = Expression.Constant(chunk);
+                    expr = new ExpressionUnit(Expression.Constant(chunk));
 
                 emitWrite(expr);
             }
         }
 
-        private Expression attributesToString(Expression attributesContainer, bool precompute)
+        private ExpressionUnit attributesToString(ExpressionUnit attributesContainer, bool precompute)
         {
             return CallMethod(precompute, "AttributesToString", attributesContainer);
         }
 
-        private void emitWrite(Expression statement)
+        private void emitWrite(ExpressionUnit value)
         {
-            _emitted.Add(new EmittedItem(statement, true));
+            var unit = new ExpressionUnit(value.Value, true, value.Dependencies.ToArray());
+            emit(unit);
         }
 
-        private void emit(Expression statement)
+        private void emit(ExpressionUnit value)
         {
-            _emitted.Add(new EmittedItem(statement, false));
+            _emitted.Add(value);
         }
 
-        private static Expression precomputeExpression(Expression staticExpression)
+        private ExpressionUnit unit(Expression expression)
         {
-            var evaluator = Expression.Lambda<PartialEvaluator>(staticExpression).Compile();
+            return new ExpressionUnit(expression);
+        }
+
+        private ExpressionUnit precomputeExpression(ExpressionUnit staticExpression)
+        {
+            //TODO run dependencies
+            var value = staticExpression.Value;
+
+            if (value.Type.IsValueType)
+            {
+                value = Expression.Convert(value, typeof(object));
+            }
+
+            var statements = new List<Expression>(staticExpression.Dependencies);
+            var returnLabel = Expression.Label(typeof(object));
+            statements.Add(Expression.Return(returnLabel, value));
+            statements.Add(Expression.Label(returnLabel, value));
+
+            var block = Expression.Block(_temporaryVariables, statements.ToArray());
+            var evaluator = Expression.Lambda<PartialEvaluator>(block).Compile();
             var precomputed = evaluator();
 
-            return Expression.Constant(precomputed);
+            return new ExpressionUnit(Expression.Constant(precomputed));
         }
 
         #endregion
 
 
+
+        internal ParameterExpression CreateTemporary(Type type)
+        {
+            var temp = Expression.Variable(type);
+
+            _temporaryVariables.Add(temp);
+
+            return temp;
+        }
     }
 }

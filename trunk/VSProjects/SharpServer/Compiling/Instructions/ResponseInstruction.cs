@@ -8,6 +8,11 @@ namespace SharpServer.Compiling.Instructions
 {
     class ResponseInstruction : Instruction
     {
+        public override Type ReturnType
+        {
+            get { return typeof(Response); }
+        }
+
         public ResponseInstruction()
         {
         }

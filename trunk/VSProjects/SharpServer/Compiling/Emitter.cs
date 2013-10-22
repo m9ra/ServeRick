@@ -94,10 +94,11 @@ namespace SharpServer.Compiling
         /// Emit instruction representation of value
         /// </summary>
         /// <param name="value">Emitted value</param>
+        /// <param name="explicitType">Explicit type is used when type cannot </param>
         /// <returns>Emitted constant</returns>
-        public Instruction Constant(object value)
+        public Instruction Constant(object value, Type explicitType = null)
         {
-            return new ConstantInstruction(value);
+            return new ConstantInstruction(value, explicitType);
         }
 
         public Instruction GetParam(string name)
@@ -105,17 +106,6 @@ namespace SharpServer.Compiling
             var declaration = _declarations[name];
 
             return new ParamInstruction(declaration);
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Get response handler compiled from emitted statements
-        /// </summary>
-        /// <returns>Compiled response handler</returns>
-        internal Instruction GetEmittedResult()
-        {
-            return new ConcatInstruction(_emitted);
         }
 
         internal Instruction Concat(IEnumerable<Instruction> stringExpressions)
@@ -143,6 +133,11 @@ namespace SharpServer.Compiling
             return new WriteInstruction(output);
         }
 
+        internal Instruction If(Instruction condition, Instruction ifBranch, Instruction elseBranch)
+        {
+            return new IfInstruction(condition, ifBranch, elseBranch);
+        }
+
         internal Instruction SetValue(Instruction container, Instruction key, Instruction value)
         {
             var setValue = getCompilerMethod("SetValue");
@@ -159,6 +154,40 @@ namespace SharpServer.Compiling
             return new CallInstruction(yield, new ResponseInstruction(), identifierInstr);
         }
 
+        internal Instruction DefaultValue(Type type)
+        {
+            if (type.IsValueType)
+            {
+                var defaultInstance = Activator.CreateInstance(type);
+                return Constant(defaultInstance);
+            }
+
+            return Constant(null, type);
+        }
+
+        internal Instruction IsEqual(Instruction value1, Instruction value2)
+        {
+            var isEqual = getCompilerMethod("IsEqual");
+            return new CallInstruction(isEqual, value1, value2);
+        }
+
+        internal Instruction Not(Instruction value)
+        {
+            var not = getCompilerMethod("Not");
+            return new CallInstruction(not, value);
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Get response handler compiled from emitted statements
+        /// </summary>
+        /// <returns>Compiled response handler</returns>
+        internal Instruction GetEmittedResult()
+        {
+            return new ConcatInstruction(_emitted);
+        }
+
         private void emit(Instruction instruction)
         {
             _emitted.AddLast(instruction);
@@ -173,7 +202,5 @@ namespace SharpServer.Compiling
         {
             throw new NotImplementedException();
         }
-
-
     }
 }

@@ -10,9 +10,15 @@ namespace SharpServer.Compiling.Instructions
     {
         internal readonly Instruction Data;
 
+        public override Type ReturnType
+        {
+            get { return typeof(void); }
+        }
+
         internal WriteInstruction(Instruction data)
         {
             Data = data;
+
         }
 
         internal override void VisitMe(InstructionVisitor visitor)

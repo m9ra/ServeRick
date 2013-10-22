@@ -18,14 +18,14 @@ namespace SharpServer.Compiling
 
         private readonly HTMLCompiler _compiler;
 
-        private Expression _result;
+        private ExpressionUnit _result;
 
         internal HTMLValues(HTMLCompiler compiler)
         {
             _compiler = compiler;
         }
 
-        public static Expression GetValue(Instruction instruction, HTMLCompiler compiler)
+        public static ExpressionUnit GetValue(Instruction instruction, HTMLCompiler compiler)
         {
             if (instruction == null)
                 return null;
@@ -37,7 +37,7 @@ namespace SharpServer.Compiling
             creator._result = null;
             return result;
         }
-             
+
         #region Visitor overrides
 
         public override void VisitInstruction(Instruction x)
@@ -57,14 +57,13 @@ namespace SharpServer.Compiling
 
         public override void VisitCall(CallInstruction x)
         {
-            var args = new List<Expression>();
-
+            var args = new List<ExpressionUnit>();
             foreach (var arg in x.Arguments)
             {
                 args.Add(getValue(arg));
             }
 
-            result(_compiler.CallMethod(x.IsStatic(),x.Method.Info, args));
+            result(_compiler.CallMethod(x.IsStatic(), x.Method.Info, args));
         }
 
         public override void VisitConstant(ConstantInstruction x)
@@ -84,47 +83,117 @@ namespace SharpServer.Compiling
 
         public override void VisitPair(PairInstruction x)
         {
-            var key = getValue(x.Key);
-            var value = getValue(x.Value);
+            var deps = emptyDepsContainer();
+            var key = getValue(x.Key, deps);
+            var value = getValue(x.Value, deps);
 
             var argTypes = new[] { key.Type, value.Type };
 
             var keyPairType = typeof(Tuple<,>).MakeGenericType(argTypes);
             var keyPairCtor = keyPairType.GetConstructor(argTypes);
 
-            result(Expression.New(keyPairCtor, key, value));
+            result(Expression.New(keyPairCtor, key, value), deps);
+        }
+
+        private List<Expression> emptyDepsContainer()
+        {
+            return new List<Expression>();
         }
 
         public override void VisitContainer(ContainerInstruction x)
         {
-            var pairValues = new List<Expression>();
+            var pairValues = new List<ExpressionUnit>();
 
             foreach (var pair in x.Pairs)
             {
                 pairValues.Add(getValue(pair));
             }
 
-            result(pairsToContainer(pairValues,x.IsStatic()));
+            result(pairsToContainer(pairValues, x.IsStatic()));
+        }
+
+        public override void VisitIf(IfInstruction x)
+        {
+            //TODO resolve void branches
+            var temporary = _compiler.CreateTemporary(x.ReturnType);
+
+            var deps = emptyDepsContainer();
+
+            var condition = getValue(x.Condition, deps);
+            var ifBranch = compileBranch(x.IfBranch, temporary, deps);
+            var elseBranch = compileBranch(x.ElseBranch, temporary, deps);
+
+            Expression ifStatement;
+            if (elseBranch == null)
+            {
+                ifStatement = Expression.IfThen(condition, ifBranch);
+            }
+            else
+            {
+                ifStatement = Expression.IfThenElse(condition, ifBranch, elseBranch);
+            }
+
+            deps.Add(ifStatement);
+
+            result(temporary, deps);
         }
 
         #endregion
 
 
         #region Private utilities
-
-        internal Expression pairsToContainer(IEnumerable<Expression> pairs,bool precompute)
+        private Expression compileBranch(Instruction branch, ParameterExpression tempVariable, List<Expression> dependencies)
         {
-            return _compiler.CallMethod(precompute,"PairsToContainer", pairs);
+            if (branch == null)
+                return null;
+
+            if (branch.ReturnType == typeof(void))
+            {
+                throw new NotImplementedException();
+            }
+            else
+            {
+                var valueUnit = getValue(branch, dependencies);
+                return Expression.Assign(tempVariable, valueUnit);
+            }
         }
 
-        private void result(Expression result)
+        internal ExpressionUnit pairsToContainer(IEnumerable<ExpressionUnit> pairs, bool precompute)
         {
-            _result = result;
+            return _compiler.CallMethod(precompute, "PairsToContainer", pairs);
         }
 
-        private Expression getValue(Instruction instruction)
+        private void result(Expression resultExpression, IEnumerable<Expression> dependencies)
+        {
+            result(resultExpression, dependencies.ToArray());
+        }
+
+        private void result(Expression resultExpression, params Expression[] dependencies)
+        {
+            result(new ExpressionUnit(resultExpression, dependencies));
+        }
+
+        private void result(ExpressionUnit resultUnit)
+        {
+            _result = resultUnit;
+        }
+
+        private ExpressionUnit getValue(Instruction instruction)
         {
             return _compiler.GetValue(instruction);
+        }
+
+        /// <summary>
+        /// Get value of instruction and fill given list with dependencies needed for returned value
+        /// </summary>
+        /// <param name="instruction"></param>
+        /// <param name="valueDependencies"></param>
+        /// <returns></returns>
+        private Expression getValue(Instruction instruction, List<Expression> valueDependencies)
+        {
+            var unit = getValue(instruction);
+            valueDependencies.AddRange(unit.Dependencies);
+            return unit.Value;
         }
 
         #endregion

@@ -28,6 +28,7 @@ namespace TestWebApp
         {
             var manager = new SimpleControllerManager(this, _rootPath);
             manager.AddDirectoryContent("");
+//            manager.AddFileResource("test.haml");
 
             return manager;
         }

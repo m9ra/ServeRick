@@ -10,6 +10,8 @@ namespace SharpServer.Compiling.Instructions
     {
         public readonly ParamDeclaration Declaration;
 
+        public override Type ReturnType{get { return Declaration.Type; }}
+
         public ParamInstruction(ParamDeclaration declaration)
         {
             Declaration=declaration;

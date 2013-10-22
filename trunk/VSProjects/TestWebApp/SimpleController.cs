@@ -22,5 +22,11 @@ namespace TestWebApp
             Layout("application.haml");
             Render("index.haml");
         }
+
+        public void test()
+        {
+            Layout("application.haml");
+            Render("test.haml");
+        }
     }
 }

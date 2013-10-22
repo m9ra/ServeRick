@@ -65,7 +65,7 @@ namespace Parsing
         /// </summary>
         /// <param name="name">Name of created non terminal</param>
         /// <returns>Created non terminal</returns>
-        protected NonTerminal NT(string name)
+        protected static NonTerminal NT(string name)
         {
             return new NonTerminal(name);
         }
@@ -76,7 +76,7 @@ namespace Parsing
         /// <param name="word">Word that will be matched by terminal</param>
         /// <param name="name">Name of terminal</param>
         /// <returns>Created terminal</returns>
-        protected Terminal T(string word, string name = null)
+        protected static Terminal T(string word, string name = null)
         {
             return new KeyTerminal(word, name);
         }
@@ -87,7 +87,7 @@ namespace Parsing
         /// <param name="pattern">Pattern used for input matching</param>
         /// <param name="name">Name of terminal</param>
         /// <returns>Created terminal</returns>
-        protected PatternTerminal T_REG(string pattern, string name = null)
+        protected static PatternTerminal T_REG(string pattern, string name = null)
         {
             return new PatternTerminal(pattern, name);
         }
@@ -97,7 +97,7 @@ namespace Parsing
         /// </summary>
         /// <param name="tokenName">Name of matched token</param>
         /// <returns>Created terminal</returns>
-        protected Terminal T_SPEC(string tokenName)
+        protected static Terminal T_SPEC(string tokenName)
         {
             return new SpecialTerminal(tokenName);
         }

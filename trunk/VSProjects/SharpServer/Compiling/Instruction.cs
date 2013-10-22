@@ -16,6 +16,7 @@ namespace SharpServer.Compiling
         /// <returns>True if instruction can be evaluated staticly, false otherwise</returns>
         internal abstract bool IsStatic();
 
+        public abstract Type ReturnType { get; }
 
         protected bool TestStatic(IEnumerable<Instruction> children)
         {

@@ -10,9 +10,21 @@ namespace SharpServer.Compiling.Instructions
     {
         public readonly object Constant;
 
-        public ConstantInstruction(object constant)
+        private readonly Type _type;
+
+        public override Type ReturnType { get { return _type; } }
+
+        public ConstantInstruction(object constant, Type explicitType)
         {
             Constant = constant;
+            if (Constant == null)
+            {
+                _type = explicitType;
+            }
+            else
+            {
+                _type = constant.GetType();
+            }
         }
 
         internal override void VisitMe(InstructionVisitor visitor)

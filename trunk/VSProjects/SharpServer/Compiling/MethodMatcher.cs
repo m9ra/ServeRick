@@ -13,21 +13,31 @@ namespace SharpServer.Compiling
     {
         private MethodInfo _method;
 
-        private Expression[] _args;
+        private ExpressionUnit[] _args;
+
+        private List<Expression> _argValues = new List<Expression>();
+        private List<Expression> _dependencies = new List<Expression>();
 
         private readonly Dictionary<Type, Type> _assignings = new Dictionary<Type, Type>();
 
-        internal MethodMatcher(MethodInfo method, IEnumerable<Expression> args)
+        internal MethodMatcher(MethodInfo method, IEnumerable<ExpressionUnit> args)
         {
             _method = method;
             _args = args.ToArray();
+
+            foreach (var arg in _args)
+            {
+                _argValues.Add(arg.Value);
+                _dependencies.AddRange(arg.Dependencies);
+            }
         }
 
-        internal Expression CreateCall()
+        internal ExpressionUnit CreateCall()
         {
             matchTypeParameters();
 
-            return Expression.Call(null, _method, _args);
+
+            return new ExpressionUnit(Expression.Call(null, _method, _argValues), _dependencies);
         }
 
         private void matchTypeParameters()
@@ -49,7 +59,7 @@ namespace SharpServer.Compiling
             for (int i = 0; i < methodParams.Length; ++i)
             {
                 //TODO proper args matching
-                var arg = _args[i];
+                var arg = _argValues[i];
                 var argType = arg.Type;
                 var param = methodParams[i];
                 var paramType = param.ParameterType;
@@ -64,9 +74,9 @@ namespace SharpServer.Compiling
                     }
 
                     //set converted argument
-                    var argValues = _args.Skip(i);
-                    _args[i] = Expression.NewArrayInit(argType, argValues.ToArray());
-                    Array.Resize(ref _args, i + 1);
+                    var argValues = _argValues.Skip(i);
+                    _argValues[i] = Expression.NewArrayInit(argType, argValues.ToArray());
+                    _argValues.RemoveRange(i + 1, _argValues.Count - i - 1);
 
                     //match type
                     match(paramType, typeof(IEnumerable<>).MakeGenericType(argType));

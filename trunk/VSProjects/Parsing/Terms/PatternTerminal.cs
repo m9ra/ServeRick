@@ -35,7 +35,7 @@ namespace Parsing
                 return TerminalMatch.Failed;
 
             var currentContext = startContext;
-            while (currentContext.Index < startContext.Index + value.Length-1)
+            while (currentContext.Index < startContext.Index + value.Length - 1)
             {
                 if (currentContext.Token.IsSpecial)
                 {
@@ -49,9 +49,9 @@ namespace Parsing
             return new TerminalMatch(currentContext.NextContext, value);
         }
 
-        public PatternTerminal Exclude(string word)
+        public PatternTerminal Exclude(params string[] word)
         {
-            _excludes.Add(word);
+            _excludes.UnionWith(word);
             return this;
         }
     }
