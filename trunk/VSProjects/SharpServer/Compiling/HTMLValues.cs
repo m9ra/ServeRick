@@ -16,26 +16,25 @@ namespace SharpServer.Compiling
         static readonly Type ThisType = typeof(HTMLValues);
         static readonly MethodInfo StringConcat = typeof(string).GetMethod("Concat", new[] { typeof(object[]) });
 
+        private readonly List<Expression> _emitted = new List<Expression>();
+
         private readonly HTMLCompiler _compiler;
 
-        private ExpressionUnit _result;
-
-        internal HTMLValues(HTMLCompiler compiler)
+        private HTMLValues(HTMLCompiler compiler)
         {
             _compiler = compiler;
         }
 
-        public static ExpressionUnit GetValue(Instruction instruction, HTMLCompiler compiler)
+        public static Expression GetValue(Instruction instruction, HTMLCompiler compiler)
         {
             if (instruction == null)
                 return null;
 
             var creator = new HTMLValues(compiler);
             instruction.VisitMe(creator);
+            var expression = compiler.CompileBlock(creator._emitted);
 
-            var result = creator._result;
-            creator._result = null;
-            return result;
+            return expression;
         }
 
         #region Visitor overrides
@@ -47,81 +46,92 @@ namespace SharpServer.Compiling
 
         public override void VisitTag(TagInstruction x)
         {
-            throw new NotSupportedException("Tag instruction is not RValue");
+            var name = getValue(x.Name);
+            var attributes = getValue(x.Attributes);
+
+            var stringyAttributes = attributes == null ? Expression.Constant("") : attributesToString(attributes, x.Attributes.IsStatic());
+
+            if (x.Content == null)
+            {
+                emitWriteConcat(x, "<", name, stringyAttributes, "/>");
+            }
+            else
+            {
+                emitWriteConcat(x, "<", name, stringyAttributes, ">");
+                x.Content.VisitMe(this);
+                emitWriteConcat(x, "</", name, ">");
+            }
         }
 
-        public override void VisitConcat(ConcatInstruction x)
+        public override void VisitSequence(SequenceInstruction x)
         {
-            throw new NotSupportedException("Concat instruction is not RValue");
+            foreach (var chunk in x.Chunks)
+            {
+                var value = getValue(chunk);
+                emit(value);
+            }
         }
 
         public override void VisitCall(CallInstruction x)
         {
-            var args = new List<ExpressionUnit>();
+            var args = new List<Expression>();
+
             foreach (var arg in x.Arguments)
             {
                 args.Add(getValue(arg));
             }
 
-            result(_compiler.CallMethod(x.IsStatic(), x.Method.Info, args));
+            emit(_compiler.CallMethod(x.IsStatic(), x.Method.Info, args));
         }
 
         public override void VisitConstant(ConstantInstruction x)
         {
-            result(Expression.Constant(x.Constant));
+            emit(Expression.Constant(x.Constant));
         }
 
         public override void VisitResponse(ResponseInstruction x)
         {
-            result(_compiler.ResponseParameter);
+            emit(_compiler.ResponseParameter);
         }
 
         public override void VisitParam(ParamInstruction x)
         {
-            result(_compiler.Param(x.Declaration.Name));
+            emit(_compiler.Param(x.Declaration.Name));
         }
 
         public override void VisitPair(PairInstruction x)
         {
-            var deps = emptyDepsContainer();
-            var key = getValue(x.Key, deps);
-            var value = getValue(x.Value, deps);
+            var key = getValue(x.Key);
+            var value = getValue(x.Value);
 
             var argTypes = new[] { key.Type, value.Type };
 
             var keyPairType = typeof(Tuple<,>).MakeGenericType(argTypes);
             var keyPairCtor = keyPairType.GetConstructor(argTypes);
 
-            result(Expression.New(keyPairCtor, key, value), deps);
-        }
-
-        private List<Expression> emptyDepsContainer()
-        {
-            return new List<Expression>();
+            emit(Expression.New(keyPairCtor, key, value));
         }
 
         public override void VisitContainer(ContainerInstruction x)
         {
-            var pairValues = new List<ExpressionUnit>();
+            var pairValues = new List<Expression>();
 
             foreach (var pair in x.Pairs)
             {
                 pairValues.Add(getValue(pair));
             }
 
-            result(pairsToContainer(pairValues, x.IsStatic()));
+            emit(pairsToContainer(pairValues, x.IsStatic()));
         }
 
         public override void VisitIf(IfInstruction x)
         {
-            //TODO resolve void branches
-            var temporary = _compiler.CreateTemporary(x.ReturnType);
+            var condition = getValue(x.Condition);
 
-            var deps = emptyDepsContainer();
-
-            var condition = getValue(x.Condition, deps);
-            var ifBranch = compileBranch(x.IfBranch, temporary, deps);
-            var elseBranch = compileBranch(x.ElseBranch, temporary, deps);
+            //TODO needs to be compiled as satement
+            var tmpVariable = _compiler.GetTemporaryVariable(x.ReturnType);
+            var ifBranch = compileBranch(x.IfBranch, tmpVariable);
+            var elseBranch = compileBranch(x.ElseBranch, tmpVariable);
 
             Expression ifStatement;
             if (elseBranch == null)
@@ -133,69 +143,81 @@ namespace SharpServer.Compiling
                 ifStatement = Expression.IfThenElse(condition, ifBranch, elseBranch);
             }
 
-            deps.Add(ifStatement);
+            emit(Expression.Block(ifStatement, tmpVariable));
+        }
 
-            result(temporary, deps);
+        public override void VisitWrite(WriteInstruction x)
+        {
+            var value = getValue(x.Data);
+            emitWrite(value);
         }
 
         #endregion
 
-
         #region Private utilities
-        private Expression compileBranch(Instruction branch, ParameterExpression tempVariable, List<Expression> dependencies)
+
+        private Expression compileBranch(Instruction branchInstruction, ParameterExpression outputVar)
         {
-            if (branch == null)
+            if (branchInstruction == null)
                 return null;
 
-            if (branch.ReturnType == typeof(void))
+            var branch = getValue(branchInstruction);
+            if (branch.Type == typeof(void))
             {
-                throw new NotImplementedException();
+                return branch;
             }
             else
             {
-                var valueUnit = getValue(branch, dependencies);
-                return Expression.Assign(tempVariable, valueUnit);
+                return Expression.Assign(outputVar, branch);
             }
         }
 
-        internal ExpressionUnit pairsToContainer(IEnumerable<ExpressionUnit> pairs, bool precompute)
+        internal Expression pairsToContainer(IEnumerable<Expression> pairs, bool precompute)
         {
             return _compiler.CallMethod(precompute, "PairsToContainer", pairs);
         }
 
-        private void result(Expression resultExpression, IEnumerable<Expression> dependencies)
+        private void emitWriteConcat(Instruction emitingInstruction, params object[] chunks)
         {
-            result(resultExpression, dependencies.ToArray());
+            var parts = new List<Expression>();
+            foreach (var chunk in chunks)
+            {
+                if (chunk == null)
+                    continue;
+
+                var part = chunk as Expression;
+
+                if (part == null)
+                    part = Expression.Constant(chunk);
+
+                parts.Add(part);
+            }
+
+            var array = Expression.NewArrayInit(typeof(string), parts);
+            var concatenation = _compiler.CallMethod(emitingInstruction.IsStatic(), "Concat", array);
+            emitWrite(concatenation);
         }
 
-        private void result(Expression resultExpression, params Expression[] dependencies)
+        private Expression attributesToString(Expression attributesContainer, bool precompute)
         {
-            result(new ExpressionUnit(resultExpression, dependencies));
+            return _compiler.CallMethod(precompute, "AttributesToString", attributesContainer);
         }
 
-        private void result(ExpressionUnit resultUnit)
-        {
-            _result = resultUnit;
-        }
-
-        private ExpressionUnit getValue(Instruction instruction)
+        private Expression getValue(Instruction instruction)
         {
             return _compiler.GetValue(instruction);
         }
 
-        /// <summary>
-        /// Get value of instruction and fill given list with dependencies needed for returned value
-        /// </summary>
-        /// <param name="instruction"></param>
-        /// <param name="valueDependencies"></param>
-        /// <returns></returns>
-        private Expression getValue(Instruction instruction, List<Expression> valueDependencies)
+        private void emitWrite(Expression statement)
         {
-            var unit = getValue(instruction);
-            valueDependencies.AddRange(unit.Dependencies);
-            return unit.Value;
+            var writeBytes = _compiler.WriteBytes(statement);
+            emit(writeBytes);
         }
 
+        private void emit(Expression statement)
+        {
+            _emitted.Add(statement);
+        }
         #endregion
     }
 }

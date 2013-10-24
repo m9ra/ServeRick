@@ -66,7 +66,7 @@ namespace SharpServer.Compiling
         /// Emits write into response stream on value specified by instruction
         /// </summary>
         /// <param name="expression">Expression which return value will be send to output</param>
-        public void Write(Instruction instruction)
+        public void Emit(Instruction instruction)
         {
             _emitted.AddLast(instruction);
         }
@@ -108,9 +108,9 @@ namespace SharpServer.Compiling
             return new ParamInstruction(declaration);
         }
 
-        internal Instruction Concat(IEnumerable<Instruction> stringExpressions)
+        internal Instruction Sequence(IEnumerable<Instruction> stringExpressions)
         {
-            return new ConcatInstruction(stringExpressions);
+            return new SequenceInstruction(stringExpressions);
         }
 
         internal TagInstruction Tag(Instruction tagName)
@@ -185,7 +185,7 @@ namespace SharpServer.Compiling
         /// <returns>Compiled response handler</returns>
         internal Instruction GetEmittedResult()
         {
-            return new ConcatInstruction(_emitted);
+            return new SequenceInstruction(_emitted);
         }
 
         private void emit(Instruction instruction)

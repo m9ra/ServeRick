@@ -18,7 +18,7 @@ namespace SharpServer.Compiling.Instructions
 
         public override Type ReturnType
         {
-            get { throw new NotImplementedException("What type tag instruction should be ?"); }
+            get { return typeof(void); }
         }
 
         public TagInstruction(Instruction name)

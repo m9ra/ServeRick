@@ -68,7 +68,6 @@
     <Compile Include="ActionInfo.cs" />
     <Compile Include="Attributes.cs" />
     <Compile Include="Compiling\CompilerBase.cs" />
-    <Compile Include="Compiling\ExpressionUnit.cs" />
     <Compile Include="Compiling\GrammarBase.cs" />
     <Compile Include="Compiling\Instructions\ContainerInstruction.cs" />
     <Compile Include="Compiling\Emitter.cs" />
@@ -78,7 +77,7 @@
     <Compile Include="Compiling\Instruction.cs" />
     <Compile Include="Compiling\Instructions\CallInstruction.cs" />
     <Compile Include="Compiling\Instructions\ConstantInstruction.cs" />
-    <Compile Include="Compiling\Instructions\ConcatInstruction.cs" />
+    <Compile Include="Compiling\Instructions\SequenceInstruction.cs" />
     <Compile Include="Compiling\Instructions\IfInstruction.cs" />
     <Compile Include="Compiling\Instructions\ParamInstruction.cs" />
     <Compile Include="Compiling\Instructions\MethodCallInstruction.cs" />

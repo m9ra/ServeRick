@@ -36,7 +36,7 @@ namespace SharpServer.Compiling
             VisitInstruction(x);
         }
 
-        public virtual void VisitConcat(ConcatInstruction x)
+        public virtual void VisitSequence(SequenceInstruction x)
         {
             foreach (var statement in x.Chunks)
             {

@@ -56,11 +56,83 @@ namespace SharpServer.Languages.HAML
         /// </summary>
         private void compile()
         {
-            E.Write(compileBlock(Root));
+            E.Emit(compileBlock(Root));
         }
 
-        #region Generating methods
 
+        /// <summary>
+        /// Declara parameters from declaratoins node
+        /// </summary>
+        /// <param name="declarations">Node with declarations</param>
+        private void declareParameters(Node declarations)
+        {
+            if (declarations != null)
+            {
+                foreach (var declaration in declarations.ChildNodes)
+                {
+                    var name = GetTerminalText(declaration, "param", "identifier");
+                    var type = GetTerminalText(declaration, "type");
+
+                    E.DeclareParam(name, type);
+                }
+            }
+        }
+
+        #region Blocks compilation
+
+        /// <summary>
+        /// Compile whole view
+        /// </summary>
+        /// <param name="view">View node to be compiled</param>
+        /// <returns>Compiled view instruction</returns>
+        private Instruction compileView(Node view)
+        {
+            var declarations = GetDescendant(view, "paramDeclarations");
+            declareParameters(declarations);
+
+            var blocksNode = GetDescendant(view, "blocks");
+            var blocks = compileBlocks(blocksNode);
+
+            var doctype = GetDescendant(view, "doctype");
+            if (doctype != null)
+            {
+                //TODO resolve doctype type
+                var doctypeString = E.WriteInstruction(E.Constant("<!DOCTYPE html>\n"));
+
+                return E.Sequence(new Instruction[] { doctypeString, blocks });
+            }
+
+            return blocks;
+        }
+
+        /// <summary>
+        /// Compile blocks from given node. Blocks are chained into sequence 
+        /// instruction.
+        /// </summary>
+        /// <param name="blocksNode">Node with blocks</param>
+        /// <returns>Sequence of compiled blocks</returns>
+        private Instruction compileBlocks(Node blocksNode)
+        {
+            var blocks = GetDescendants(blocksNode, "block");
+
+            var compiledBlocks = new List<Instruction>();
+            foreach (var block in blocks)
+            {
+                var resolved = StepToChild(block);
+
+                var compiledBlock = compileBlock(resolved);
+                compiledBlocks.Add(compiledBlock);
+            }
+
+            return E.Sequence(compiledBlocks);
+        }
+
+        /// <summary>
+        /// Compile block from given node
+        /// <remarks>Block defines output on it's own</remarks>
+        /// </summary>
+        /// <param name="block">Block to be compiled</param>
+        /// <returns>Compiled block</returns>
         private Instruction compileBlock(Node block)
         {
             var name = block.Name;
@@ -77,50 +149,11 @@ namespace SharpServer.Languages.HAML
             }
         }
 
-        private Instruction compileView(Node view)
-        {
-            var declarations = GetDescendant(view, "paramDeclarations");
-            if (declarations != null)
-            {
-                foreach (var declaration in declarations.ChildNodes)
-                {
-                    var name = GetTerminalText(declaration, "param", "identifier");
-                    var type = GetTerminalText(declaration, "type");
-
-                    E.DeclareParam(name, type);
-                }
-            }
-
-            var blocks = compileBlocks(view);
-
-            var doctype = GetDescendant(view, "doctype");
-            if (doctype != null)
-            {
-                //TODO resolve doctype type
-                var doctypeString = E.Constant("<!DOCTYPE html>\n");
-
-                return E.Concat(new Instruction[] { doctypeString, blocks });
-            }
-
-            return blocks;
-        }
-
-        private Instruction compileBlocks(Node parent)
-        {
-            var blocks = GetDescendants(parent, "blocks", "block");
-
-            var compiledBlocks = new List<Instruction>();
-            foreach (var block in blocks)
-            {
-                var resolved = StepToChild(block);
-
-                var compiledBlock = compileBlock(resolved);
-                compiledBlocks.Add(compiledBlock);
-            }
-
-            return E.Concat(compiledBlocks);
-        }
-
+        /// <summary>
+        /// Compile block with content
+        /// </summary>
+        /// <param name="contentBlock">Block to be compiled</param>
+        /// <returns>Compiled block</returns>
         private Instruction compileContentBlock(Node contentBlock)
         {
             var headNode = GetDescendant(contentBlock, "head");
@@ -137,22 +170,35 @@ namespace SharpServer.Languages.HAML
             return tag.ToInstruction();
         }
 
+        #endregion
+
+        #region Content compilation 
+
         private Instruction compileContent(Node contentNode)
         {
             if (contentNode == null)
                 return null;
 
+            Instruction compiled;
+
             var rawContent = GetTerminalText(contentNode, "rawOutput");
-            if (rawContent != null)
+            if (rawContent == null)
             {
-                return E.Constant(rawContent);
+                var code = GetDescendant(contentNode, "code");
+                compiled = compileCode(code);
             }
             else
             {
-                var code = GetDescendant(contentNode, "code");
-                return compileCode(code);
+                //rawContent is always written to output
+                compiled = E.WriteInstruction(E.Constant(rawContent));
             }
+
+            return compiled;
         }
+
+        #endregion
+
+        #region Code compilation
 
         private Instruction compileCode(Node code)
         {
@@ -167,24 +213,43 @@ namespace SharpServer.Languages.HAML
             
                  return lastStatement;*/
 
-            return compileStatement(statements);
+            var prefix = GetTerminalText(code.ChildNodes[0]);
+            var compiled = compileStatement(statements);
+            if (compiled.ReturnType == typeof(void))
+            {
+                //TODO correct handling of yield
+                //TODO void statements should return "0"
+                return compiled;
+            }
+
+            switch (prefix)
+            {
+                case "=":
+                    compiled = E.WriteInstruction(compiled);
+                    break;
+                case "-":
+                    //silent code
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            return compiled;
         }
 
         private Instruction compileStatement(Node statement)
         {
             var child = StepToChild(statement);
             var statementName = child.Name;
+
+            Instruction compiled;
             switch (statementName)
             {
                 case "expression":
                     var value = resolveRValue(child);
-                    var output = value.ToInstruction();
+                    compiled = value.ToInstruction();
 
-                    if (containsYield(child))
-                        //yield doesn't have return value
-                        return output;
-                    else
-                        return E.WriteInstruction(output);
+                    break;
                 case "ifStatement":
                     var ifBranch = compileBranch(GetDescendant(child, "ifBranch"));
                     var elseBranch = compileBranch(GetDescendant(child, "elseBranch"));
@@ -195,11 +260,25 @@ namespace SharpServer.Languages.HAML
                 default:
                     throw new NotImplementedException();
             }
+
+            return compiled;
         }
 
         private Instruction compileBranch(Node node)
         {
-            return E.Constant("NotImplemented branch compilation");
+            if (node == null)
+                return null;
+
+            var blocks = GetDescendant(node, "branch", "blocks");
+            if (blocks == null)
+            {
+                var statement = GetDescendant(node, "branch", "statement");
+                return compileStatement(statement);
+            }
+            else
+            {
+                return compileBlocks(blocks);
+            }
         }
 
         private bool containsYield(Node child)
@@ -212,7 +291,8 @@ namespace SharpServer.Languages.HAML
             var headNode = GetDescendant(containerBlock, "head");
             var tag = createTag(headNode);
 
-            var blocks = compileBlocks(containerBlock);
+            var blocksNode = GetDescendant(containerBlock, "blocks");
+            var blocks = compileBlocks(blocksNode);
             if (tag == null)
                 return blocks;
 

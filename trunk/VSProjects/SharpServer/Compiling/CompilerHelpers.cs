@@ -78,6 +78,12 @@ namespace SharpServer.Compiling
             return obj1.Equals(obj2);
         }
 
+        public static string Concat(params object[] parts)
+        {
+            var result=string.Concat(parts);
+            return result;
+        }
+
         public static bool Not(bool value)
         {
             return !value;

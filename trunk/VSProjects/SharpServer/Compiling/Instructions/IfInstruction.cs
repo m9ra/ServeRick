@@ -24,7 +24,7 @@ namespace SharpServer.Compiling.Instructions
             IfBranch = ifBranch;
             ElseBranch = elseBranch;
 
-            _type = TypeHelper.FindBaseClassWith(IfBranch.ReturnType, ElseBranch.ReturnType);
+            _type = TypeHelper.FindBaseClassWith(IfBranch, ElseBranch);
         }
 
         internal override void VisitMe(InstructionVisitor visitor)

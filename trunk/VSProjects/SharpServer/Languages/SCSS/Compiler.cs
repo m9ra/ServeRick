@@ -32,7 +32,7 @@ namespace SharpServer.Languages.SCSS
         readonly Dictionary<string, string> _variables = new Dictionary<string, string>();
 
         private Compiler(Node root, Emitter emitter)
-            :base(root,emitter)
+            : base(root, emitter)
         {
         }
 
@@ -76,7 +76,8 @@ namespace SharpServer.Languages.SCSS
                 }
 
                 var constant = E.Constant(block.ToCSS());
-                E.Write(constant);
+                var write = E.WriteInstruction(constant);
+                E.Emit(write);
             }
         }
 

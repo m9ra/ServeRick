@@ -12,6 +12,27 @@ namespace SharpServer.Compiling
     /// </summary>
     public static class TypeHelper
     {
+        public static Type FindBaseClassWith(this Instruction instructionLeft, Instruction instructionRight)
+        {
+            if(instructionLeft==null){
+                if (instructionRight == null)
+                    return null;
+
+                return instructionRight.ReturnType;
+            }
+
+            if (instructionRight == null)
+            {
+                if (instructionLeft == null)
+                    return null;
+
+                return instructionLeft.ReturnType;
+            }
+
+
+            return instructionLeft.ReturnType.FindBaseClassWith(instructionRight.ReturnType);
+        }
+
         // provide common base class or implemented interface
         public static Type FindEqualTypeWith(this Type typeLeft, Type typeRight)
         {

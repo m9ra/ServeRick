@@ -28,7 +28,7 @@ namespace SharpServer.Compiling.Instructions
 
         internal override bool IsStatic()
         {
-            return Data.IsStatic();
+            return false;
         }
     }
 }

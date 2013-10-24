@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SharpServer.Compiling.Instructions
 {
-    class ConcatInstruction:Instruction
+    class SequenceInstruction:Instruction
     {
         public IEnumerable<Instruction> Chunks { get; private set; }
 
@@ -15,14 +15,14 @@ namespace SharpServer.Compiling.Instructions
             get { return typeof(string); }
         }
 
-        public ConcatInstruction(IEnumerable<Instruction> statements)
+        public SequenceInstruction(IEnumerable<Instruction> statements)
         {
             Chunks = statements.ToArray();
         }
 
         internal override void VisitMe(InstructionVisitor visitor)
         {
-            visitor.VisitConcat(this);
+            visitor.VisitSequence(this);
         }
 
         internal override bool IsStatic()
