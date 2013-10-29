@@ -10,17 +10,20 @@ namespace SharpServer.Compiling.Instructions
 {
     class MethodCallInstruction : Instruction
     {
-        internal readonly WebMethod Method;
+        internal readonly MethodInfo Method;
         internal readonly Instruction[] Arguments;
         internal readonly Instruction ThisObject;
 
         public override Type ReturnType
         {
-            get { return Method.Info.ReturnType; }
+            get { return Method.ReturnType; }
         }
 
-        internal MethodCallInstruction(Instruction thisObject, WebMethod method, params Instruction[] args)
-        {            
+        internal MethodCallInstruction(Instruction thisObject, MethodInfo method, params Instruction[] args)
+        {
+            if (method == null)
+                throw new ArgumentNullException("method");
+
             Method = method;
             Arguments = args;
             ThisObject = thisObject;

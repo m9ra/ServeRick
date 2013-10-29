@@ -69,6 +69,8 @@
     <Compile Include="Attributes.cs" />
     <Compile Include="Compiling\CompilerBase.cs" />
     <Compile Include="Compiling\GrammarBase.cs" />
+    <Compile Include="Compiling\Instructions\AssignInstruction.cs" />
+    <Compile Include="Compiling\Instructions\ConstructorCall.cs" />
     <Compile Include="Compiling\Instructions\ContainerInstruction.cs" />
     <Compile Include="Compiling\Emitter.cs" />
     <Compile Include="Compiling\CompilerHelpers.cs" />
@@ -85,6 +87,8 @@
     <Compile Include="Compiling\Instructions\PairInstruction.cs" />
     <Compile Include="Compiling\Instructions\ResponseInstruction.cs" />
     <Compile Include="Compiling\Instructions\TagInstruction.cs" />
+    <Compile Include="Compiling\Instructions\VariableInstruction.cs" />
+    <Compile Include="Compiling\Instructions\WhileInstruction.cs" />
     <Compile Include="Compiling\Instructions\WriteInstruction.cs" />
     <Compile Include="Compiling\InstructionVisitor.cs" />
     <Compile Include="Compiling\LanguageToolChain.cs" />
@@ -96,6 +100,8 @@
     <Compile Include="Compiling\WebMethods.cs" />
     <Compile Include="InputController.cs" />
     <Compile Include="InputManagerBase.cs" />
+    <Compile Include="Languages\HAML\Compiling\Context.cs" />
+    <Compile Include="Languages\HAML\Compiling\HAMLInterval.cs" />
     <Compile Include="ResponseController.cs" />
     <Compile Include="ResponseManagerBase.cs" />
     <Compile Include="Languages\HAML\Compiler.cs" />

@@ -81,7 +81,31 @@ namespace SharpServer.Compiling
                 args.Add(getValue(arg));
             }
 
-            emit(_compiler.CallMethod(x.IsStatic(), x.Method.Info, args));
+            emit(_compiler.Call(x.IsStatic(), x.Method.Info, args));
+        }
+
+        public override void VisitMethodCall(MethodCallInstruction x)
+        {
+            var thisObj = getValue(x.ThisObject);
+
+            var args = new List<Expression>();
+            foreach (var arg in x.Arguments)
+            {
+                args.Add(getValue(arg));
+            }
+
+            emit(_compiler.MethodCall(x.IsStatic(), thisObj, x.Method, args));
+        }
+
+        public override void VisitConstructor(ConstructorInstruction x)
+        {
+            var args = new List<Expression>();
+            foreach (var arg in x.Arguments)
+            {
+                args.Add(getValue(arg));
+            }
+
+            emit(Expression.New(x.Constructor, args.ToArray()));
         }
 
         public override void VisitConstant(ConstantInstruction x)
@@ -97,6 +121,19 @@ namespace SharpServer.Compiling
         public override void VisitParam(ParamInstruction x)
         {
             emit(_compiler.Param(x.Declaration.Name));
+        }
+
+        public override void VisitAssign(AssignInstruction x)
+        {
+            var targetVar = _compiler.Variable(x.Target);
+            var assignedValue = getValue(x.AssignedValue);
+
+            emit(Expression.Assign(targetVar, assignedValue));
+        }
+
+        public override void VisitVariable(VariableInstruction x)
+        {
+            emit(_compiler.Variable(x));
         }
 
         public override void VisitPair(PairInstruction x)
@@ -146,6 +183,26 @@ namespace SharpServer.Compiling
             emit(Expression.Block(ifStatement, tmpVariable));
         }
 
+        public override void VisitWhile(WhileInstruction x)
+        {
+            var condition = getValue(x.Condition);
+            var loopBlock = getValue(x.LoopBlock);
+
+            var breakLabel = Expression.Label();
+
+            var whileStatement = Expression.Loop(
+                    Expression.Block(
+                        Expression.IfThenElse(condition,
+                            loopBlock,
+                            Expression.Break(breakLabel)
+                            )
+                    ),
+                    breakLabel
+                );
+
+            emit(whileStatement);
+        }
+
         public override void VisitWrite(WriteInstruction x)
         {
             var value = getValue(x.Data);
@@ -174,7 +231,7 @@ namespace SharpServer.Compiling
 
         internal Expression pairsToContainer(IEnumerable<Expression> pairs, bool precompute)
         {
-            return _compiler.CallMethod(precompute, "PairsToContainer", pairs);
+            return _compiler.Call(precompute, "PairsToContainer", pairs);
         }
 
         private void emitWriteConcat(Instruction emitingInstruction, params object[] chunks)
@@ -194,13 +251,13 @@ namespace SharpServer.Compiling
             }
 
             var array = Expression.NewArrayInit(typeof(string), parts);
-            var concatenation = _compiler.CallMethod(emitingInstruction.IsStatic(), "Concat", array);
+            var concatenation = _compiler.Call(emitingInstruction.IsStatic(), "Concat", array);
             emitWrite(concatenation);
         }
 
         private Expression attributesToString(Expression attributesContainer, bool precompute)
         {
-            return _compiler.CallMethod(precompute, "AttributesToString", attributesContainer);
+            return _compiler.Call(precompute, "AttributesToString", attributesContainer);
         }
 
         private Expression getValue(Instruction instruction)

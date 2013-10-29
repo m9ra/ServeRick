@@ -23,11 +23,11 @@ namespace SharpServer.Compiling
             _args = args.ToArray();
         }
 
-        internal Expression CreateCall()
+        internal Expression CreateCall(Expression thisObj=null)
         {
             matchTypeParameters();
 
-            return Expression.Call(null, _method, _args);
+            return Expression.Call(thisObj, _method, _args);
         }
 
         private void matchTypeParameters()

@@ -26,6 +26,7 @@ namespace TestWebApp
         public void test()
         {
             SetParam("test", GET("test"));
+            SetParam("test2", new[] { "ValA", "ValB" });
             Layout("application.haml");
             //Layout("test.haml");
             Render("test.haml");

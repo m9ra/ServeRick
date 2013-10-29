@@ -24,7 +24,7 @@ namespace TestWebApp
                 typeof(SimpleController)
             )
         {
-            ErrorPage(404, "404.haml");
+        //    ErrorPage(404, "404.haml");
             PublicExtensions("png", "jpg", "css", "scss");
         }
     }

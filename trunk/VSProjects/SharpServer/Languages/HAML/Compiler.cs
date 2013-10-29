@@ -28,6 +28,15 @@ namespace SharpServer.Languages.HAML
         /// </summary>
         static readonly Parser Parser = new Parser(HamlGrammar);
 
+        private readonly Stack<Context> _contextStack = new Stack<Context>();
+
+        private Context CurrentContext { get { return _contextStack.Peek(); } }
+
+        static readonly Dictionary<string, string> TypeTranslations = new Dictionary<string, string>()
+        {
+            {"string","System.String"}
+        };
+
         private Compiler(Node root, Emitter emitter)
             : base(root, emitter)
         {
@@ -56,9 +65,47 @@ namespace SharpServer.Languages.HAML
         /// </summary>
         private void compile()
         {
+            pushContext();
             E.Emit(compileBlock(Root));
+            popContext();
+            if (_contextStack.Count != 0)
+            {
+                throw new NotSupportedException("Incorrect context stack handling");
+            }
         }
 
+        #region Context stack handling
+
+        /// <summary>
+        /// Push context to stack, with respect to previous contexts
+        /// </summary>
+        /// <returns>Pushed context</returns>
+        private Context pushContext()
+        {
+            Context pushedContext;
+            if (_contextStack.Count == 0)
+            {
+                pushedContext = new Context(E);
+            }
+            else
+            {
+                pushedContext = CurrentContext.CreateSubContext();
+            }
+
+            _contextStack.Push(pushedContext);
+            return pushedContext;
+        }
+
+        /// <summary>
+        /// Pop context from stack
+        /// </summary>
+        /// <returns>Popped stack</returns>
+        private Context popContext()
+        {
+            return _contextStack.Pop();
+        }
+
+        #endregion
 
         /// <summary>
         /// Declara parameters from declaratoins node
@@ -71,9 +118,22 @@ namespace SharpServer.Languages.HAML
                 foreach (var declaration in declarations.ChildNodes)
                 {
                     var name = GetTerminalText(declaration, "param", "identifier");
+                    var modifier = GetTerminalText(declaration, "typeModifier");
                     var type = GetTerminalText(declaration, "type");
 
-                    E.DeclareParam(name, type);
+
+                    if (TypeTranslations.ContainsKey(type))
+                        type = TypeTranslations[type];
+
+
+                    switch (modifier)
+                    {
+                        case "+":
+                            type = string.Format("System.Collections.Generic.IEnumerable`1[{0}]", type);
+                            break;
+                    }
+
+                    CurrentContext.DeclareParam(name, type);
                 }
             }
         }
@@ -172,7 +232,7 @@ namespace SharpServer.Languages.HAML
 
         #endregion
 
-        #region Content compilation 
+        #region Content compilation
 
         private Instruction compileContent(Node contentNode)
         {
@@ -327,24 +387,86 @@ namespace SharpServer.Languages.HAML
                     return resolveYield(node);
                 case "param":
                     return resolveParam(node);
+                case "interval":
+                    var fromVal = resolveRValue(node.ChildNodes[0]);
+                    var toVal = resolveRValue(node.ChildNodes[1]);
+                    return resolveInterval(fromVal, toVal);
                 case "condition":
                     var conditionValue = resolveRValue(StepToChild(node));
                     return resolveCondition(conditionValue);
+                case "methodCall":
+                    var calledObjNode = GetDescendant(node, "calledObject");
+                    var calledObj = resolveRValue(StepToChild(calledObjNode));
 
+                    var callNode = GetDescendant(node, "call");
+                    return resolveMethodCall(calledObj, callNode);
+                case "identifier":
+
+                    var variableName = GetTerminalText(node);
+                    return new VariableValue(variableName, CurrentContext);
                 default:
                     throw new NotImplementedException();
             }
         }
 
+        private RValue resolveInterval(RValue fromVal, RValue toVal)
+        {
+            return new IntervalValue(fromVal, toVal, CurrentContext);
+        }
+
+        private RValue resolveMethodCall(RValue calledObj, Node callNode)
+        {
+            //TODO create signature based support for lambdaBlocks
+            var callName = GetTerminalText(callNode, "callName", "identifier");
+            switch (callName)
+            {
+                case "each":
+                    var lambdaBlockNode = GetDescendant(callNode, "lambdaBlock");
+
+                    var enumeratedItemType = calledObj.ReturnType().GetGenericArguments()[0];
+                    var lambdaBlock = resolveLambdaBlock(lambdaBlockNode, enumeratedItemType);
+
+                    return new ForeachValue(calledObj, lambdaBlock, CurrentContext);
+
+                default:
+                    throw new NotSupportedException();
+            }
+        }
+
+        private LambdaBlock resolveLambdaBlock(Node lambdaBlockNode, params Type[] inputArgumentTypes)
+        {
+            var blockParameters = GetTerminalTexts(lambdaBlockNode, "blockArguments", "identifier");
+            if (blockParameters.Length != inputArgumentTypes.Length)
+                throw new NotSupportedException("Invalid lambda parameters count");
+
+            var lambdaContext = pushContext();
+            var declaredParameters = new List<VariableInstruction>();
+            for (int i = 0; i < blockParameters.Length; ++i)
+            {
+                var argType = inputArgumentTypes[i];
+                var parameterName = blockParameters[i];
+                var declaredParameter = lambdaContext.DeclareVariable(parameterName, argType);
+
+                declaredParameters.Add(declaredParameter);
+            }
+
+            var blocksNode = GetDescendant(lambdaBlockNode, "blocks");
+            var blocks = compileBlocks(blocksNode);
+
+            popContext();
+
+            return new LambdaBlock(blocks, declaredParameters, lambdaContext);
+        }
+
         private RValue resolveCondition(RValue conditionValue)
         {
-            return new ConditionValue(conditionValue, E);
+            return new ConditionValue(conditionValue, CurrentContext);
         }
 
         private RValue resolveParam(Node node)
         {
             var paramName = GetSubTerminalText(node);
-            return new ParamValue(paramName, E);
+            return new ParamValue(paramName, CurrentContext);
         }
 
         private RValue resolveCall(Node node)
@@ -352,7 +474,7 @@ namespace SharpServer.Languages.HAML
             var argValues = getArguments(node);
             var callName = GetSubTerminalText(node.ChildNodes[0]);
 
-            return new CallValue(callName, argValues, E);
+            return new CallValue(callName, argValues, CurrentContext);
         }
 
         private RValue[] getArguments(Node callNode)
@@ -385,7 +507,7 @@ namespace SharpServer.Languages.HAML
             if (symbolNode == null)
                 return null;
 
-            return new LiteralValue(GetTerminalText(symbolNode).Substring(1), E);
+            return new LiteralValue(GetTerminalText(symbolNode).Substring(1), CurrentContext);
         }
 
         private RValue resolveShortKey(Node shortKeyNode)
@@ -393,30 +515,36 @@ namespace SharpServer.Languages.HAML
             var keyText = GetTerminalText(shortKeyNode);
             //remove ending :
             keyText = keyText.Substring(0, keyText.Length - 1);
-            return new LiteralValue(keyText, E);
+            return new LiteralValue(keyText, CurrentContext);
         }
 
         private RValue resolveLiteralValue(string literal)
         {
             //TODO proper literal resolving
 
+            object literalValue;
+
             if (literal.StartsWith("\"") && literal.EndsWith("\""))
             {
-                literal = literal.Substring(1, literal.Length - 2);
+                literalValue = literal.Substring(1, literal.Length - 2);
             }
-            else
+            else 
             {
-                throw new NotImplementedException();
+                int number;
+                if (int.TryParse(literal, out number))
+                    literalValue = number;
+                else
+                    throw new NotImplementedException();
             }
 
-            return new LiteralValue(literal, E);
+            return new LiteralValue(literalValue, CurrentContext);
         }
 
         private RValue resolveKeyPair(Node pairNode)
         {
             var key = resolveRValue(pairNode.ChildNodes[0]);
             var value = resolveRValue(pairNode.ChildNodes[1]);
-            return new PairValue(key, value, E);
+            return new PairValue(key, value, CurrentContext);
         }
 
         private RValue resolveYield(Node yieldNode)
@@ -424,7 +552,7 @@ namespace SharpServer.Languages.HAML
             var symbolNode = GetDescendant(yieldNode, "symbol");
             var symbol = resolveSymbol(symbolNode);
 
-            return new YieldValue(symbol, E);
+            return new YieldValue(symbol, CurrentContext);
         }
 
         private RValue resolveHashValue(Node hashNode)
@@ -435,7 +563,7 @@ namespace SharpServer.Languages.HAML
             {
                 pairValues.Add(resolveRValue(pair));
             }
-            return new HashValue(pairValues, E);
+            return new HashValue(pairValues, CurrentContext);
         }
 
         #endregion
@@ -462,9 +590,9 @@ namespace SharpServer.Languages.HAML
 
             if (tag == null)
                 //implicit tag
-                tag = new LiteralValue("div", E);
+                tag = new LiteralValue("div", CurrentContext);
 
-            return new TagValue(tag, classAttrib, id, hash, E);
+            return new TagValue(tag, classAttrib, id, hash, CurrentContext);
         }
 
         private RValue getClassAttrib(Node headNode)
@@ -475,7 +603,7 @@ namespace SharpServer.Languages.HAML
                 return null;
 
             var classAttrib = string.Join(" ", classes);
-            return new LiteralValue(classAttrib, E);
+            return new LiteralValue(classAttrib, CurrentContext);
         }
 
         private RValue getTagName(Node headNode)
@@ -484,7 +612,7 @@ namespace SharpServer.Languages.HAML
             if (terms.Length < 1)
                 return null;
 
-            return new LiteralValue(terms[0], E);
+            return new LiteralValue(terms[0], CurrentContext);
         }
 
         private RValue getId(Node headNode)
@@ -493,7 +621,7 @@ namespace SharpServer.Languages.HAML
             if (terms.Length < 1)
                 return null;
 
-            return new LiteralValue(terms[0], E);
+            return new LiteralValue(terms[0], CurrentContext);
         }
 
         private Dictionary<string, RValue> parseHash(Node hashNode)

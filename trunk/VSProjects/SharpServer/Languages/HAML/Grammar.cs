@@ -59,7 +59,7 @@ namespace SharpServer.Languages.HAML
             generateTemplateGrammar(statement);
 
             MarkPunctuation("", "!!!", ".", "#", "%", "render", "=>", ",",
-                ")", "(", "}", "{", "@", "else", "if"
+                ")", "(", "}", "{", "@", "|", "else", "if", "do", ".."
                 );
         }
 
@@ -77,24 +77,30 @@ namespace SharpServer.Languages.HAML
             var elseBranch = NT("elseBranch");
             var branch = NT("branch");
 
+            var methodCall = NT("methodCall");
             var call = NT("call");
             var callName = NT("callName");
             var yield = NT("yield");
 
             var argList = NT("argList");
             var args = NT("args");
+            var calledObject = NT("calledObject");
 
             var keyPair = NT("keyPair");
             var keyPairs = NT("keyPairs");
 
+            var interval = NT("interval");
             var value = NT("value");
+
+            var blockArguments = NT("blockArguments");
+            var lambdaBlock = NT("lambdaBlock");
 
             var symbol = T_REG(":[a-zA-Z][a-zA-Z01-9_]*", "symbol");
             var shortKey = T_REG("[a-zA-Z][a-zA-Z01-9_]*:", "shortKey");
             var identifier = T_REG("[a-zA-Z][a-zA-Z01-9_]*", "identifier")
                 .Exclude("yield", "if", "else");
 
-            var numberLiteral = T_REG("/d+", "number");
+            var numberLiteral = T_REG(@"\d+", "number");
             var stringLiteral = T_REG(@""" [^""]* """, "string");
 
             #endregion
@@ -112,19 +118,29 @@ namespace SharpServer.Languages.HAML
             //let last EOL be consumed from parent
             branch.Rule = statement | (EOL + INDENT + blocks + DEDENT);
 
+            //lambda block
+            lambdaBlock.Rule = "do" + blockArguments + EOL + INDENT + blocks + DEDENT;
+            blockArguments.Rule = "|" + identifier + "|";
+
             //arguments
             argList.Rule = ("(" + args + ")") | args | Empty;
             args.Rule = (expression + "," + args) | expression;
 
             //call
-            call.Rule = callName + argList;
+            call.Rule = callName + argList + Q(lambdaBlock);
             callName.Rule = identifier;
+
+            //method call
+            methodCall.Rule = calledObject + "." + call;
+            calledObject.Rule = expression;
 
             //expression           
             yield.Rule = "yield" + (symbol | Empty);
-            expression.Rule = yield | keyPair | symbol | value | call | identifier | param;
+            expression.Rule = yield | keyPair | symbol | value | call | methodCall | identifier | param | interval;
             keyPair.Rule = (symbol + "=>" + expression) | (shortKey + expression);
             keyPairs.Rule = MakeStarRule(keyPair, ",");
+
+            interval.Rule = expression + ".." + expression;
 
             //literals
             value.Rule = stringLiteral | numberLiteral;
@@ -161,9 +177,10 @@ namespace SharpServer.Languages.HAML
             var paramDeclarations = NT("paramDeclarations");
             var paramDeclaration = NT("paramDeclaration");
 
+            var typeModifier = T_REG("\\+", "typeModifier");
             var type = T_REG("\\w+", "type");
             var identifier = T_REG("[a-zA-Z_][a-zA-Z01-9_]*", "identifier");
-            var rawOutput = T_REG("[^!%#={.][^\\r\\n]*", "rawOutput");
+            var rawOutput = T_REG("[^@!%#={.-][^\\r\\n]*", "rawOutput");
 
             #endregion
 
@@ -174,10 +191,11 @@ namespace SharpServer.Languages.HAML
             blocks.Rule = MakeStarRule(block);
 
             containerBlock.Rule = head + EOL + INDENT + blocks + DEDENT;
-            contentBlock.Rule = (head + EOL + Q(INDENT + content + DEDENT)) | (Q(head) + content + EOL);
+            //TODO: better EOL semantics
+            contentBlock.Rule = (head + EOL + Q(INDENT + content + EOL + DEDENT)) | (Q(head) + content + Q(EOL));
 
             //content rules
-            content.Rule = code | rawOutput;
+            content.Rule = (code | rawOutput);
             code.Rule = codePrefix + statement;
 
             //head rules
@@ -200,7 +218,7 @@ namespace SharpServer.Languages.HAML
 
             //params
             paramDeclarations.Rule = MakeStarRule(paramDeclaration);
-            paramDeclaration.Rule = param + type + EOL;
+            paramDeclaration.Rule = param + Q(typeModifier) + type + EOL;
             param.Rule = "@" + identifier;
 
             MarkTransient(attrib);

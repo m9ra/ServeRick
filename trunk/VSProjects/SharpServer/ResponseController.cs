@@ -53,7 +53,7 @@ namespace SharpServer
             return Request.GetPOST(varName);
         }
 
-        protected void SetParam(string paramName, string paramValue)
+        protected void SetParam(string paramName, object paramValue)
         {
             Response.SetParam(paramName, paramValue);
         }

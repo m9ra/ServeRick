@@ -79,7 +79,7 @@ namespace SharpServer.Compiling
             {
                 var terminals = from label in waitingContext.IncommingEdges.WaitingLabels select label.Terminal;
                 var waitingTerms = string.Join("', '", (object[])terminals.ToArray());
-                var description = string.Format("expected: '{0}'", waitingTerms);
+                var description = string.Format("expected: '{0}', but got: '{1}'", waitingTerms,waitingContext.Token);
 
                 var error = new SyntaxError(waitingContext, description);
                 errors.Add(error);
@@ -98,7 +98,7 @@ namespace SharpServer.Compiling
             var output = new StringBuilder();
             foreach (var error in errors)
             {
-                output.AppendFormat("{0} at '{1}',\nNear: '{2}'",error.Description,error.Location,error.NearPreview);
+                output.AppendFormat("{0} at '{1}',\nNear: '{2}'\n\n",error.Description,error.Location,error.NearPreview);
             }
 
             return output.ToString();

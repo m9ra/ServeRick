@@ -27,8 +27,8 @@ namespace TestWebApp
         protected override ResponseManagerBase createResponseManager()
         {
             var manager = new SimpleControllerManager(this, _rootPath);
-            manager.AddDirectoryContent("");
-//            manager.AddFileResource("test.haml");
+            /**/manager.AddDirectoryContent("");
+     /*/       manager.AddFileResource("test.haml");/**/
 
             return manager;
         }

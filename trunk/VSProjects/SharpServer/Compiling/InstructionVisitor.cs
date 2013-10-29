@@ -32,7 +32,19 @@ namespace SharpServer.Compiling
             {
                 arg.VisitMe(this);
             }
-            VisitInstruction(x.ThisObject);
+            x.ThisObject.VisitMe(this);
+
+            VisitInstruction(x);
+        }
+
+
+        public virtual void VisitConstructor(ConstructorInstruction x)
+        {
+            foreach (var arg in x.Arguments)
+            {
+                arg.VisitMe(this);
+            }
+
             VisitInstruction(x);
         }
 
@@ -102,5 +114,28 @@ namespace SharpServer.Compiling
 
             VisitInstruction(x);
         }
+
+
+        public virtual void VisitAssign(AssignInstruction x)
+        {
+            x.Target.VisitMe(this);
+            x.AssignedValue.VisitMe(this);
+
+            VisitInstruction(x);
+        }
+
+        public virtual void VisitVariable(VariableInstruction x)
+        {
+            VisitInstruction(x);
+        }
+
+        public virtual void VisitWhile(WhileInstruction x)
+        {
+            x.Condition.VisitMe(this);
+            x.LoopBlock.VisitMe(this);
+
+            VisitInstruction(x);
+        }
+
     }
 }

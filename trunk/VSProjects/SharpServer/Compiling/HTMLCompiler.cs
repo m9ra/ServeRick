@@ -24,6 +24,7 @@ namespace SharpServer.Compiling
         private static readonly MethodInfo WriteMethod = ResponseType.GetMethod("Write");
         private static readonly MethodInfo ConvertBytesMethod = typeof(HTMLCompiler).GetMethod("ConvertBytes", BindingFlags.Static | BindingFlags.NonPublic);
 
+        private readonly Dictionary<VariableInstruction, ParameterExpression> _declaredVariables = new Dictionary<VariableInstruction, ParameterExpression>();
         private readonly List<ParameterExpression> _temporaryVariables = new List<ParameterExpression>();
         private readonly Dictionary<string, ParameterExpression> _paramStorages = new Dictionary<string, ParameterExpression>();
 
@@ -68,21 +69,39 @@ namespace SharpServer.Compiling
             return _paramStorages[paramName];
         }
 
-        public Expression CallMethod(bool precompute, string name, params Expression[] args)
+        internal Expression Variable(VariableInstruction variableOccurance)
         {
-            return CallMethod(precompute, name, (IEnumerable<Expression>)args);
+            ParameterExpression variable;
+
+            if (!_declaredVariables.TryGetValue(variableOccurance, out variable))
+            {
+                variable = GetTemporaryVariable(variableOccurance.VariableType);
+                _declaredVariables[variableOccurance] = variable;
+            }
+
+            return variable;
         }
 
-        public Expression CallMethod(bool precompute, string name, IEnumerable<Expression> args)
+        public Expression Call(bool precompute, string name, params Expression[] args)
+        {
+            return Call(precompute, name, (IEnumerable<Expression>)args);
+        }
+
+        public Expression Call(bool precompute, string name, IEnumerable<Expression> args)
         {
             var method = ResponseHandlerProvider.CompilerHelpers.GetMethod(name);
-            return CallMethod(precompute, method.Info, args);
+            return Call(precompute, method.Info, args);
         }
 
-        public Expression CallMethod(bool precompute, MethodInfo methodInfo, IEnumerable<Expression> args)
+        public Expression Call(bool precompute, MethodInfo methodInfo, IEnumerable<Expression> args)
+        {
+            return MethodCall(precompute, null, methodInfo, args);
+        }
+
+        public Expression MethodCall(bool precompute, Expression thisObj, MethodInfo methodInfo, IEnumerable<Expression> args)
         {
             var matcher = new MethodMatcher(methodInfo, args);
-            var call = matcher.CreateCall();
+            var call = matcher.CreateCall(thisObj);
 
             if (precompute)
                 return precomputeExpression(call);
@@ -172,7 +191,7 @@ namespace SharpServer.Compiling
             {
                 var nameExpr = Expression.Constant(storage.Name);
 
-                var getParam = CallMethod(false, "Param", ResponseParameter, nameExpr);
+                var getParam = Call(false, "Param", ResponseParameter, nameExpr);
                 getParam = Expression.Convert(getParam, storage.Type);
                 var assign = Expression.Assign(storage, getParam);
                 compiled.Add(assign);
@@ -196,6 +215,11 @@ namespace SharpServer.Compiling
 
         internal Expression WriteBytes(Expression data)
         {
+            if (data.Type != typeof(string))
+            {
+                data = Expression.Call(data,typeof(object).GetMethod("ToString"));
+            }
+
             var bytesProvider = Expression.Call(null, ConvertBytesMethod, data);
             return Expression.Call(ResponseParameter, WriteMethod, bytesProvider);
         }
@@ -239,7 +263,5 @@ namespace SharpServer.Compiling
         }
 
         #endregion
-
-
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,12 +13,140 @@ namespace SharpServer.Languages.HAML.Compiling
 {
     abstract class RValue
     {
-        protected readonly Emitter E;
+        protected readonly Context Context;
+
+        protected Emitter E { get { return Context.Emitter; } }
+
         internal abstract Instruction ToInstruction();
 
-        internal RValue(Emitter emitter)
+        internal abstract Type ReturnType();
+
+        internal RValue(Context context)
         {
-            E = emitter;
+            Context = context;
+        }
+    }
+
+    class VariableValue : RValue
+    {
+        readonly VariableInstruction _variable;
+
+        internal VariableValue(string variableName, Context context)
+            : base(context)
+        {
+            _variable = context.GetVariable(variableName);
+            if (_variable == null)
+                throw new KeyNotFoundException("Variable: " + variableName);
+        }
+
+        internal override Instruction ToInstruction()
+        {
+            return _variable;
+        }
+
+        internal override Type ReturnType()
+        {
+            return _variable.ReturnType;
+        }
+    }
+
+    class LambdaBlock : RValue
+    {
+        private readonly Instruction _blockInstruction;
+        internal readonly VariableInstruction[] Parameters;
+
+        internal LambdaBlock(Instruction blockInstruction, IEnumerable<VariableInstruction> blockParameters, Context context)
+            : base(context)
+        {
+            _blockInstruction = blockInstruction;
+            Parameters = blockParameters.ToArray();
+        }
+
+        internal override Instruction ToInstruction()
+        {
+            return _blockInstruction;
+        }
+
+        internal override Type ReturnType()
+        {
+            return typeof(void);
+        }
+    }
+
+    class IntervalValue : RValue
+    {
+        readonly RValue _from;
+        readonly RValue _to;
+
+        internal IntervalValue(RValue from, RValue to, Context context)
+            :base(context)
+        {
+            _from = from;
+            _to = to;
+        }
+
+        internal override Instruction ToInstruction()
+        {
+            return E.CreateObject<HAMLInterval>(_from.ToInstruction(), _to.ToInstruction());
+        }
+
+        internal override Type ReturnType()
+        {
+            return typeof(IEnumerable<int>);
+        }
+    }
+
+    class ForeachValue : RValue
+    {
+        readonly RValue _enumerated;
+
+        readonly LambdaBlock _block;
+
+
+        internal ForeachValue(RValue enumerated, LambdaBlock block, Context context)
+            : base(context)
+        {
+            _enumerated = enumerated;
+            _block = block;
+        }
+
+        internal override Instruction ToInstruction()
+        {
+            var enumerated = _enumerated.ToInstruction();
+            var block = _block.ToInstruction();
+            var enumeratedParam = _block.Parameters[0];
+            var enumeratedType = enumeratedParam.VariableType;
+
+            var enumeratorType = typeof(IEnumerator<>).MakeGenericType(enumeratedType);
+            var enumeratorVar = E.CreateVariable("Enumerator", enumeratorType);
+
+            var getEnumerator = E.MethodCall(enumerated, "GetEnumerator");
+            var assignEnumerator = E.Assign(enumeratorVar, getEnumerator);
+            var moveNextCall = E.MethodCall(enumeratorVar, typeof(IEnumerator).GetMethod("MoveNext"));
+            var current = E.MethodCall(enumeratorVar, "get_Current");
+            var assignCurrent = E.Assign(enumeratedParam, current);
+
+            var loopSequence=E.Sequence(new []{
+                assignCurrent,
+
+                block
+            });
+
+
+            var result = E.Sequence(new[]{
+                assignEnumerator,
+
+                E.While(moveNextCall,
+                    loopSequence
+                )
+            });
+
+            return result;
+        }
+
+        internal override Type ReturnType()
+        {
+            return typeof(void);
         }
     }
 
@@ -25,8 +154,8 @@ namespace SharpServer.Languages.HAML.Compiling
     {
         internal readonly RValue Identifier;
 
-        internal YieldValue(RValue identifier, Emitter emitter)
-            : base(emitter)
+        internal YieldValue(RValue identifier, Context context)
+            : base(context)
         {
             Identifier = identifier;
         }
@@ -36,6 +165,11 @@ namespace SharpServer.Languages.HAML.Compiling
             var identifierInstr = Identifier == null ? null : Identifier.ToInstruction();
             return E.Yield(identifierInstr);
         }
+
+        internal override Type ReturnType()
+        {
+            return typeof(void);
+        }
     }
 
     class ResponseCallValue : RValue
@@ -44,8 +178,8 @@ namespace SharpServer.Languages.HAML.Compiling
 
         internal readonly string CallName;
 
-        internal ResponseCallValue(string callName, RValue[] args, Emitter emitter)
-            : base(emitter)
+        internal ResponseCallValue(string callName, RValue[] args, Context context)
+            : base(context)
         {
             Args = args;
             CallName = callName;
@@ -61,14 +195,19 @@ namespace SharpServer.Languages.HAML.Compiling
 
             return E.ResponseCall(CallName, argExprs.ToArray());
         }
+
+        internal override Type ReturnType()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     class ConditionValue : RValue
     {
         internal readonly RValue Value;
 
-        internal ConditionValue(RValue value, Emitter emitter)
-            : base(emitter)
+        internal ConditionValue(RValue value, Context context)
+            : base(context)
         {
             Value = value;
         }
@@ -81,6 +220,11 @@ namespace SharpServer.Languages.HAML.Compiling
 
             return E.Not(E.IsEqual(valueInstruction, defaultValue));
         }
+
+        internal override Type ReturnType()
+        {
+            return typeof(bool);
+        }
     }
 
     class CallValue : RValue
@@ -88,8 +232,8 @@ namespace SharpServer.Languages.HAML.Compiling
         internal readonly string CallName;
         internal readonly RValue[] Args;
 
-        internal CallValue(string callName, RValue[] args, Emitter emitter)
-            : base(emitter)
+        internal CallValue(string callName, RValue[] args, Context context)
+            : base(context)
         {
             CallName = callName;
             Args = args;
@@ -105,13 +249,18 @@ namespace SharpServer.Languages.HAML.Compiling
 
             return E.Call(CallName, argExprs.ToArray());
         }
+
+        internal override Type ReturnType()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     class ParamValue : RValue
     {
         internal readonly string ParamName;
-        internal ParamValue(string paramName, Emitter emitter)
-            : base(emitter)
+        internal ParamValue(string paramName, Context context)
+            : base(context)
         {
             ParamName = paramName;
         }
@@ -120,13 +269,18 @@ namespace SharpServer.Languages.HAML.Compiling
         {
             return E.GetParam(ParamName);
         }
+
+        internal override Type ReturnType()
+        {
+            return Context.ParamType(ParamName);
+        }
     }
 
     class LiteralValue : RValue
     {
-        internal readonly string Literal;
-        internal LiteralValue(string literal, Emitter emitter) :
-            base(emitter)
+        internal readonly object Literal;
+        internal LiteralValue(object literal, Context context)
+            : base(context)
         {
             Literal = literal;
         }
@@ -136,14 +290,19 @@ namespace SharpServer.Languages.HAML.Compiling
         {
             return E.Constant(Literal);
         }
+
+        internal override Type ReturnType()
+        {
+            return Literal.GetType();
+        }
     }
 
     class HashValue : RValue
     {
         internal readonly IEnumerable<RValue> Pairs;
 
-        internal HashValue(IEnumerable<RValue> pairs, Emitter emitter)
-            : base(emitter)
+        internal HashValue(IEnumerable<RValue> pairs, Context context)
+            : base(context)
         {
             Pairs = pairs;
         }
@@ -159,6 +318,11 @@ namespace SharpServer.Languages.HAML.Compiling
 
             return E.Container(pairInstructions);
         }
+
+        internal override Type ReturnType()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     class PairValue : RValue
@@ -167,8 +331,8 @@ namespace SharpServer.Languages.HAML.Compiling
 
         internal readonly RValue Value;
 
-        internal PairValue(RValue key, RValue value, Emitter emitter)
-            : base(emitter)
+        internal PairValue(RValue key, RValue value, Context context)
+            : base(context)
         {
             Key = key;
             Value = value;
@@ -177,6 +341,11 @@ namespace SharpServer.Languages.HAML.Compiling
         internal override Instruction ToInstruction()
         {
             return E.Pair(Key.ToInstruction(), Value.ToInstruction());
+        }
+
+        internal override Type ReturnType()
+        {
+            return typeof(KeyValuePair<,>).MakeGenericType(Key.ReturnType(), Value.ReturnType());
         }
     }
 
@@ -192,8 +361,8 @@ namespace SharpServer.Languages.HAML.Compiling
 
         Instruction _content;
 
-        internal TagValue(RValue tag, RValue explClass, RValue explId, RValue attributes, Emitter emitter)
-            : base(emitter)
+        internal TagValue(RValue tag, RValue explClass, RValue explId, RValue attributes, Context context)
+            : base(context)
         {
             TagName = tag;
             ExplicitClass = explClass;
@@ -250,6 +419,11 @@ namespace SharpServer.Languages.HAML.Compiling
             }
 
             return attributes;
+        }
+
+        internal override Type ReturnType()
+        {
+            return typeof(void);
         }
     }
 }

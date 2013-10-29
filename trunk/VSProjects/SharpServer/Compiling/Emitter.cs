@@ -16,12 +16,9 @@ namespace SharpServer.Compiling
     /// </summary>
     public class Emitter
     {
-        private readonly static Dictionary<string, string> TypeTranslations = new Dictionary<string, string>()
-        {
-            {"string","System.String"}
-        };
-
         private readonly Dictionary<string, ParamDeclaration> _declarations = new Dictionary<string, ParamDeclaration>();
+
+        private readonly List<VariableInstruction> _variables = new List<VariableInstruction>();
 
         private readonly LinkedList<Instruction> _emitted = new LinkedList<Instruction>();
 
@@ -45,17 +42,22 @@ namespace SharpServer.Compiling
 
         #region API for declarations
 
-        public void DeclareParam(string name, string typeName)
+        public Type ResolveType(string typeName)
         {
-            if (TypeTranslations.ContainsKey(typeName))
-                typeName = TypeTranslations[typeName];
-
             var type = Type.GetType(typeName);
             if (type == null)
-                throw new NotSupportedException("Unknonw type: " + typeName);
-            var declaration = new ParamDeclaration(name, type);
+                throw new NotSupportedException("Unknow type: " + typeName);
+
+            return type;
+        }
+
+        internal ParamInstruction DeclareParam(string name, Type paramType)
+        {
+            var declaration = new ParamDeclaration(name, paramType);
 
             _declarations.Add(declaration.Name, declaration);
+
+            return new ParamInstruction(declaration);
         }
 
         #endregion
@@ -83,11 +85,41 @@ namespace SharpServer.Compiling
             return new CallInstruction(methodInfo, args);
         }
 
+
+        public Instruction CreateObject<ObjectType>(params Instruction[] ctorArgs)
+        {
+            var type=typeof(ObjectType);
+            var argTypes=from arg in ctorArgs select arg.ReturnType;
+            var ctorInfo = type.GetConstructor(argTypes.ToArray());
+
+            if (ctorInfo == null)
+                throw new KeyNotFoundException("Constructor hasn't been found");
+
+            return new ConstructorInstruction(ctorInfo, ctorArgs);
+        }
+
+
+        public Instruction MethodCall(Instruction thisObj, string methodName, params Instruction[] args)
+        {
+            //TODO correct resolving
+            var methodInfo = thisObj.ReturnType.GetMethod(methodName,BindingFlags.Instance | BindingFlags.Public |BindingFlags.FlattenHierarchy);
+
+            return MethodCall(thisObj, methodInfo, args);
+        }
+
+        public Instruction MethodCall(Instruction thisObj, MethodInfo methodInfo , params Instruction[] args)
+        {
+            if (methodInfo == null)
+                throw new NotSupportedException("Cannot find requested method");
+
+            return new MethodCallInstruction(thisObj, methodInfo, args);
+        }
+
         public Instruction ResponseCall(string methodName, Instruction[] args)
         {
             var thisObj = new ResponseInstruction();
-            var methodInfo = getResponseMethod(methodName);
-            return new MethodCallInstruction(thisObj, methodInfo, args);
+            var method = getResponseMethod(methodName);
+            return new MethodCallInstruction(thisObj, method.Info, args);
         }
 
         /// <summary>
@@ -153,6 +185,11 @@ namespace SharpServer.Compiling
             var yield = getCompilerMethod("Yield");
             return new CallInstruction(yield, new ResponseInstruction(), identifierInstr);
         }
+        
+        internal Instruction While(Instruction condition, Instruction loopBlock)
+        {
+            return new WhileInstruction(condition, loopBlock);
+        }
 
         internal Instruction DefaultValue(Type type)
         {
@@ -163,6 +200,20 @@ namespace SharpServer.Compiling
             }
 
             return Constant(null, type);
+        }
+
+        internal VariableInstruction CreateVariable(string nameHint, Type variableType)
+        {
+            var variable=new VariableInstruction(nameHint, variableType);
+
+            _variables.Add(variable);
+
+            return variable;
+        }
+
+        internal Instruction Assign(VariableInstruction variable, Instruction assignedValue)
+        {
+            return new AssignInstruction(variable, assignedValue);
         }
 
         internal Instruction IsEqual(Instruction value1, Instruction value2)

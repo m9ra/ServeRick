@@ -21,7 +21,7 @@ namespace SharpServer
         /// <summary>
         /// TODO strongly typed parameters
         /// </summary>
-        private readonly Dictionary<string, string> _parameters = new Dictionary<string, string>();
+        private readonly Dictionary<string, object> _parameters = new Dictionary<string, object>();
         private readonly Queue<ResponseWorkItem> _workItems = new Queue<ResponseWorkItem>();
         protected readonly Dictionary<string, string> _responseHeaders = new Dictionary<string, string>();        
 
@@ -154,14 +154,14 @@ namespace SharpServer
             Client.Send(bytes, sendQueue);
         }
 
-        internal void SetParam(string paramName, string paramValue)
+        internal void SetParam(string paramName, object paramValue)
         {
             _parameters[paramName] = paramValue;
         }
 
         public object GetParam(string paramName)
         {
-            string result;
+            object result;
             _parameters.TryGetValue(paramName, out result);
             return result;
         }

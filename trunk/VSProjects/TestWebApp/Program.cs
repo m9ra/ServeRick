@@ -12,6 +12,7 @@ namespace TestWebApp
     {
         static void Main(string[] args)
         {
+
             if (args.Length != 1)
             {
                 Console.WriteLine("Expects path to root folder of web");
