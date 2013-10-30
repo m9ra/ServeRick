@@ -51,9 +51,9 @@
     <Compile Include="WebHelper.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SharpServer\SharpServer.csproj">
+    <ProjectReference Include="..\ServeRick\ServeRick.csproj">
       <Project>{448aa490-1b38-4c66-b915-eba43d4695df}</Project>
-      <Name>SharpServer</Name>
+      <Name>ServeRick</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

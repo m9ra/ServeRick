@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using SharpServer;
-using SharpServer.Networking;
+using ServeRick;
+using ServeRick.Networking;
 
 namespace TestWebApp
 {

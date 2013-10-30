@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using SharpServer.Networking;
-using SharpServer.Compiling;
+using ServeRick.Networking;
+using ServeRick.Compiling;
 
 using System.IO;
 
-using SharpServer;
+using ServeRick;
 
 namespace TestWebApp
 {
@@ -24,7 +24,7 @@ namespace TestWebApp
                 typeof(SimpleController)
             )
         {
-        //    ErrorPage(404, "404.haml");
+            ErrorPage(404, "404.haml");
             PublicExtensions("png", "jpg", "css", "scss");
         }
     }
