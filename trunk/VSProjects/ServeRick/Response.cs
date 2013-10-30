@@ -38,7 +38,7 @@ namespace ServeRick
             Client = client;
             _processor = processor;
 
-            _responseHeaders["Server"] = "SharpServer";
+            _responseHeaders["Server"] = "ServeRick";
 
             _responseHeaders["Cache-Control"] = "max-age=0, private, must-revalidate";
             SetContentType("text/html; charset=utf-8"); //default content type

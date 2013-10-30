@@ -68,7 +68,6 @@
     <Compile Include="ActionInfo.cs" />
     <Compile Include="Attributes.cs" />
     <Compile Include="Compiling\CompilerBase.cs" />
-    <Compile Include="Compiling\GrammarBase.cs" />
     <Compile Include="Compiling\Instructions\AssignInstruction.cs" />
     <Compile Include="Compiling\Instructions\ConstructorCall.cs" />
     <Compile Include="Compiling\Instructions\ContainerInstruction.cs" />
@@ -125,7 +124,6 @@
     <Compile Include="Networking\HttpRequestParser.cs" />
     <Compile Include="Networking\HttpRequest.cs" />
     <Compile Include="Networking\NetworkConfiguration.cs" />
-    <Compile Include="Output.cs" />
     <Compile Include="ServerEnvironment.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Research.cs" />
@@ -140,10 +138,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\ExternalSources\Irony\010.Irony.2010.csproj">
-      <Project>{d81f5c91-d7db-46e5-bc99-49488fb6814c}</Project>
-      <Name>010.Irony.2010</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Parsing\Parsing.csproj">
       <Project>{abf0c475-c489-4c87-aa03-b8cf49f89f76}</Project>
       <Name>Parsing</Name>

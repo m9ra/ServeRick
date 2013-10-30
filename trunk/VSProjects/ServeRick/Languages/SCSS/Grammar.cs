@@ -6,16 +6,10 @@ using System.Threading.Tasks;
 
 using System.Globalization;
 
-using Irony;
-using Irony.Parsing;
-using Irony.Ast;
-using Irony.Parsing.Construction;
-
 using ServeRick.Compiling;
 
 namespace ServeRick.Languages.SCSS
 {
-    [Language("SCSS", "1.0", "Testing implementation for SCSS")]
     public class Grammar : Parsing.GrammarBase
     {
         public Grammar()

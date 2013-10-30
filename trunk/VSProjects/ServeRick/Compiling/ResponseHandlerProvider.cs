@@ -4,8 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Irony.Parsing;
-
 namespace ServeRick.Compiling
 {
     public class ResponseHandlerProvider

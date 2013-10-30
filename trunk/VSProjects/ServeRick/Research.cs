@@ -9,9 +9,6 @@ using System.Diagnostics;
 
 using System.Net;
 
-using Irony.Ast;
-using Irony.Parsing;
-
 using ServeRick.Networking;
 using ServeRick.Compiling;
 using ServeRick.Memory;
