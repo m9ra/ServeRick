@@ -12,8 +12,13 @@ namespace TestWebApp
     {
         public void index()
         {
-            Layout("application.haml");
-            Render("index.haml");
+            Query<TestItem>().Where("id", 2).ExecuteRow((row) =>
+            {
+                SetParam("row", row);
+
+                Layout("application.haml");
+                Render("index.haml");
+            });
         }
 
         [GET("/attribs/:name/:page")]

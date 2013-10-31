@@ -4,8 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using ServeRick.Processing;
 using ServeRick.Responsing;
 using ServeRick.Networking;
+using ServeRick.Database;
+
+
 
 namespace ServeRick
 {
@@ -15,31 +19,27 @@ namespace ServeRick
     /// This is just testing implementation that will be heavily changed
     /// </summary>
     public class Response
-    {        
-        private readonly ResponseProcessor _processor;
-        private readonly Dictionary<string, ResponseHandler> _contentsFor = new Dictionary<string, ResponseHandler>();
+    {
         /// <summary>
         /// TODO strongly typed parameters
         /// </summary>
         private readonly Dictionary<string, object> _parameters = new Dictionary<string, object>();
-        private readonly Queue<ResponseWorkItem> _workItems = new Queue<ResponseWorkItem>();
-        protected readonly Dictionary<string, string> _responseHeaders = new Dictionary<string, string>();        
+        protected readonly Dictionary<string, string> _responseHeaders = new Dictionary<string, string>();
+        private readonly Dictionary<string, ResponseHandler> _contentsFor = new Dictionary<string, ResponseHandler>();
 
         private bool _headersSent = false;
+        private bool _closeAfterSend = false;
         private string _statusLine = "HTTP/1.1 200 OK";
 
         protected Queue<byte[]> _toSend = new Queue<byte[]>();
-        
 
         internal readonly Client Client;
 
-        internal Response(Client client, ResponseProcessor processor)
+        internal Response(Client client)
         {
             Client = client;
-            _processor = processor;
 
             _responseHeaders["Server"] = "ServeRick";
-
             _responseHeaders["Cache-Control"] = "max-age=0, private, must-revalidate";
             SetContentType("text/html; charset=utf-8"); //default content type
         }
@@ -75,8 +75,9 @@ namespace ServeRick
 
         public void Render(ResponseHandler handler)
         {
-            var work = new ResponseWorkItem(Client, handler);
-            _workItems.Enqueue(work);
+            Client.EnqueueWork(
+                new ResponseHandlerWorkItem(handler)
+                );
         }
 
         public void Yield(string identifier)
@@ -89,30 +90,10 @@ namespace ServeRick
             }
         }
 
-        
-
         internal void ContentFor(string yieldIdentifier, ResponseHandler handler)
         {
             _contentsFor[yieldIdentifier] = handler;
         }
-
-        internal void RunWork(ResponseWorkItem work)
-        {
-            _workItems.Enqueue(work);
-            while (_workItems.Count > 0)
-            {
-                var currentWork = _workItems.Dequeue();
-                currentWork.Handler(this);
-            }
-            sendQueue();
-        }
-
-        internal void EnqueueToProcessor(ResponseHandler handler)
-        {
-            var work = new ResponseWorkItem(Client, handler);
-            _processor.EnqueueWork(work);
-        }
-
 
         /// <summary>
         /// Non blocking single threaded queue send
@@ -125,15 +106,17 @@ namespace ServeRick
                 return;
             }
 
-            if (_toSend.Count == 0 && _workItems.Count == 0)
+            if (_toSend.Count == 0)
             {
-                //there is no other work
-                Client.Close();
+                //nothing more to send
+                if (_closeAfterSend)
+                    //there is no other work
+                    Client.Close();
 
-                //TODO: there will be possible enqueuing of next work items
                 return;
             }
 
+            //send next data
             var data = _toSend.Dequeue();
             Client.Send(data, sendQueue);
         }
@@ -164,6 +147,12 @@ namespace ServeRick
             object result;
             _parameters.TryGetValue(paramName, out result);
             return result;
+        }
+
+        internal void Close()
+        {
+            _closeAfterSend = true;
+            sendQueue();
         }
     }
 }

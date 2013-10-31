@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using ServeRick.Database;
 using ServeRick.Compiling;
 
 namespace ServeRick
@@ -16,6 +17,8 @@ namespace ServeRick
 
         protected abstract InputManagerBase createInputManager();
 
+        protected abstract IEnumerable<DataTable> createTables();
+
         protected abstract Type[] getHelpers();
 
         protected WebApplication()
@@ -27,15 +30,19 @@ namespace ServeRick
         
         internal ResponseManagerBase CreateResponseManager(){
             var manager=createResponseManager();
-
             return manager;
         }
 
         internal InputManagerBase CreateInputManager()
         {
             var manager = createInputManager();
-
             return manager;
+        }
+
+        internal IEnumerable<DataTable> CreateTables()
+        {
+            var tables = createTables();
+            return tables;
         }
     }
 }

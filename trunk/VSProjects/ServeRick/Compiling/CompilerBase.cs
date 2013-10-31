@@ -59,7 +59,7 @@ namespace ServeRick.Compiling
         {
             var context = data.StartContext;
             var waitingContexts = new List<SourceContext>();
-            SourceContext lastFilledContext=null;
+
             while (context != null)
             {
                 if (context.IncommingEdges.WaitingLabels.Any())

@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ServeRick</RootNamespace>
-    <AssemblyName>SharpServer</AssemblyName>
+    <AssemblyName>ServeRick</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -98,10 +98,22 @@
     <Compile Include="Compiling\TypeFactory.cs" />
     <Compile Include="Compiling\TypeHelper.cs" />
     <Compile Include="Compiling\WebMethods.cs" />
+    <Compile Include="Database\DatabaseProcessor.cs" />
+    <Compile Include="Database\DataDriver.cs" />
+    <Compile Include="Database\RowQueryWorkItem.cs" />
+    <Compile Include="Database\DataTable.cs" />
+    <Compile Include="Database\TableQuery.cs" />
+    <Compile Include="Database\WhereClause.cs" />
+    <Compile Include="Database\DataRecord.cs" />
     <Compile Include="InputController.cs" />
     <Compile Include="InputManagerBase.cs" />
     <Compile Include="Languages\HAML\Compiling\Context.cs" />
     <Compile Include="Languages\HAML\Compiling\HAMLInterval.cs" />
+    <Compile Include="Modules\LightDataDriver.cs" />
+    <Compile Include="Modules\NamespaceDoc.cs" />
+    <Compile Include="Processing\ClientWorkItem.cs" />
+    <Compile Include="Processing\ProcessingUnit.cs" />
+    <Compile Include="Processing\WorkProcessor.cs" />
     <Compile Include="ResponseController.cs" />
     <Compile Include="ResponseManagerBase.cs" />
     <Compile Include="Languages\HAML\Compiler.cs" />
@@ -128,11 +140,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Research.cs" />
     <Compile Include="Response.cs" />
-    <Compile Include="Responsing\ResponseProcessor.cs" />
-    <Compile Include="Responsing\ResponseWorkItem.cs" />
+    <Compile Include="Responsing\OutputProcessor.cs" />
+    <Compile Include="Responsing\ResponseHandlerWorkItem.cs" />
     <Compile Include="WebApplication.cs" />
     <Compile Include="WebItem.cs" />
     <Compile Include="WebMethod.cs" />
+    <Compile Include="Processing\WorkItem.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

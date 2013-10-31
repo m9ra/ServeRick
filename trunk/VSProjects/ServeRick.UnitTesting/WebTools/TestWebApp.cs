@@ -23,5 +23,10 @@ namespace ServeRick.UnitTesting.WebTools
         {
             throw new NotImplementedException();
         }
+
+        protected override IEnumerable<Database.DataTable> createTables()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

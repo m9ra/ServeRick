@@ -5,28 +5,29 @@ using System.Text;
 using System.Threading.Tasks;
 
 using System.Threading;
+using System.Diagnostics;
 
-using ServeRick.Networking;
-
-namespace ServeRick.Responsing
+namespace ServeRick.Processing
 {
-    class ResponseProcessor
+    abstract class WorkProcessor
     {
-        readonly Queue<ResponseWorkItem> _toProcess = new Queue<ResponseWorkItem>();
+        readonly Queue<WorkItem> _toProcess = new Queue<WorkItem>();
 
         readonly object _L_toProcess = new object();
 
         readonly Thread _executionThread;
 
 
-        internal ResponseProcessor()
+        internal WorkProcessor()
         {
             _executionThread = new Thread(_run);
             _executionThread.Start();
         }
 
-        internal void EnqueueWork(ResponseWorkItem work)
+        internal void EnqueueWork(WorkItem work)
         {
+            Debug.Assert(work.PlannedProcessor == this);
+
             lock (_L_toProcess)
             {
                 _toProcess.Enqueue(work);
@@ -38,18 +39,17 @@ namespace ServeRick.Responsing
         {
             for (; ; )
             {
-                ResponseWorkItem work;
+                WorkItem work;
                 lock (_L_toProcess)
                 {
                     if (_toProcess.Count == 0)
                         //there is nothing to process.. wait
                         Monitor.Wait(_L_toProcess);
 
-                    work= _toProcess.Dequeue();
+                    work = _toProcess.Dequeue();
                 }
 
-                var response = work.Client.Response;
-                response.RunWork(work);
+                work.Run();
             }
         }
     }

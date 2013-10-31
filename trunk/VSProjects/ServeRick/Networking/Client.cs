@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 
 using ServeRick.Memory;
+using ServeRick.Processing;
 
 namespace ServeRick.Networking
 {
@@ -28,6 +29,8 @@ namespace ServeRick.Networking
     /// </summary>
     public class Client
     {
+        #region Private client members
+
         /// <summary>
         /// Socket for communication with client
         /// </summary>
@@ -39,18 +42,50 @@ namespace ServeRick.Networking
         readonly DataBuffer _buffer;
 
         /// <summary>
+        /// Queue used for work items that are waiting for processing.
+        /// Contained work items needs to be run to complete response.
+        /// </summary>
+        readonly Queue<ClientWorkItem> _responseWork = new Queue<ClientWorkItem>();
+
+        /// <summary>
+        /// Determine that work items in work queue are sended to processors
+        /// </summary>
+        bool _isResponseWorkStarted = false;
+
+        #endregion
+
+        #region Internal API exposed by client
+
+        /// <summary>
         /// Parser for http requests
         /// </summary>
         internal readonly HttpRequestParser Parser = new HttpRequestParser();
+
+        /// <summary>
+        /// TODO avoid multiple assigning
+        /// </summary>
+        internal ProcessingUnit Unit { get; set; }
+
+        #endregion
+
+        #region Public API exposed by client
 
         /// <summary>
         /// Response object is used for creating response for client
         /// </summary>
         public Response Response { get; internal set; }
 
+        /// <summary>
+        /// TODO avoid multiple assigning
+        /// </summary>
         public InputController Input { get; internal set; }
 
+        /// <summary>
+        /// Request collected for client
+        /// </summary>
         public HttpRequest Request { get { return Parser.Request; } }
+
+        #endregion
 
         internal Client(TcpClient clientSocket, DataBuffer clientBuffer)
         {
@@ -146,6 +181,56 @@ namespace ServeRick.Networking
         {
             _socket.Client.EndDisconnect(result);
             onDisconnected();
+        }
+
+        #endregion
+
+        #region Clients response work items handling
+
+        /// <summary>
+        /// Enqueue given work items to be processed to complete client response.
+        /// </summary>
+        /// <param name="workItems">Work items to be enqueued.</param>
+        internal void EnqueueWork(params ClientWorkItem[] workItems)
+        {
+            foreach (var work in workItems)
+            {
+                work.SetClient(this);
+                _responseWork.Enqueue(work);
+            }
+        }
+
+        /// <summary>
+        /// Start processing of response work items on client processing unit.
+        /// </summary>
+        internal void StartQueueProcessing()
+        {
+            if (_isResponseWorkStarted)
+                throw new NotSupportedException("Work processing can be started only once");
+
+            _isResponseWorkStarted = true;
+
+            ProcessNextWorkItem();
+        }
+
+        /// <summary>
+        /// Process next response work item in queue. If there the queue is
+        /// empty, response is closed
+        /// </summary>
+        internal void ProcessNextWorkItem()
+        {
+            if (!_isResponseWorkStarted)
+                throw new NotSupportedException("Next work item cannot be processed until work processing starts");
+
+            if (_responseWork.Count == 0)
+            {
+                Response.Close();
+                //work for currrent client has been done
+                return;
+            }
+
+            var work = _responseWork.Dequeue();
+            work.EnqueueToProcessor();
         }
 
         #endregion

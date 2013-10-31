@@ -9,7 +9,7 @@ using System.Reflection;
 using System.Linq.Expressions;
 
 using ServeRick.Networking;
-
+using ServeRick.Responsing;
 using ServeRick.Compiling;
 
 namespace ServeRick
@@ -262,7 +262,11 @@ namespace ServeRick
                 item = _404;
             }
 
-            client.Response.EnqueueToProcessor(item.Handler);
+            client.EnqueueWork(
+                new ResponseHandlerWorkItem(item.Handler)                
+                );
+
+            client.StartQueueProcessing();
         }
 
         #endregion

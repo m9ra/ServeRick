@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using System.Diagnostics;
 
+using ServeRick.Database;
 using ServeRick.Networking;
 
 namespace ServeRick
@@ -19,6 +20,12 @@ namespace ServeRick
         protected HttpRequest Request { get { return Response.Client.Request; } }
 
         protected ResponseManagerBase Manager { get; private set; }
+
+        protected TableQuery<ActiveRecord> Query<ActiveRecord>()
+            where ActiveRecord : DataRecord
+        {
+            return new TableQuery<ActiveRecord>(Response);
+        }
 
         internal void SetResponse(ResponseManagerBase manager, Response response)
         {
