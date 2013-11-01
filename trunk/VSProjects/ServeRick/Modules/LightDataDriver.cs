@@ -12,33 +12,40 @@ namespace ServeRick.Modules
     /// Light implementation of data driver, storing it's values in memory.
     /// Is supposed to be used as development only driver.
     /// </summary>
-    public class LightDataDriver<ActiveRecord> : DataDriver<ActiveRecord>
-        where ActiveRecord : DataRecord
+    public class LightDataDriver : DataDriver
     {
-        private readonly Dictionary<int, ActiveRecord> _records = new Dictionary<int, ActiveRecord>();
+        private readonly DataRecord[] _records;
 
-        public LightDataDriver(IEnumerable<ActiveRecord> records)
+        public LightDataDriver(IEnumerable<DataRecord> records)
         {
-            foreach (var record in records)
+            _records = records.ToArray();
+        }
+
+        #region Data driver API implementation
+
+        public override void Initialize<ActiveRecord>(DataTable<ActiveRecord> table)
+        {
+            foreach (var record in _records)
             {
-                _records.Add(record.ID, record);
+                if (!(record is ActiveRecord))
+                    continue;
+
+                table.MemoryRecords[record.ID] = record as ActiveRecord;
             }
         }
 
-
-        public override void ExecuteRow(TableQuery<ActiveRecord> query, RowExecutor<ActiveRecord> executor)
+        public override void ExecuteRow<ActiveRecord>(DataTable<ActiveRecord> table, TableQuery<ActiveRecord> query, RowExecutor<ActiveRecord> executor)
         {
             var items = query.Condition.ToArray();
-
 
             ActiveRecord result;
             switch (items.Length)
             {
                 case 0:
-                    result = _records.Values.First();
+                    result = table.MemoryRecords.Values.First();
                     break;
                 case 1:
-                    result = findItem(items[0]);
+                    result = findItem(table, items[0]);
                     break;
                 default:
                     throw new NotImplementedException("Resolve conditions");
@@ -47,15 +54,46 @@ namespace ServeRick.Modules
             executor(result);
         }
 
-        private ActiveRecord findItem(WhereItem condition)
+        public override void ExecuteRows<ActiveRecord>(DataTable<ActiveRecord> table, TableQuery<ActiveRecord> query, RowsExecutor<ActiveRecord> executor)
         {
-            if (condition.Operation != WhereOperation.Equal || condition.Column!="id")
+            IEnumerable<ActiveRecord> rows = table.MemoryRecords.Values;
+
+            foreach (var item in query.Condition)
+            {
+                rows = applyCondition(rows, item);
+            }
+
+            var result = rows.Take(query.MaxCount).ToArray();
+            executor(result);
+        }
+
+        #endregion
+
+        #region Private utilities
+
+        private IEnumerable<ActiveRecord> applyCondition<ActiveRecord>(IEnumerable<ActiveRecord> rows, WhereItem where)
+            where ActiveRecord : DataRecord
+        {
+            foreach (var row in rows)
+            {
+                
+            }
+
+            throw new NotImplementedException();
+        }
+
+        private ActiveRecord findItem<ActiveRecord>(DataTable<ActiveRecord> table, WhereItem condition)
+            where ActiveRecord : DataRecord
+        {
+            if (condition.Operation != WhereOperation.Equal || condition.Column != "id")
                 throw new NotImplementedException();
 
             ActiveRecord result;
-            _records.TryGetValue((int)condition.Operand, out result);
+            table.MemoryRecords.TryGetValue((int)condition.Operand, out result);
 
             return result;
         }
+
+        #endregion
     }
 }

@@ -10,10 +10,15 @@ namespace ServeRick.Database
     /// Driver for fetching active record data. Doesn't need to be thread safe.
     /// Query methods are called synchronously - they cannot block!!
     /// </summary>
-    /// <typeparam name="ActiveRecord">Type of drived ActiveRecord</typeparam>
-    public abstract class DataDriver<ActiveRecord>
-        where ActiveRecord:DataRecord
+    public abstract class DataDriver
     {
-        public abstract void ExecuteRow(TableQuery<ActiveRecord> query, RowExecutor<ActiveRecord> executor);
+        public abstract void ExecuteRow<ActiveRecord>(DataTable<ActiveRecord> table, TableQuery<ActiveRecord> query, RowExecutor<ActiveRecord> executor)
+            where ActiveRecord : DataRecord;
+        
+        public abstract void ExecuteRows<ActiveRecord>(DataTable<ActiveRecord> table, TableQuery<ActiveRecord> query, RowsExecutor<ActiveRecord> executor)
+            where ActiveRecord : DataRecord;
+
+        public abstract void Initialize<ActiveRecord>(DataTable<ActiveRecord> table)
+            where ActiveRecord : DataRecord;
     }
 }

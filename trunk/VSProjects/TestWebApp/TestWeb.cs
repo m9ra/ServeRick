@@ -43,12 +43,13 @@ namespace TestWebApp
 
         protected override IEnumerable<DataTable> createTables()
         {
-            return new DataTable[]{
-                DataTable.Create(new LightDataDriver<TestItem>(
-                new []{
+            var driver = new LightDataDriver(new []{
                     new TestItem(1,"Data1"),
                     new TestItem(2,"Data2")
-                }))
+                });
+
+            return new DataTable[]{
+                new DataTable<TestItem>(driver)
             };
         }
     }

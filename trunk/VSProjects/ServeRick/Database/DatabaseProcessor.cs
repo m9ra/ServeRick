@@ -18,13 +18,13 @@ namespace ServeRick.Database
             _tables[type] = table;
         }
 
-        internal DataDriver<ActiveRecord> GetDriver<ActiveRecord>()
+        internal DataTable<ActiveRecord> GetTable<ActiveRecord>()
             where ActiveRecord : DataRecord
         {
             var type = typeof(ActiveRecord);
             var table = _tables[type] as DataTable<ActiveRecord>;
 
-            return table.Driver;
+            return table;
         }
     }
 }

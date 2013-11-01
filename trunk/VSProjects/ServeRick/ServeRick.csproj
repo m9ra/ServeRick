@@ -39,7 +39,7 @@
     <OutputPath>bin\x86\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
@@ -99,9 +99,11 @@
     <Compile Include="Compiling\TypeHelper.cs" />
     <Compile Include="Compiling\WebMethods.cs" />
     <Compile Include="Database\DatabaseProcessor.cs" />
+    <Compile Include="Database\DatabaseWorkItem.cs" />
     <Compile Include="Database\DataDriver.cs" />
     <Compile Include="Database\RowQueryWorkItem.cs" />
     <Compile Include="Database\DataTable.cs" />
+    <Compile Include="Database\RowsQueryWorkItem.cs" />
     <Compile Include="Database\TableQuery.cs" />
     <Compile Include="Database\WhereClause.cs" />
     <Compile Include="Database\DataRecord.cs" />

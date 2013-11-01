@@ -15,22 +15,26 @@ namespace ServeRick.Database
         { }
 
         abstract internal Type GetRecordType();
-
-        public static DataTable Create<ActiveRecord>(DataDriver<ActiveRecord> drive)
-            where ActiveRecord : DataRecord
-        {
-            return new DataTable<ActiveRecord>(drive);
-        }
     }
 
     public class DataTable<ActiveRecord> : DataTable
         where ActiveRecord : DataRecord
     {
-        internal readonly DataDriver<ActiveRecord> Driver;
+        /// <summary>
+        /// Driver handling data in current table.
+        /// </summary>
+        internal readonly DataDriver Driver;
 
-        internal DataTable(DataDriver<ActiveRecord> driver)
+        /// <summary>
+        /// ActiveRecords stored in memory. Can be used for caching purposes or for memory storages.
+        /// </summary>
+        public readonly Dictionary<int, ActiveRecord> MemoryRecords = new Dictionary<int, ActiveRecord>();
+
+        public DataTable(DataDriver driver)
         {
             Driver = driver;
+
+            driver.Initialize(this);
         }
 
         internal override Type GetRecordType()
