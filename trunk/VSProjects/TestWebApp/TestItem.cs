@@ -13,8 +13,8 @@ namespace TestWebApp
         public string Data { get; set; }
 
         internal TestItem(int id, string data)
+            :base(id)
         {
-            ID = id;
             Data = data;
         }
     }

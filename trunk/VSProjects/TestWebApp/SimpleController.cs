@@ -12,7 +12,7 @@ namespace TestWebApp
     {
         public void index()
         {
-            Query<TestItem>().Where("id", 2).ExecuteRow((row) =>
+            Query<TestItem>().Find(2).ExecuteRow((row) =>
             {
                 SetParam("row", row);
 
