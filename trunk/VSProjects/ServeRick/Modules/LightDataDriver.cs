@@ -60,10 +60,12 @@ namespace ServeRick.Modules
 
             foreach (var item in query.Condition)
             {
-                rows = applyCondition(rows, item);
+                rows = applyCondition(table, rows, item);
             }
 
-            var result = rows.Take(query.MaxCount).ToArray();
+            rows = rows.Skip(query.Start).Take(query.MaxCount);
+            var result = new RowsResult<ActiveRecord>(rows, table.MemoryRecords.Count);
+
             executor(result);
         }
 
@@ -71,15 +73,28 @@ namespace ServeRick.Modules
 
         #region Private utilities
 
-        private IEnumerable<ActiveRecord> applyCondition<ActiveRecord>(IEnumerable<ActiveRecord> rows, WhereItem where)
+        private IEnumerable<ActiveRecord> applyCondition<ActiveRecord>(DataTable<ActiveRecord> table, IEnumerable<ActiveRecord> rows, WhereItem where)
             where ActiveRecord : DataRecord
         {
             foreach (var row in rows)
             {
-                
-            }
+                var column = table.GetColumn(where.Column, row);
 
-            throw new NotImplementedException();
+                switch (where.Operation)
+                {
+                    case WhereOperation.Equal:
+                        if (column == where.Operand)
+                            yield return row;
+                        break;
+                    case WhereOperation.HasSubstring:
+                        var value = column as string;
+                        if (value.Contains(where.Operand.ToString()))
+                            yield return row;
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
         }
 
         private ActiveRecord findItem<ActiveRecord>(DataTable<ActiveRecord> table, WhereItem condition)

@@ -65,12 +65,16 @@ namespace ServeRick.Compiling
             response.Yield(identifier);
         }
 
-        public static object Param(Response response, string identifier)
+        public static T Param<T>(Response response, string identifier)
         {
-            return response.GetParam(identifier);
+            var param = response.GetParam(identifier);
+            if (param == null)
+                return default(T);
+
+            return (T)param;
         }
 
-        public static bool IsEqual(object obj1, object obj2)
+        public static bool IsEqual<T1, T2>(T1 obj1, T2 obj2)
         {
             if (obj1 == null)
                 return obj2 == null;
@@ -80,7 +84,7 @@ namespace ServeRick.Compiling
 
         public static string Concat(params object[] parts)
         {
-            var result=string.Concat(parts);
+            var result = string.Concat(parts);
             return result;
         }
 

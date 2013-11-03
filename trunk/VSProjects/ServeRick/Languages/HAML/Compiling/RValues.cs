@@ -267,6 +267,8 @@ namespace ServeRick.Languages.HAML.Compiling
 
         internal readonly MethodInfo Method;
 
+        internal readonly FieldInfo Field;
+
         internal MethodCallValue(RValue thisObj, string callName, RValue[] args, Context context)
             : base(context)
         {
@@ -274,28 +276,42 @@ namespace ServeRick.Languages.HAML.Compiling
             Args = args;
             ThisObj = thisObj;
 
+            Field = resolveField();
             Method = resolveMethod();
         }
 
         internal override Instruction ToInstruction()
         {
+            //keep correct order because of side effects
             var thisObj = ThisObj.ToInstruction();
+
             var argExprs = new List<Instruction>();
             foreach (var arg in Args)
             {
                 argExprs.Add(arg.ToInstruction());
             }
 
-            return E.MethodCall(thisObj, Method, argExprs.ToArray());
+            if (Field == null)
+            {
+                return E.MethodCall(thisObj, Method, argExprs.ToArray());
+            }
+            else
+            {
+                return E.Field(thisObj, Field);
+            }
         }
 
         internal override Type ReturnType()
         {
-            return Method.ReturnType;
+            //Field precedence
+            return Field == null ? Method.ReturnType : Field.FieldType;
         }
 
         private MethodInfo resolveMethod()
         {
+            if (Field != null)
+                return null;
+
             MethodInfo method = null;
             if (
                 !tryFindMethod(ref method) &&
@@ -306,6 +322,17 @@ namespace ServeRick.Languages.HAML.Compiling
                 throw new KeyNotFoundException("Resolve setters,...");
 
             return method;
+        }
+
+        private FieldInfo resolveField()
+        {
+            if (Args.Length != 0)
+            {
+                return null;
+            }
+
+            var field = ThisType.GetField(MethodName);
+            return field;
         }
 
         private bool tryFindMethod(ref MethodInfo method)

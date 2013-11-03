@@ -78,6 +78,7 @@
     <Compile Include="Compiling\Instruction.cs" />
     <Compile Include="Compiling\Instructions\CallInstruction.cs" />
     <Compile Include="Compiling\Instructions\ConstantInstruction.cs" />
+    <Compile Include="Compiling\Instructions\FieldInstruction.cs" />
     <Compile Include="Compiling\Instructions\SequenceInstruction.cs" />
     <Compile Include="Compiling\Instructions\IfInstruction.cs" />
     <Compile Include="Compiling\Instructions\ParamInstruction.cs" />
@@ -104,6 +105,7 @@
     <Compile Include="Database\RowQueryWorkItem.cs" />
     <Compile Include="Database\DataTable.cs" />
     <Compile Include="Database\RowsQueryWorkItem.cs" />
+    <Compile Include="Database\RowsResult.cs" />
     <Compile Include="Database\TableQuery.cs" />
     <Compile Include="Database\WhereClause.cs" />
     <Compile Include="Database\DataRecord.cs" />

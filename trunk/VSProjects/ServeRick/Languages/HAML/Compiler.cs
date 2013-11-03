@@ -34,7 +34,8 @@ namespace ServeRick.Languages.HAML
 
         static readonly Dictionary<string, string> TypeTranslations = new Dictionary<string, string>()
         {
-            {"string","System.String"}
+            {"string","System.String"},
+            {"int","System.Int32"}
         };
 
         private Compiler(Node root, Emitter emitter)
@@ -479,26 +480,17 @@ namespace ServeRick.Languages.HAML
 
         private RValue[] getArguments(Node callNode)
         {
-            var argsNode = GetDescendant(callNode, "argList", "args");
+            var argNodes = GetDescendant(callNode, "argList", "args");
+            if(argNodes==null)
+                return new RValue[0];
 
             var args = new List<RValue>();
-
-            while (argsNode != null)
+            foreach (var argNode in argNodes.ChildNodes)
             {
-                var argNode = argsNode;
-                if (argsNode.Name == "args")
-                {
-                    argNode = argsNode.ChildNodes[0];
-                }
-                var value = resolveRValue(argNode);
-                args.Add(value);
-
-                if (argsNode.ChildNodes.Count == 1)
-                    break;
-
-                argsNode = GetDescendant(argsNode.ChildNodes[1], "args");
+                var arg = resolveRValue(argNode);
+                args.Add(arg);
             }
-
+            
             return args.ToArray();
         }
 

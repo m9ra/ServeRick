@@ -38,7 +38,7 @@ namespace ServeRick.Networking
             (?<Name> [^&=]+)
             =?
             (?<Value> [^&=]*)
-        )*
+        &?)*
         ", RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
 
         public bool IsError { get; private set; }

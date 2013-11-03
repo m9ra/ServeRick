@@ -89,6 +89,10 @@ namespace ServeRick.Compiling
             return new ConstructorInstruction(ctorInfo, ctorArgs);
         }
 
+        public Instruction Field(Instruction thisObj, FieldInfo field)
+        {
+            return new FieldInstruction(thisObj, field);
+        }
 
         public Instruction MethodCall(Instruction thisObj, string methodName, params Instruction[] args)
         {

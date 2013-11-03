@@ -41,5 +41,12 @@ namespace ServeRick.Database
         {
             return typeof(ActiveRecord);
         }
+
+        internal object GetColumn(string column, ActiveRecord record)
+        {
+            var type = typeof(ActiveRecord);
+            var field=type.GetField(column);
+            return field.GetValue(record);
+        }
     }
 }

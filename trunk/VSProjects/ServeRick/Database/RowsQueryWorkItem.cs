@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ServeRick.Database
 {
-    class RowsQueryWorkItem<ActiveRecord>:DatabaseWorkItem
+    class RowsQueryWorkItem<ActiveRecord> : DatabaseWorkItem
           where ActiveRecord : DataRecord
     {
         /// <summary>
@@ -37,7 +37,8 @@ namespace ServeRick.Database
         /// query execution is done.
         /// </summary>
         /// <param name="rows">Retrieved rows.</param>
-        private void _handler(ActiveRecord[] rows) {
+        private void _handler(RowsResult<ActiveRecord> rows)
+        {
             _executor(rows);
             Complete();
         }

@@ -97,6 +97,13 @@ namespace ServeRick.Compiling
             emit(_compiler.MethodCall(x.IsStatic(), thisObj, x.Method, args));
         }
 
+        public override void VisitField(FieldInstruction x)
+        {
+            var thisObj = getValue(x.ThisObject);
+
+            emit(Expression.Field(thisObj, x.Field));
+        }
+
         public override void VisitConstructor(ConstructorInstruction x)
         {
             var args = new List<Expression>();

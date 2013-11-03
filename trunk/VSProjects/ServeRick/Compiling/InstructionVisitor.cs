@@ -37,6 +37,12 @@ namespace ServeRick.Compiling
             VisitInstruction(x);
         }
 
+        public virtual void VisitField(FieldInstruction x)
+        {
+            x.ThisObject.VisitMe(this);
+
+            VisitInstruction(x);
+        }
 
         public virtual void VisitConstructor(ConstructorInstruction x)
         {

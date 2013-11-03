@@ -55,7 +55,6 @@ namespace ServeRick.Compiling
                 return null;
 
             var value = HTMLValues.GetValue(instruction, this);
-
             if (instruction.IsStatic())
             {
                 return precomputeExpression(value);
@@ -157,7 +156,7 @@ namespace ServeRick.Compiling
                 flushBuffer(buffer, output);
                 return Expression.Block(output.ToArray());*/
 
-            if (emitted.Count==0)
+            if (emitted.Count == 0)
             {
                 return Expression.Constant(null);
             }
@@ -191,8 +190,9 @@ namespace ServeRick.Compiling
             {
                 var nameExpr = Expression.Constant(storage.Name);
 
-                var getParam = Call(false, "Param", ResponseParameter, nameExpr);
-                getParam = Expression.Convert(getParam, storage.Type);
+                var method = ResponseHandlerProvider.CompilerHelpers.GetMethod("Param");
+                var info = method.Info.MakeGenericMethod(storage.Type);
+                var getParam = Call(false, info, new Expression[] { ResponseParameter, nameExpr });
                 var assign = Expression.Assign(storage, getParam);
                 compiled.Add(assign);
             }
@@ -217,7 +217,7 @@ namespace ServeRick.Compiling
         {
             if (data.Type != typeof(string))
             {
-                data = Expression.Call(data,typeof(object).GetMethod("ToString"));
+                data = Expression.Call(data, typeof(object).GetMethod("ToString"));
             }
 
             var bytesProvider = Expression.Call(null, ConvertBytesMethod, data);
@@ -237,7 +237,7 @@ namespace ServeRick.Compiling
 
             if (value.Type == typeof(void))
             {
-                return value;   
+                return value;
             }
 
             if (value.Type.IsValueType)

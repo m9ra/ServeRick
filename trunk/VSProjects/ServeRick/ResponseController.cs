@@ -38,6 +38,12 @@ namespace ServeRick
             Response.ContentFor(yieldIdentifier, handler);
         }
 
+        protected void ContentFor(string yieldIdentifier, string partial)
+        {
+            var partialHandler = GetHandler(partial);
+            Response.ContentFor(yieldIdentifier, partialHandler);
+        }
+
         protected void Layout(string fileName)
         {
             _layout = GetHandler(fileName);
