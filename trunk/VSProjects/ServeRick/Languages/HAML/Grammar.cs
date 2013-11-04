@@ -98,8 +98,9 @@ namespace ServeRick.Languages.HAML
             var symbol = T_REG(":[a-zA-Z][a-zA-Z01-9_]*", "symbol");
             var shortKey = T_REG("[a-zA-Z][a-zA-Z01-9_]*:", "shortKey");
             var identifier = T_REG("[a-zA-Z][a-zA-Z01-9_]*", "identifier")
-                .Exclude("yield", "if", "else");
+                .Exclude("yield", "if", "else", "true", "false");
 
+            var boolLiteral = T_REG("(true|false)", "bool");
             var numberLiteral = T_REG(@"\d+", "number");
             var stringLiteral = T_REG(@""" [^""]* """, "string");
 
@@ -143,7 +144,7 @@ namespace ServeRick.Languages.HAML
             interval.Rule = expression + ".." + expression;
 
             //literals
-            value.Rule = stringLiteral | numberLiteral;
+            value.Rule = stringLiteral | numberLiteral | boolLiteral;
 
             //hash
             hash.Rule = "{" + keyPairs + "}";

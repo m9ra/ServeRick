@@ -19,7 +19,7 @@ namespace Parsing
         public PatternTerminal(string pattern, string name)
             : base(name)
         {
-            _match = new Regex(@"\G" + pattern, RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
+            _match = new Regex(string.Format(@"\G({0})", pattern), RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
         }
 
         protected internal override TerminalMatch Match(SourceContext context)

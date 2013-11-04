@@ -35,7 +35,8 @@ namespace ServeRick.Languages.HAML
         static readonly Dictionary<string, string> TypeTranslations = new Dictionary<string, string>()
         {
             {"string","System.String"},
-            {"int","System.Int32"}
+            {"int","System.Int32"},
+            {"bool","System.Boolean"}
         };
 
         private Compiler(Node root, Emitter emitter)
@@ -481,7 +482,7 @@ namespace ServeRick.Languages.HAML
         private RValue[] getArguments(Node callNode)
         {
             var argNodes = GetDescendant(callNode, "argList", "args");
-            if(argNodes==null)
+            if (argNodes == null)
                 return new RValue[0];
 
             var args = new List<RValue>();
@@ -490,7 +491,7 @@ namespace ServeRick.Languages.HAML
                 var arg = resolveRValue(argNode);
                 args.Add(arg);
             }
-            
+
             return args.ToArray();
         }
 
@@ -515,18 +516,24 @@ namespace ServeRick.Languages.HAML
             //TODO proper literal resolving
 
             object literalValue;
+            int number;
+            bool boolean;
 
             if (literal.StartsWith("\"") && literal.EndsWith("\""))
             {
                 literalValue = literal.Substring(1, literal.Length - 2);
             }
+            else if (int.TryParse(literal, out number))
+            {
+                literalValue = number;
+            }
+            else if (bool.TryParse(literal, out boolean))
+            {
+                literalValue = boolean;
+            }
             else
             {
-                int number;
-                if (int.TryParse(literal, out number))
-                    literalValue = number;
-                else
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
             }
 
             return new LiteralValue(literalValue, CurrentContext);
