@@ -209,7 +209,6 @@ namespace ServeRick.Networking
                 throw new NotSupportedException("Work processing can be started only once");
 
             _isResponseWorkStarted = true;
-
             ProcessNextWorkItem();
         }
 

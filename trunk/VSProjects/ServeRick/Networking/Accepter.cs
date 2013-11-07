@@ -40,7 +40,7 @@ namespace ServeRick.Networking
         /// Handler for accepted clients
         /// </summary>
         readonly OnClientAccepted _onClientAccepted;
-        
+
         /// <summary>
         /// Create client accepter with given configuration.
         /// <remarks>Accepter uses buffer provider, for creating client buffers</remarks>
@@ -71,7 +71,7 @@ namespace ServeRick.Networking
         /// </summary>
         private void acceptClient()
         {
-            _listener.BeginAcceptTcpClient(_acceptClient, null);            
+            _listener.BeginAcceptTcpClient(_acceptClient, null);
         }
 
         /// <summary>
@@ -81,9 +81,9 @@ namespace ServeRick.Networking
         private void _acceptClient(IAsyncResult result)
         {
             var clientSocket = _listener.EndAcceptTcpClient(result);
-            var clientBuffer = _bufferProvider.GetBuffer();
+            var buffer = _bufferProvider.GetBuffer();
 
-            var client = new Client(clientSocket, clientBuffer);
+            var client = new Client(clientSocket, buffer);
             _onClientAccepted(client);
             acceptClient();
         }

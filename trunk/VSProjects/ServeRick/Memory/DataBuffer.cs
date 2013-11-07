@@ -26,7 +26,7 @@ namespace ServeRick.Memory
         /// <summary>
         /// Storage of buffer, that can be used until buffer is recycled
         /// </summary>
-        internal byte[] Storage
+        public byte[] Storage
         {
             get
             {
@@ -42,7 +42,7 @@ namespace ServeRick.Memory
         /// </summary>
         /// <param name="length">Length of buffer in bytes</param>
         /// <param name="provider">Provider where created buffer storage will be recycled</param>
-        internal DataBuffer(int length,BufferProvider provider)
+        internal DataBuffer(int length, BufferProvider provider)
         {
             _bufferStorage = new byte[length];
             _provider = provider;
