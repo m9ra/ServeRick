@@ -71,6 +71,11 @@ namespace ServeRick.Networking
         #region Public API exposed by client
 
         /// <summary>
+        /// ID resolved for client
+        /// </summary>
+        public string SessionID { get; internal set; }
+
+        /// <summary>
         /// Response object is used for creating response for client
         /// </summary>
         public Response Response { get; internal set; }
@@ -274,5 +279,6 @@ namespace ServeRick.Networking
         }
 
         #endregion
+
     }
 }

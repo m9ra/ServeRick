@@ -16,12 +16,16 @@ namespace ServeRick.Networking
     /// </summary>
     public class HttpRequest
     {
+        public static readonly string CookieHeader = "Cookie";
+
         #region Private members
 
         /// <summary>
         /// Storage for recieved headers
         /// </summary>
-        private Dictionary<string, string> _headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string> _headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        private readonly Dictionary<string, string> _cookies = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Storage for recieved POST variables
@@ -94,8 +98,8 @@ namespace ServeRick.Networking
         /// <param name="httpVersion">Version of http</param>
         internal HttpRequest(string method, string uri, string httpVersion, Dictionary<string, string> getVariables)
         {
-            Method = method.ToUpper();       
-            URI = uri;          
+            Method = method.ToUpper();
+            URI = uri;
             HttpVersion = httpVersion.ToUpper();
 
             _getVariables = getVariables;
@@ -117,6 +121,12 @@ namespace ServeRick.Networking
 
             headerValue = defaultValue;
             return false;
+        }
+
+
+        internal bool TryGetCookie(string cookie, out string cookieValue)
+        {
+            return _cookies.TryGetValue(cookie,out cookieValue);
         }
 
         /// <summary>
@@ -163,6 +173,11 @@ namespace ServeRick.Networking
         {
             Debug.Assert(!IsHeadComplete);
 
+            if (headerName == CookieHeader)
+            {
+                HttpRequestParser.FillCookies(headerValue, _cookies);
+            }
+
             _headers[headerName] = headerValue;
         }
 
@@ -190,7 +205,6 @@ namespace ServeRick.Networking
             _postVariables[varName] = varValue;
         }
         #endregion
-
 
     }
 }

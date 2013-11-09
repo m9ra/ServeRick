@@ -33,13 +33,24 @@ namespace ServeRick.Networking
 
         #endregion
 
-        public readonly Regex SplitterGET = new Regex(@"
+        public static readonly Regex SplitterGET = new Regex(@"
         (
             (?<Name> [^&=]+)
             =?
             (?<Value> [^&=]*)
         &?)*
         ", RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
+
+        public static readonly Regex SplitterCookie = new Regex(@"
+        (
+            (?<Name> [^;= ]+)\s*
+            =  \s*
+            (?<Value> [^;]*)\s*
+            ;? \s*
+        )+
+", RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
+
+
 
         public bool IsError { get; private set; }
 
@@ -84,6 +95,26 @@ namespace ServeRick.Networking
             }
 
             return processedDataLength;
+        }
+
+        public static void FillCookies(string cookieString, Dictionary<string, string> getVariables)
+        {
+            var match = SplitterCookie.Match(cookieString);
+            if (!match.Success)
+            {
+                Log.Notice("Invalid cookie string");
+                return;
+            }
+
+            var names = match.Groups["Name"].Captures;
+            var values = match.Groups["Value"].Captures;
+            for (int i = 0; i < names.Count; ++i)
+            {
+                var name = names[i].Value;
+                var value = values[i].Value;
+
+                getVariables[name] = value;
+            }
         }
 
         #region Completitions handlers

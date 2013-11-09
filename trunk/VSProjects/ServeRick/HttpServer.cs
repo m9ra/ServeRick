@@ -9,7 +9,7 @@ using ServeRick.Database;
 using ServeRick.Networking;
 using ServeRick.Responsing;
 using ServeRick.Processing;
-
+using ServeRick.Sessions;
 
 namespace ServeRick
 {
@@ -18,6 +18,11 @@ namespace ServeRick
     /// </summary>
     class HttpServer
     {
+        /// <summary>
+        /// Provider of session data
+        /// </summary>
+        readonly SessionProvider _sessions = new SessionProvider();
+
         /// <summary>
         /// Accepter used for accepting clients
         /// </summary>
@@ -84,6 +89,12 @@ namespace ServeRick
         {
             Log.Trace("HttpServer._onHeadCompleted {0}", client);
 
+
+            //TODO selecting processor according to session data
+            client.Unit = _unit;            
+            client.Response = new Response(client);
+            _sessions.Handle(client);
+
             if (client.Request.ContentLength > 0)
             {
                 //Send to input processor
@@ -118,9 +129,6 @@ namespace ServeRick
         /// <param name="client"></param>
         private void _onRequestCompleted(Client client)
         {
-            //TODO selecting processor according to session data
-            client.Unit = _unit;
-            client.Response = new Response(client);
             _responseManager.Handle(client);
         }
     }

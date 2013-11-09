@@ -9,6 +9,11 @@ namespace ServeRick.Modules.Input
     public class Boundary
     {
         /// <summary>
+        /// Maximal possible length of boundary according to specification.
+        /// </summary>
+        public static readonly int BoundaryMaxLength = 70;
+
+        /// <summary>
         /// Prefix needed for boundary (except first one - that doesn't have preceding newline)
         /// </summary>
         private static readonly byte[] BoundaryPrefix = Encoding.ASCII.GetBytes("\r\n--");
@@ -40,9 +45,9 @@ namespace ServeRick.Modules.Input
 
         public Boundary(string boundary)
         {
-            if (boundary.Length > 70)
+            if (boundary.Length > BoundaryMaxLength)
                 //limit according to specification
-                boundary = boundary.Substring(0, 70);
+                boundary = boundary.Substring(0, BoundaryMaxLength);
 
             DelimiterData = new byte[Encoding.ASCII.GetByteCount(boundary) + BoundaryPrefix.Length];
 
@@ -50,7 +55,7 @@ namespace ServeRick.Modules.Input
             Encoding.ASCII.GetBytes(boundary, 0, boundary.Length, DelimiterData, BoundaryPrefix.Length);
             Array.Copy(BoundaryPrefix, DelimiterData, BoundaryPrefix.Length);
 
-            //first boundary doesn't have prefixing newline
+            //first boundary doesn't have prefixing CRLF
             Cursor = 2;
         }
 
@@ -69,6 +74,13 @@ namespace ServeRick.Modules.Input
                 {
                     //delimiter data match
                     ++Cursor;
+
+                    if (IsComplete)
+                    {
+                        //we reached end offset
+                        LocalEndOffset = i;
+                        return;
+                    }
                 }
                 else
                 {
@@ -77,12 +89,6 @@ namespace ServeRick.Modules.Input
                 }
 
 
-                if (IsComplete)
-                {
-                    //we reached end offset
-                    LocalEndOffset = i;
-                    return;
-                }
             }
 
             LocalEndOffset = int.MaxValue;

@@ -120,6 +120,7 @@
     <Compile Include="Modules\NamespaceDoc.cs" />
     <Compile Include="Processing\ClientWorkItem.cs" />
     <Compile Include="Processing\ProcessingUnit.cs" />
+    <Compile Include="Sessions\SetSessionWorkItem.cs" />
     <Compile Include="Processing\WorkProcessor.cs" />
     <Compile Include="ResponseController.cs" />
     <Compile Include="ResponseManagerBase.cs" />
@@ -149,6 +150,8 @@
     <Compile Include="Response.cs" />
     <Compile Include="Responsing\OutputProcessor.cs" />
     <Compile Include="Responsing\ResponseHandlerWorkItem.cs" />
+    <Compile Include="Sessions\Session.cs" />
+    <Compile Include="Sessions\SessionProvider.cs" />
     <Compile Include="WebApplication.cs" />
     <Compile Include="WebItem.cs" />
     <Compile Include="WebMethod.cs" />

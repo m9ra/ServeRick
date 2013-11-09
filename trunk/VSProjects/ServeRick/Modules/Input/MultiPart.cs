@@ -14,8 +14,7 @@ namespace ServeRick.Modules.Input
     public class Dispositions : Dictionary<string, string> { }
 
     /// <summary>
-    /// Class providing multi part content processing. TODO: Boundaries with
-    /// back edges are not supported yet.
+    /// Class providing multi part content processing.
     /// </summary>
     public abstract class MultiPart : InputController
     {
@@ -127,20 +126,12 @@ namespace ServeRick.Modules.Input
             {
                 if (_boundary.IsComplete)
                 {
-                    if (_hasStartingBoundary)
-                    {
-                        //Report data from current offset to boundary start
-                        reportPartContent(data, localContext, _boundary.LocalStartOffset - localContext);
-                        if (!ContinueDownloading)
-                            //processing could be stopped because of error
-                            break;
-
-                        reportPartEnd();
-                    }
-                    else
-                    {
-                        _hasStartingBoundary = true;
-                    }
+                    //Report data from current offset to boundary start
+                    reportPartContent(data, localContext, _boundary.LocalStartOffset - localContext);
+                    if (!ContinueDownloading)
+                        //processing could be stopped because of error
+                        break;
+                    reportPartEnd();
 
                     localContext = _boundary.LocalEndOffset + 1;
                     _boundary.AcceptNext(data, localContext, dataLength + dataOffset - localContext);
@@ -312,7 +303,7 @@ namespace ServeRick.Modules.Input
                 if (_buffer.Length == 2 && _buffer.ToString() == "--")
                 {
                     //end of last part
-                    ContinueDownloading=false;
+                    ContinueDownloading = false;
                     return i;
                 }
             }

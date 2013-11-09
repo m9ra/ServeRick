@@ -39,8 +39,8 @@ namespace ServeRick
         {
             Client = client;
 
-            _responseHeaders["Server"] = "ServeRick";
-            _responseHeaders["Cache-Control"] = "max-age=0, private, must-revalidate";
+            SetHeader("Server", "ServeRick");
+            SetHeader("Cache-Control", "max-age=0, private, must-revalidate");
             SetContentType("text/html; charset=utf-8"); //default content type
         }
 
@@ -53,12 +53,23 @@ namespace ServeRick
 
         public void SetContentType(string mime)
         {
-            _responseHeaders["Content-Type"] = mime;
+            SetHeader("Content-Type", mime);
         }
 
         public void SetLength(int contentLength)
         {
-            _responseHeaders["Content-Length"] = contentLength.ToString();
+            SetHeader("Content-Length", contentLength.ToString());
+        }
+
+
+        internal void SetHeader(string header, string value)
+        {
+            _responseHeaders[header] = value;
+        }
+
+        internal void SetCookie(string cookieName, string cookieValue)
+        {
+            SetHeader("Set-Cookie", cookieName + "=" + cookieValue);
         }
 
         /// <summary>
@@ -154,5 +165,6 @@ namespace ServeRick
             _closeAfterSend = true;
             sendQueue();
         }
+
     }
 }

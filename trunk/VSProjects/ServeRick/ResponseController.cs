@@ -8,6 +8,7 @@ using System.Diagnostics;
 
 using ServeRick.Database;
 using ServeRick.Networking;
+using ServeRick.Processing;
 
 namespace ServeRick
 {
@@ -15,9 +16,13 @@ namespace ServeRick
     {
         private ResponseHandler _layout = null;
 
+        private Client Client { get { return Response.Client; } }
+
+        private ProcessingUnit Unit { get { return Client.Unit; } }
+
         protected Response Response { get; private set; }
 
-        protected HttpRequest Request { get { return Response.Client.Request; } }
+        protected HttpRequest Request { get { return Client.Request; } }
 
         protected ResponseManagerBase Manager { get; private set; }
 
@@ -52,8 +57,15 @@ namespace ServeRick
         protected void Render(string fileName)
         {
             var handler = GetHandler(fileName);
-            ContentFor("", handler);
-            Response.Render(_layout);
+            if (_layout == null)
+            {
+                Response.Render(handler);
+            }
+            else
+            {
+                ContentFor("", handler);
+                Response.Render(_layout);
+            }
         }
 
         protected string GET(string varName)
@@ -64,6 +76,16 @@ namespace ServeRick
         protected string POST(string varName)
         {
             return Request.GetPOST(varName);
+        }
+
+        protected T Session<T>()
+        {
+            object data;
+            if (!Unit.Output.Sessions.TryGetValue(Client.SessionID, out data))
+            {
+                return default(T);
+            }
+            return (T)data;
         }
 
         protected void SetParam(string paramName, object paramValue)

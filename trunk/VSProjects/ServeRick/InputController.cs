@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using ServeRick.Networking;
+using ServeRick.Sessions;
 
 namespace ServeRick
 {
@@ -32,7 +33,7 @@ namespace ServeRick
         /// Determine that data downloading still continues.
         /// </summary>
         public bool ContinueDownloading { get; protected set; }
-                
+
         /// <summary>
         /// Unique ID of input (uniquness accross all input controllers created 
         /// via input manager)
@@ -53,6 +54,19 @@ namespace ServeRick
         internal void AcceptData(byte[] data, int dataOffset, int dataLength)
         {
             acceptData(data, dataOffset, dataLength);
+        }
+
+        /// <summary>
+        /// Set session of current client. Session value can be
+        /// retrieved even before input controller handles input.
+        /// NOTE: It is usefull for geting info about upload processing.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="sessionData"></param>
+        public void SetSession<T>(T sessionData)
+        {
+            var work = new SetSessionWorkItem(Client.Unit, Client.SessionID, sessionData);
+            Client.Unit.Output.EnqueueWork(work);
         }
 
         /// <summary>
