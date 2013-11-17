@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using System.Diagnostics;
 
+using ServeRick.Sessions;
 using ServeRick.Database;
 using ServeRick.Networking;
 using ServeRick.Processing;
@@ -26,16 +27,23 @@ namespace ServeRick
 
         protected ResponseManagerBase Manager { get; private set; }
 
-        protected TableQuery<ActiveRecord> Query<ActiveRecord>()
+        protected SelectQuery<ActiveRecord> Query<ActiveRecord>()
             where ActiveRecord : DataRecord
         {
-            return new TableQuery<ActiveRecord>(Response);
+            return new SelectQuery<ActiveRecord>(Response);
+        }
+
+        protected InsertQuery<ActiveRecord> Insert<ActiveRecord>(IEnumerable<ActiveRecord> entries)
+            where ActiveRecord : DataRecord
+        {
+            return new InsertQuery<ActiveRecord>(Response, entries);
         }
 
         internal void SetResponse(ResponseManagerBase manager, Response response)
         {
             Response = response;
             Manager = manager;
+            Response.AllowSessionFlip();
         }
 
         protected void ContentFor(string yieldIdentifier, ResponseHandler handler)
@@ -80,12 +88,44 @@ namespace ServeRick
 
         protected T Session<T>()
         {
-            object data;
-            if (!Unit.Output.Sessions.TryGetValue(Client.SessionID, out data))
-            {
-                return default(T);
-            }
-            return (T)data;
+            return SessionProvider.GetData<T>(Unit.Output, Client.SessionID);
+        }
+
+        protected void Session<T>(T data)
+        {
+            SessionProvider.SetData(Unit.Output, Client.SessionID, data);
+        }
+
+        protected void RemoveSession<T>()
+        {
+            SessionProvider.RemoveData<T>(Unit.Output, Client.SessionID);
+        }
+
+        /// <summary>
+        /// Set value to given flash type. Flash is one display durability session data.
+        /// </summary>
+        /// <param name="messageID">ID of flash that will be set</param>
+        /// <param name="value">Value of message that will be set</param>
+        protected void Flash(string messageID, string value)
+        {
+            SessionProvider.SetFlash(Unit.Output, Client.SessionID, messageID, value);
+        }
+
+        /// <summary>
+        /// Get flash value for given messageID.
+        /// </summary>
+        /// <param name="messageID">ID of flash message</param>
+        /// <returns>Flash message if present, null otherwise</returns>
+        protected string Flash(string messageID)
+        {
+            return SessionProvider.GetFlash(Unit.Output, Client.SessionID, messageID);
+        }
+
+
+        protected void RedirectTo(string url)
+        {
+            Response.SetHeader("Location", url);
+            Response.SetStatus(302);
         }
 
         protected void SetParam(string paramName, object paramValue)

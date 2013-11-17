@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using ServeRick.Processing;
 using ServeRick.Responsing;
 using ServeRick.Networking;
+using ServeRick.Sessions;
 using ServeRick.Database;
 
 
@@ -27,9 +28,12 @@ namespace ServeRick
         protected readonly Dictionary<string, string> _responseHeaders = new Dictionary<string, string>();
         private readonly Dictionary<string, ResponseHandler> _contentsFor = new Dictionary<string, ResponseHandler>();
 
+        private bool _flipSession = false;
         private bool _headersSent = false;
         private bool _closeAfterSend = false;
-        private string _statusLine = "HTTP/1.1 200 OK";
+        private bool _closed = false;
+
+        private string _statusLine;
 
         protected Queue<byte[]> _toSend = new Queue<byte[]>();
 
@@ -39,6 +43,7 @@ namespace ServeRick
         {
             Client = client;
 
+            SetStatus(200);
             SetHeader("Server", "ServeRick");
             SetHeader("Cache-Control", "max-age=0, private, must-revalidate");
             SetContentType("text/html; charset=utf-8"); //default content type
@@ -49,6 +54,27 @@ namespace ServeRick
         /// </summary>
         protected Response()
         {
+        }
+
+
+        internal void SetStatus(int statusCode)
+        {
+            switch (statusCode)
+            {
+                case 200:
+                    _statusLine = "HTTP/1.1 200 OK"; ;
+                    break;
+                case 302:
+                    _statusLine = "HTTP/1.1 302 Found";
+                    break;
+                default:
+                    throw new NotImplementedException("Status code: " + statusCode);
+            }
+        }
+
+        internal void AllowSessionFlip()
+        {
+            _flipSession = true;
         }
 
         public void SetContentType(string mime)
@@ -71,6 +97,17 @@ namespace ServeRick
         {
             SetHeader("Set-Cookie", cookieName + "=" + cookieValue);
         }
+
+        /// <summary>
+        /// Get flash value for given messageID.
+        /// </summary>
+        /// <param name="messageID">ID of flash message</param>
+        /// <returns>Flash message if present, null otherwise</returns>
+        public string Flash(string messageID)
+        {
+            return SessionProvider.GetFlash(Client.Unit.Output, Client.SessionID, messageID);
+        }
+
 
         /// <summary>
         /// TODO will be changed to byte[] utf8 encoding
@@ -121,8 +158,10 @@ namespace ServeRick
             {
                 //nothing more to send
                 if (_closeAfterSend)
+                {
                     //there is no other work
                     Client.Close();
+                }
 
                 return;
             }
@@ -162,9 +201,21 @@ namespace ServeRick
 
         internal void Close()
         {
-            _closeAfterSend = true;
-            sendQueue();
-        }
+            if (_closed)
+            {
+                throw new NotSupportedException("Cannot Close response twice");
+            }
 
+            _closed = true;
+            _closeAfterSend = true;
+
+            sendQueue();
+
+            if (_flipSession)
+            {
+                var flip = new FlipSessionWorkItem(Client.Unit, Client.SessionID);
+                flip.EnqueueToProcessor();
+            }
+        }
     }
 }

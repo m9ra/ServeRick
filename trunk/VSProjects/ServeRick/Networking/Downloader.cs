@@ -56,11 +56,11 @@ namespace ServeRick.Networking
         {
             Log.Trace("Downloader._processHead client: {0}, dataLength: {1}", client, dataLength);
 
-            var notProcessedOffset=client.Parser.AppendData(data, dataLength);
+            var notProcessedOffset = client.Parser.AppendData(data, dataLength);
             if (client.Parser.IsHeadComplete)
             {
                 var remainingLength = dataLength - notProcessedOffset;
-                _onHeadCompleted(client,data,notProcessedOffset,remainingLength);
+                _onHeadCompleted(client, data, notProcessedOffset, remainingLength);
                 return;
             }
 
@@ -78,10 +78,10 @@ namespace ServeRick.Networking
         {
             Log.Trace("Downloader._processContent client: {0}, dataLength: {1}", client, dataLength);
 
-            var input=client.Input;
+            var input = client.Input;
 
             input.AcceptData(data, 0, dataLength);
-            if (input.ContinueDownloading)
+            if (input.ContinueDownloading && dataLength > 0)
             {
                 client.Recieve(_processContent);
             }

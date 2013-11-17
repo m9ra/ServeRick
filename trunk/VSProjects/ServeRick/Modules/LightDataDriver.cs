@@ -34,7 +34,7 @@ namespace ServeRick.Modules
             }
         }
 
-        public override void ExecuteRow<ActiveRecord>(DataTable<ActiveRecord> table, TableQuery<ActiveRecord> query, RowExecutor<ActiveRecord> executor)
+        public override void ExecuteRow<ActiveRecord>(DataTable<ActiveRecord> table, SelectQuery<ActiveRecord> query, RowExecutor<ActiveRecord> executor)
         {
             var items = query.Condition.ToArray();
 
@@ -48,20 +48,16 @@ namespace ServeRick.Modules
                     result = findItem(table, items[0]);
                     break;
                 default:
-                    throw new NotImplementedException("Resolve conditions");
+                    result = applyCondition(table, query.Condition).FirstOrDefault();
+                    break;
             }
 
             executor(result);
         }
 
-        public override void ExecuteRows<ActiveRecord>(DataTable<ActiveRecord> table, TableQuery<ActiveRecord> query, RowsExecutor<ActiveRecord> executor)
+        public override void ExecuteRows<ActiveRecord>(DataTable<ActiveRecord> table, SelectQuery<ActiveRecord> query, RowsExecutor<ActiveRecord> executor)
         {
-            IEnumerable<ActiveRecord> rows = table.MemoryRecords.Values;
-
-            foreach (var item in query.Condition)
-            {
-                rows = applyCondition(table, rows, item);
-            }
+            var rows = applyCondition(table, query.Condition);
 
             rows = rows.Skip(query.Start).Take(query.MaxCount);
             var result = new RowsResult<ActiveRecord>(rows, table.MemoryRecords.Count);
@@ -69,11 +65,46 @@ namespace ServeRick.Modules
             executor(result);
         }
 
+        public override void InsertRows<ActiveRecord>(DataTable<ActiveRecord> table, InsertQuery<ActiveRecord> query, InsertExecutor<ActiveRecord> executor)
+        {
+            foreach (var row in query.Rows)
+            {
+                table.SetColumn(row, "id", getUID(table));
+                table.MemoryRecords.Add(row.ID, row);
+            }
+
+            executor(query.Rows);
+        }
+
+
+
+        public override void UpdateRows<ActiveRecord>(DataTable<ActiveRecord> table, UpdateQuery<ActiveRecord> query, Action executor)
+        {
+            ExecuteRows(table, query.Select, (res) =>
+            {
+                foreach (var row in res.Rows)
+                {
+                    foreach (var update in query.Updates)
+                    {
+                        table.SetColumn(row, update.Key, update.Value);
+                    }
+                }
+            });
+
+            executor();
+        }
+
         #endregion
 
         #region Private utilities
 
-        private IEnumerable<ActiveRecord> applyCondition<ActiveRecord>(DataTable<ActiveRecord> table, IEnumerable<ActiveRecord> rows, WhereItem where)
+        private int getUID<ActiveRecord>(DataTable<ActiveRecord> table)
+            where ActiveRecord : DataRecord
+        {
+            return table.MemoryRecords.Keys.Max() + 1;
+        }
+
+        private IEnumerable<ActiveRecord> applyItem<ActiveRecord>(DataTable<ActiveRecord> table, IEnumerable<ActiveRecord> rows, WhereItem where)
             where ActiveRecord : DataRecord
         {
             foreach (var row in rows)
@@ -83,7 +114,7 @@ namespace ServeRick.Modules
                 switch (where.Operation)
                 {
                     case WhereOperation.Equal:
-                        if (column == where.Operand)
+                        if (column.Equals(where.Operand))
                             yield return row;
                         break;
                     case WhereOperation.HasSubstring:
@@ -95,6 +126,19 @@ namespace ServeRick.Modules
                         throw new NotImplementedException();
                 }
             }
+        }
+
+        private IEnumerable<ActiveRecord> applyCondition<ActiveRecord>(DataTable<ActiveRecord> table, WhereClause query)
+            where ActiveRecord : DataRecord
+        {
+            IEnumerable<ActiveRecord> rows = table.MemoryRecords.Values;
+
+            foreach (var item in query)
+            {
+                rows = applyItem(table, rows, item);
+            }
+
+            return rows;
         }
 
         private ActiveRecord findItem<ActiveRecord>(DataTable<ActiveRecord> table, WhereItem condition)

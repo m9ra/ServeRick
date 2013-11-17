@@ -30,6 +30,14 @@ namespace ServeRick
         protected abstract void acceptData(byte[] data, int dataOffset, int dataLength);
 
         /// <summary>
+        /// Is called after download is completed
+        /// </summary>
+        protected virtual void onDownloadCompleted()
+        {
+            //by default there is nothing to do
+        }
+
+        /// <summary>
         /// Determine that data downloading still continues.
         /// </summary>
         public bool ContinueDownloading { get; protected set; }
@@ -77,6 +85,14 @@ namespace ServeRick
         public void SetPOST(string varName, string varValue)
         {
             Request.SetPOST(varName, varValue);
+        }
+
+        /// <summary>
+        /// Called after input download is completed
+        /// </summary>
+        internal void OnDownloadCompleted()
+        {
+            onDownloadCompleted();
         }
     }
 }

@@ -15,6 +15,8 @@ namespace ServeRick.UnitTesting
             .AssertHAML("<a/>");
         }
 
+
+
         [TestMethod]
         public void HAML_ContentInline()
         {
@@ -34,7 +36,6 @@ namespace ServeRick.UnitTesting
   %f
 ".AssertHAML(@"<a><b/><c/></a><d><e><f/></e></d>");
         }
-
 
         [TestMethod]
         public void HAML_ChainedContent()

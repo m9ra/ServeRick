@@ -26,9 +26,9 @@ namespace ServeRick.Database
     /// <summary>
     /// Base class for query processed on table
     /// </summary>
-    public abstract class TableQuery
+    public abstract class SelectQuery
     {
-        internal TableQuery()
+        internal SelectQuery()
         {
             //prevent creating from another assemblies
         }
@@ -38,10 +38,10 @@ namespace ServeRick.Database
     /// Query on table representation.
     /// </summary>
     /// <typeparam name="ActiveRecord">Tyep of active record.</typeparam>
-    public class TableQuery<ActiveRecord> : TableQuery
+    public class SelectQuery<ActiveRecord> : SelectQuery
         where ActiveRecord : DataRecord
     {
-        private readonly Response _response;
+        internal readonly Response Response;
 
         public readonly WhereClause Condition;
 
@@ -49,29 +49,29 @@ namespace ServeRick.Database
 
         public int Start { get; private set; }
 
-        internal TableQuery(Response response)
+        internal SelectQuery(Response response)
             : this(response, new WhereClause())
         {
             MaxCount = int.MaxValue;
         }
 
-        internal TableQuery(Response response, WhereClause where)
+        internal SelectQuery(Response response, WhereClause where)
         {
-            _response = response;
+            Response = response;
             Condition = where;
         }
 
-        public TableQuery<ActiveRecord> Find(int id)
+        public SelectQuery<ActiveRecord> Find(int id)
         {
             return Where("id", WhereOperation.Equal, id).Limit(1);
         }
 
-        public TableQuery<ActiveRecord> WhereEqual(string column, object operand)
+        public SelectQuery<ActiveRecord> WhereEqual(string column, object operand)
         {
             return Where(column, WhereOperation.Equal, operand);
         }
 
-        public TableQuery<ActiveRecord> Where(string column, WhereOperation operation, object operand)
+        public SelectQuery<ActiveRecord> Where(string column, WhereOperation operation, object operand)
         {
             var item = new WhereItem(column, operation, operand);
             var conditon = Condition.Clone();
@@ -81,14 +81,21 @@ namespace ServeRick.Database
             return query;
         }
 
-        public TableQuery<ActiveRecord> Limit(int maxCount)
+        public UpdateQuery<ActiveRecord> Update(string column, object value)
+        {
+            var update = new UpdateQuery<ActiveRecord>(this);
+
+            return update.Update(column, value);
+        }
+
+        public SelectQuery<ActiveRecord> Limit(int maxCount)
         {
             var clonned = Clone();
             clonned.MaxCount = maxCount;
             return clonned;
         }
 
-        public TableQuery<ActiveRecord> Offset(int start)
+        public SelectQuery<ActiveRecord> Offset(int start)
         {
             var clonned = Clone();
             clonned.Start = start;
@@ -98,25 +105,25 @@ namespace ServeRick.Database
         public void ExecuteRow(RowExecutor<ActiveRecord> executor)
         {
             var work = new RowQueryWorkItem<ActiveRecord>(this, executor);
-            _response.Client.EnqueueWork(work);
+            Response.Client.EnqueueWork(work);
         }
 
         public void ExecuteRows(RowsExecutor<ActiveRecord> executor)
         {
             var work = new RowsQueryWorkItem<ActiveRecord>(this, executor);
-            _response.Client.EnqueueWork(work);
+            Response.Client.EnqueueWork(work);
         }
 
-        internal TableQuery<ActiveRecord> Clone(WhereClause where)
+        internal SelectQuery<ActiveRecord> Clone(WhereClause where)
         {
-            var query = new TableQuery<ActiveRecord>(_response, where);
+            var query = new SelectQuery<ActiveRecord>(Response, where);
             query.Start = Start;
             query.MaxCount = MaxCount;
 
             return query;
         }
 
-        internal TableQuery<ActiveRecord> Clone()
+        internal SelectQuery<ActiveRecord> Clone()
         {
             return Clone(Condition);
         }

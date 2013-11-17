@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 
 using ServeRick.Memory;
+using ServeRick.Sessions;
 using ServeRick.Processing;
 
 namespace ServeRick.Networking
@@ -139,7 +140,8 @@ namespace ServeRick.Networking
         /// </summary>
         internal void Close()
         {
-            _socket.Client.BeginDisconnect(false, _onDisconnected, null);
+            if (_socket.Connected)
+                _socket.Client.BeginDisconnect(false, _onDisconnected, null);
         }
 
         #endregion

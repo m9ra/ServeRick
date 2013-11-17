@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Reflection;
+
 namespace ServeRick.Database
 {
     public abstract class DataTable
@@ -44,9 +46,21 @@ namespace ServeRick.Database
 
         internal object GetColumn(string column, ActiveRecord record)
         {
-            var type = typeof(ActiveRecord);
-            var field=type.GetField(column);
+            var field = getField(column);
             return field.GetValue(record);
+        }
+
+        internal void SetColumn(ActiveRecord record, string column, object value)
+        {
+            var field = getField(column);
+            field.SetValue(record, value);
+        }
+
+        private FieldInfo getField(string column)
+        {
+            var type = typeof(ActiveRecord);
+            var field = type.GetField(column, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public);
+            return field;
         }
     }
 }

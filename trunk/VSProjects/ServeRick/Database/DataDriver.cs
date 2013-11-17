@@ -12,13 +12,20 @@ namespace ServeRick.Database
     /// </summary>
     public abstract class DataDriver
     {
-        public abstract void ExecuteRow<ActiveRecord>(DataTable<ActiveRecord> table, TableQuery<ActiveRecord> query, RowExecutor<ActiveRecord> executor)
+        public abstract void ExecuteRow<ActiveRecord>(DataTable<ActiveRecord> table, SelectQuery<ActiveRecord> query, RowExecutor<ActiveRecord> executor)
             where ActiveRecord : DataRecord;
-        
-        public abstract void ExecuteRows<ActiveRecord>(DataTable<ActiveRecord> table, TableQuery<ActiveRecord> query, RowsExecutor<ActiveRecord> executor)
+
+        public abstract void ExecuteRows<ActiveRecord>(DataTable<ActiveRecord> table, SelectQuery<ActiveRecord> query, RowsExecutor<ActiveRecord> executor)
+            where ActiveRecord : DataRecord;
+
+        public abstract void InsertRows<ActiveRecord>(DataTable<ActiveRecord> table, InsertQuery<ActiveRecord> query, InsertExecutor<ActiveRecord> executor)
+            where ActiveRecord : DataRecord;
+
+        public abstract void UpdateRows<ActiveRecord>(DataTable<ActiveRecord> table, UpdateQuery<ActiveRecord> query, Action executor)
             where ActiveRecord : DataRecord;
 
         public abstract void Initialize<ActiveRecord>(DataTable<ActiveRecord> table)
             where ActiveRecord : DataRecord;
+
     }
 }

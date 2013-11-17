@@ -14,14 +14,14 @@ namespace ServeRick.Database
         /// <summary>
         /// Query stored for work item.
         /// </summary>
-        private readonly TableQuery<ActiveRecord> _query;
+        private readonly SelectQuery<ActiveRecord> _query;
 
         /// <summary>
         /// Executor processed with retrieved row.
         /// </summary>
         private readonly RowExecutor<ActiveRecord> _executor;
 
-        internal RowQueryWorkItem(TableQuery<ActiveRecord> query, RowExecutor<ActiveRecord> executor)
+        internal RowQueryWorkItem(SelectQuery<ActiveRecord> query, RowExecutor<ActiveRecord> executor)
         {
             _query = query;
             _executor = executor;

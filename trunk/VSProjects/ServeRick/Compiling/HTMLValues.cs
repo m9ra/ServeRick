@@ -15,7 +15,7 @@ namespace ServeRick.Compiling
     {
         static readonly Type ThisType = typeof(HTMLValues);
         static readonly MethodInfo StringConcat = typeof(string).GetMethod("Concat", new[] { typeof(object[]) });
-
+        
         private readonly List<Expression> _emitted = new List<Expression>();
 
         private readonly HTMLCompiler _compiler;

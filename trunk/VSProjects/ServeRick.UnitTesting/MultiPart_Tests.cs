@@ -24,17 +24,6 @@ namespace ServeRick.UnitTesting
             .AssertStart(5);
         }
 
-        /// <summary>
-        /// TODO: needs algorithm that can cope with back edges
-        /// </summary>
-        //[TestMethod]
-        public void MultiPart_BackEdgeBoundary()
-        {
-            @"--a--a--b"
-            .Boundary("a--b")
-            .AssertStart(3);
-        }
-
         [TestMethod]
         public void MultiPart_ContentParsing()
         {

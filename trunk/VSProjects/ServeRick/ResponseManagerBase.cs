@@ -118,10 +118,12 @@ namespace ServeRick
                 case "css":
                 case "png":
                 case "jpg":
+                case "bmp":
                 case "txt":
+                case "js":
                     return SendRaw(file, ext);
                 default:
-                    return null;
+                    throw new NotSupportedException("Unsupported format");
             }
         }
 
@@ -263,7 +265,7 @@ namespace ServeRick
             }
 
             client.EnqueueWork(
-                new ResponseHandlerWorkItem(item.Handler)                
+                new ResponseHandlerWorkItem(item.Handler)
                 );
 
             client.StartQueueProcessing();
@@ -370,10 +372,14 @@ namespace ServeRick
                     return "image/jpeg";
                 case "png":
                     return "image/png";
+                case "bmp":
+                    return "image/bmp";
                 case "txt":
                     return "text/plain";
                 case "html":
                     return "text/html";
+                case "js":
+                    return "application/javascript";
                 default:
                     throw new NotImplementedException();
             }

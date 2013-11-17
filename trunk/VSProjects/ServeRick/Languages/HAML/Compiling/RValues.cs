@@ -233,27 +233,32 @@ namespace ServeRick.Languages.HAML.Compiling
         internal readonly string CallName;
         internal readonly RValue[] Args;
 
+        internal readonly Instruction Call;
+
         internal CallValue(string callName, RValue[] args, Context context)
             : base(context)
         {
             CallName = callName;
             Args = args;
-        }
 
-        internal override Instruction ToInstruction()
-        {
+
             var argExprs = new List<Instruction>();
             foreach (var arg in Args)
             {
                 argExprs.Add(arg.ToInstruction());
             }
 
-            return E.Call(CallName, argExprs.ToArray());
+            Call = E.Call(CallName, argExprs.ToArray());
+        }
+
+        internal override Instruction ToInstruction()
+        {
+            return Call;
         }
 
         internal override Type ReturnType()
         {
-            throw new NotImplementedException();
+            return Call.ReturnType;
         }
     }
 
@@ -275,6 +280,8 @@ namespace ServeRick.Languages.HAML.Compiling
             MethodName = callName;
             Args = args;
             ThisObj = thisObj;
+            if (ThisType == null)
+                throw new NotSupportedException("Cannot call method on undefined type");
 
             Field = resolveField();
             Method = resolveMethod();

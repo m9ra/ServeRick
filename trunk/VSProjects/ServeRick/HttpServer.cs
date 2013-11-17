@@ -19,11 +19,6 @@ namespace ServeRick
     class HttpServer
     {
         /// <summary>
-        /// Provider of session data
-        /// </summary>
-        readonly SessionProvider _sessions = new SessionProvider();
-
-        /// <summary>
         /// Accepter used for accepting clients
         /// </summary>
         readonly Accepter _accepter;
@@ -50,7 +45,7 @@ namespace ServeRick
             var provider = new BufferProvider(memoryConfiguration.ClientBufferSize, memoryConfiguration.MaximalClientMemoryUsage);
 
             _accepter = new Accepter(networkConfiguration, provider, _acceptClient);
-            _downloader = new Downloader(_onHeadCompleted, _onContentCompleted);            
+            _downloader = new Downloader(_onHeadCompleted, _onContentCompleted);
             _responseManager = application.CreateResponseManager();
             _inputManager = application.CreateInputManager();
 
@@ -91,9 +86,9 @@ namespace ServeRick
 
 
             //TODO selecting processor according to session data
-            client.Unit = _unit;            
+            client.Unit = _unit;
             client.Response = new Response(client);
-            _sessions.Handle(client);
+            SessionProvider.PrepareSessionID(client);
 
             if (client.Request.ContentLength > 0)
             {
@@ -120,6 +115,9 @@ namespace ServeRick
 
         private void _onContentCompleted(Client client)
         {
+            if (client.Input != null)
+                client.Input.OnDownloadCompleted();
+
             _onRequestCompleted(client);
         }
 

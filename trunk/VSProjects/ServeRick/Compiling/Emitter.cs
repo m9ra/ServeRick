@@ -73,14 +73,24 @@ namespace ServeRick.Compiling
         public Instruction Call(string methodName, Instruction[] args)
         {
             var methodInfo = _helpers.GetMethod(methodName);
-            return new CallInstruction(methodInfo, args);
+            var parameters = methodInfo.Info.GetParameters();
+
+            var argValues = new LinkedList<Instruction>(args);
+            if (parameters.Length > 0 && (parameters[0].ParameterType == typeof(Response)))
+            {
+                //first parameter is response
+                if (!(args.Length > 0) || !(args[0].ReturnType == typeof(Response)))
+                    //add implicit response param
+                    argValues.AddFirst(new ResponseInstruction());
+            }
+            return new CallInstruction(methodInfo, argValues.ToArray());
         }
 
 
         public Instruction CreateObject<ObjectType>(params Instruction[] ctorArgs)
         {
-            var type=typeof(ObjectType);
-            var argTypes=from arg in ctorArgs select arg.ReturnType;
+            var type = typeof(ObjectType);
+            var argTypes = from arg in ctorArgs select arg.ReturnType;
             var ctorInfo = type.GetConstructor(argTypes.ToArray());
 
             if (ctorInfo == null)
@@ -97,12 +107,12 @@ namespace ServeRick.Compiling
         public Instruction MethodCall(Instruction thisObj, string methodName, params Instruction[] args)
         {
             //TODO correct resolving
-            var methodInfo = thisObj.ReturnType.GetMethod(methodName,BindingFlags.Instance | BindingFlags.Public |BindingFlags.FlattenHierarchy);
+            var methodInfo = thisObj.ReturnType.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
 
             return MethodCall(thisObj, methodInfo, args);
         }
 
-        public Instruction MethodCall(Instruction thisObj, MethodInfo methodInfo , params Instruction[] args)
+        public Instruction MethodCall(Instruction thisObj, MethodInfo methodInfo, params Instruction[] args)
         {
             if (methodInfo == null)
                 throw new NotSupportedException("Cannot find requested method");
@@ -180,7 +190,7 @@ namespace ServeRick.Compiling
             var yield = getCompilerMethod("Yield");
             return new CallInstruction(yield, new ResponseInstruction(), identifierInstr);
         }
-        
+
         internal Instruction While(Instruction condition, Instruction loopBlock)
         {
             return new WhileInstruction(condition, loopBlock);
@@ -199,7 +209,7 @@ namespace ServeRick.Compiling
 
         internal VariableInstruction CreateVariable(string nameHint, Type variableType)
         {
-            var variable=new VariableInstruction(nameHint, variableType);
+            var variable = new VariableInstruction(nameHint, variableType);
 
             _variables.Add(variable);
 

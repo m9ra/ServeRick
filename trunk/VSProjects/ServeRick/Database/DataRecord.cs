@@ -10,6 +10,8 @@ namespace ServeRick.Database
     {
         public readonly int ID;
 
+        protected DataRecord() { }
+
         protected DataRecord(int id)
         {
             ID = id;

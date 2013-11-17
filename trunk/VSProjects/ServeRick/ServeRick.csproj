@@ -58,6 +58,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -102,11 +103,15 @@
     <Compile Include="Database\DatabaseProcessor.cs" />
     <Compile Include="Database\DatabaseWorkItem.cs" />
     <Compile Include="Database\DataDriver.cs" />
+    <Compile Include="Database\InsertQuery.cs" />
+    <Compile Include="Database\InsertQueryWorkItem.cs" />
     <Compile Include="Database\RowQueryWorkItem.cs" />
     <Compile Include="Database\DataTable.cs" />
     <Compile Include="Database\RowsQueryWorkItem.cs" />
     <Compile Include="Database\RowsResult.cs" />
-    <Compile Include="Database\TableQuery.cs" />
+    <Compile Include="Database\SelectQuery.cs" />
+    <Compile Include="Database\UpdateQuery.cs" />
+    <Compile Include="Database\UpdateQueryWorkItem.cs" />
     <Compile Include="Database\WhereClause.cs" />
     <Compile Include="Database\DataRecord.cs" />
     <Compile Include="InputController.cs" />
@@ -120,6 +125,7 @@
     <Compile Include="Modules\NamespaceDoc.cs" />
     <Compile Include="Processing\ClientWorkItem.cs" />
     <Compile Include="Processing\ProcessingUnit.cs" />
+    <Compile Include="Sessions\FlipSessionWorkItem.cs" />
     <Compile Include="Sessions\SetSessionWorkItem.cs" />
     <Compile Include="Processing\WorkProcessor.cs" />
     <Compile Include="ResponseController.cs" />
@@ -150,7 +156,6 @@
     <Compile Include="Response.cs" />
     <Compile Include="Responsing\OutputProcessor.cs" />
     <Compile Include="Responsing\ResponseHandlerWorkItem.cs" />
-    <Compile Include="Sessions\Session.cs" />
     <Compile Include="Sessions\SessionProvider.cs" />
     <Compile Include="WebApplication.cs" />
     <Compile Include="WebItem.cs" />

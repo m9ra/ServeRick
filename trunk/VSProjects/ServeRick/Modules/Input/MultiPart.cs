@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Web;
+
 using System.Text.RegularExpressions;
 
 namespace ServeRick.Modules.Input
@@ -56,7 +58,7 @@ namespace ServeRick.Modules.Input
         /// <summary>
         /// Buffer for dispositions keys/values
         /// </summary>
-        private StringBuilder _buffer = new StringBuilder(100);
+        private List<byte> _buffer = new List<byte>(100);
 
         /// <summary>
         /// Dispositions for current part. Null means that disposition section is not started.
@@ -224,12 +226,18 @@ namespace ServeRick.Modules.Input
             _currentPartStream = reportPart(_dispositions);
         }
 
+        private string stringyBuffer()
+        {
+            return Encoding.UTF8.GetString(_buffer.ToArray());
+        }
+
         private int reportHeaderContent(byte[] data, int dataOffset, int dataLength)
         {
             int i;
             for (i = dataOffset; i < dataOffset + dataLength; ++i)
             {
-                var ch = (char)data[i];
+                var b = data[i];
+                var ch = (char)b;
 
                 switch (ch)
                 {
@@ -239,7 +247,7 @@ namespace ServeRick.Modules.Input
 
                     case ':':
                         //key confirmation
-                        _dispositionKey = _buffer.ToString();
+                        _dispositionKey = stringyBuffer();
                         _buffer.Clear();
 
                         break;
@@ -247,7 +255,7 @@ namespace ServeRick.Modules.Input
                     case '\n':
                         //buffer confirmation
 
-                        var value = _buffer.ToString();
+                        var value = stringyBuffer();
                         _buffer.Clear();
 
                         if (_dispositions == null)
@@ -289,18 +297,21 @@ namespace ServeRick.Modules.Input
                         break;
 
                     default:
-                        if (_buffer.Length == 0 && char.IsWhiteSpace(ch))
+                        if (_buffer.Count == 0 && char.IsWhiteSpace(ch))
                             //remove trailing white chars
                             break;
 
-                        _buffer.Append(ch);
+                        _buffer.Add(b);
                         break;
                 }
             }
 
             if (_dispositions == null)
             {
-                if (_buffer.Length == 2 && _buffer.ToString() == "--")
+                if (_buffer.Count == 2 &&
+                    _buffer[0] == '-' &&
+                    _buffer[1] == '-'
+                    )
                 {
                     //end of last part
                     ContinueDownloading = false;

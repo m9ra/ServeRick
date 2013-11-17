@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Web;
+
 using System.Diagnostics;
 
 namespace ServeRick.Networking
@@ -144,7 +146,12 @@ namespace ServeRick.Networking
         public string GetGET(string varName)
         {
             string result;
-            _getVariables.TryGetValue(varName, out result);
+            if (_getVariables.TryGetValue(varName, out result))
+            {
+                //TODO cache obtained results
+                result = HttpUtility.UrlDecode(result);
+            }
+
             return result;
         }
 
