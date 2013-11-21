@@ -73,6 +73,7 @@ namespace ServeRick
         public void AddDirectoryContent(string relativeDirPath)
         {
             //TODO hook directory for listening changes
+            relativeDirPath += Path.DirectorySeparatorChar;
             foreach (var file in Directory.EnumerateFiles(_rootPath + relativeDirPath))
             {
                 var relativeFilePath = relativeDirPath + Path.GetFileName(file);
@@ -80,11 +81,24 @@ namespace ServeRick
             }
         }
 
+
+        public void AddDirectoryTree(string relativeDirPath)
+        {
+            AddDirectoryContent(relativeDirPath);
+
+            foreach (var subDir in Directory.EnumerateDirectories(_rootPath + relativeDirPath))
+            {
+
+                var relativeSubDirPath = relativeDirPath + Path.DirectorySeparatorChar + Path.GetFileName(subDir);
+                AddDirectoryTree(relativeSubDirPath);
+            }
+        }
+
         public void AddFileResource(string relativePath)
         {
             var handler = getWebItem(relativePath);
 
-            RegisterFile(relativePath, handler);
+            RegisterFile(relativePath.Substring(1), handler);
 
             if (isPublic(relativePath))
             {
@@ -95,7 +109,11 @@ namespace ServeRick
 
         protected virtual string getUri(string relativeFilePath)
         {
-            return "/" + relativeFilePath;
+            var uri= relativeFilePath.Replace('\\', '/');
+            if (uri[0] != '/')
+                uri = '/' + uri;
+
+            return uri;
         }
 
         private bool isPublic(string relativeFilePath)
@@ -121,6 +139,8 @@ namespace ServeRick
                 case "bmp":
                 case "txt":
                 case "js":
+                case "md":
+                case "swf":
                     return SendRaw(file, ext);
                 default:
                     throw new NotSupportedException("Unsupported format");
@@ -374,12 +394,15 @@ namespace ServeRick
                     return "image/png";
                 case "bmp":
                     return "image/bmp";
+                case "md":
                 case "txt":
                     return "text/plain";
                 case "html":
                     return "text/html";
                 case "js":
                     return "application/javascript";
+                case "swf":
+                    return "application/x-shockwave-flash";
                 default:
                     throw new NotImplementedException();
             }

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using ServeRick.Processing;
+
 namespace ServeRick.Database
 {
     class RowsQueryWorkItem<ActiveRecord> : DatabaseWorkItem
@@ -19,7 +21,8 @@ namespace ServeRick.Database
         /// </summary>
         private readonly RowsExecutor<ActiveRecord> _executor;
 
-        internal RowsQueryWorkItem(SelectQuery<ActiveRecord> query, RowsExecutor<ActiveRecord> executor)
+        internal RowsQueryWorkItem(ProcessingUnit unit, SelectQuery<ActiveRecord> query, RowsExecutor<ActiveRecord> executor)
+            : base(unit)
         {
             _query = query;
             _executor = executor;

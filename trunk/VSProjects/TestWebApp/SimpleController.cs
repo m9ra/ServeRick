@@ -12,13 +12,15 @@ namespace TestWebApp
     {
         public void index()
         {
-            Query<TestItem>().Find(2).ExecuteRow((row) =>
-            {
-                SetParam("row", row);
+            var q = Query<TestItem>().Find(2);
 
-                Layout("application.haml");
-                Render("index.haml");
-            });
+            ExecuteRow(q, (row) =>
+               {
+                   SetParam("row", row);
+
+                   Layout("application.haml");
+                   Render("index.haml");
+               });
         }
 
         [GET("/attribs/:name/:page")]

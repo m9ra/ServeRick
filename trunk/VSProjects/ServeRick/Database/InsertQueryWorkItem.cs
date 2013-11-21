@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using ServeRick.Processing;
+
 namespace ServeRick.Database
 {
     class InsertQueryWorkItem<ActiveRecord> : DatabaseWorkItem
@@ -13,7 +15,8 @@ namespace ServeRick.Database
         readonly InsertQuery<ActiveRecord> _query;
         readonly InsertExecutor<ActiveRecord> _executor;
 
-        internal InsertQueryWorkItem(InsertQuery<ActiveRecord> query, InsertExecutor<ActiveRecord> executor)
+        internal InsertQueryWorkItem(ProcessingUnit unit, InsertQuery<ActiveRecord> query, InsertExecutor<ActiveRecord> executor)
+            :base(unit)
         {
             _query = query;
             _executor = executor;

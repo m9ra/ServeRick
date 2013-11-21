@@ -68,6 +68,7 @@
   <ItemGroup>
     <Compile Include="ActionInfo.cs" />
     <Compile Include="Attributes.cs" />
+    <Compile Include="BackgroundTask.cs" />
     <Compile Include="Compiling\CompilerBase.cs" />
     <Compile Include="Compiling\Instructions\AssignInstruction.cs" />
     <Compile Include="Compiling\Instructions\ConstructorCall.cs" />
@@ -114,6 +115,7 @@
     <Compile Include="Database\UpdateQueryWorkItem.cs" />
     <Compile Include="Database\WhereClause.cs" />
     <Compile Include="Database\DataRecord.cs" />
+    <Compile Include="DataStream.cs" />
     <Compile Include="InputController.cs" />
     <Compile Include="InputManagerBase.cs" />
     <Compile Include="Languages\HAML\Compiling\Context.cs" />
@@ -124,7 +126,9 @@
     <Compile Include="Modules\LightDataDriver.cs" />
     <Compile Include="Modules\NamespaceDoc.cs" />
     <Compile Include="Processing\ClientWorkItem.cs" />
+    <Compile Include="Processing\ClientWorkItemWrap.cs" />
     <Compile Include="Processing\ProcessingUnit.cs" />
+    <Compile Include="Responsing\WriteWorkItem.cs" />
     <Compile Include="Sessions\FlipSessionWorkItem.cs" />
     <Compile Include="Sessions\SetSessionWorkItem.cs" />
     <Compile Include="Processing\WorkProcessor.cs" />

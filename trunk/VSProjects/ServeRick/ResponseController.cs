@@ -4,12 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.IO;
 using System.Diagnostics;
 
 using ServeRick.Sessions;
 using ServeRick.Database;
 using ServeRick.Networking;
 using ServeRick.Processing;
+using ServeRick.Responsing;
 
 namespace ServeRick
 {
@@ -27,16 +29,16 @@ namespace ServeRick
 
         protected ResponseManagerBase Manager { get; private set; }
 
-        protected SelectQuery<ActiveRecord> Query<ActiveRecord>()
+        protected static SelectQuery<ActiveRecord> Query<ActiveRecord>()
             where ActiveRecord : DataRecord
         {
-            return new SelectQuery<ActiveRecord>(Response);
+            return new SelectQuery<ActiveRecord>();
         }
 
         protected InsertQuery<ActiveRecord> Insert<ActiveRecord>(IEnumerable<ActiveRecord> entries)
             where ActiveRecord : DataRecord
         {
-            return new InsertQuery<ActiveRecord>(Response, entries);
+            return new InsertQuery<ActiveRecord>(entries);
         }
 
         internal void SetResponse(ResponseManagerBase manager, Response response)
@@ -74,6 +76,11 @@ namespace ServeRick
                 ContentFor("", handler);
                 Response.Render(_layout);
             }
+        }
+
+        protected void Write(DataStream data)
+        {
+            Client.EnqueueWork(new WriteWorkItem(data));
         }
 
         protected string GET(string varName)
@@ -143,5 +150,41 @@ namespace ServeRick
 
             return handler;
         }
+
+
+        #region Database API
+
+        protected void Execute<T>(UpdateQuery<T> query)
+            where T : DataRecord
+        {
+            var item = query.CreateWork(Unit);
+            item.EnqueueToProcessor();
+        }
+
+        protected void Execute<T>(InsertQuery<T> query, InsertExecutor<T> executor)
+            where T : DataRecord
+        {
+            var item = query.CreateWork(Unit, executor);
+
+            Client.EnqueueWork(new ClientWorkItemWrap(item));
+        }
+
+        protected void ExecuteRow<T>(SelectQuery<T> query, RowExecutor<T> executor)
+            where T : DataRecord
+        {
+            var item = query.CreateWork(Unit, executor);
+
+            Client.EnqueueWork(new ClientWorkItemWrap(item));
+        }
+
+        protected void ExecuteRows<T>(SelectQuery<T> query, RowsExecutor<T> executor)
+            where T : DataRecord
+        {
+            var item = query.CreateWork(Unit, executor);
+
+            Client.EnqueueWork(new ClientWorkItemWrap(item));
+        }
+
+        #endregion
     }
 }

@@ -16,7 +16,7 @@ namespace ServeRick
     /// <summary>
     /// Accept, download request and create response via ReponseProcessors from/to clients
     /// </summary>
-    class HttpServer
+    public class HttpServer
     {
         /// <summary>
         /// Accepter used for accepting clients
@@ -40,6 +40,8 @@ namespace ServeRick
 
         readonly ProcessingUnit _unit;
 
+        readonly List<BackgroundTask> _tasks = new List<BackgroundTask>();
+
         internal HttpServer(WebApplication application, NetworkConfiguration networkConfiguration, MemoryConfiguration memoryConfiguration)
         {
             var provider = new BufferProvider(memoryConfiguration.ClientBufferSize, memoryConfiguration.MaximalClientMemoryUsage);
@@ -55,6 +57,12 @@ namespace ServeRick
             {
                 _unit.Database.AddTable(table);
             }
+        }
+
+        public void RunTask(BackgroundTask task)
+        {
+            task.Run(_unit);
+            _tasks.Add(task);
         }
 
         /// <summary>
@@ -89,6 +97,8 @@ namespace ServeRick
             client.Unit = _unit;
             client.Response = new Response(client);
             SessionProvider.PrepareSessionID(client);
+
+            client.Request.SetHeader(HttpRequest.IPHeader, client.IP.ToString());
 
             if (client.Request.ContentLength > 0)
             {

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using ServeRick.Processing;
+
 namespace ServeRick.Database
 {
     public abstract class UpdateQuery
@@ -27,8 +29,9 @@ namespace ServeRick.Database
             Updates = new KeyValuePair<string, object>[0];
         }
 
-        private UpdateQuery(SelectQuery<ActiveRecord> select, IEnumerable<KeyValuePair<string,object>> updates){
-            Select=select;
+        private UpdateQuery(SelectQuery<ActiveRecord> select, IEnumerable<KeyValuePair<string, object>> updates)
+        {
+            Select = select;
             Updates = updates;
         }
 
@@ -42,11 +45,9 @@ namespace ServeRick.Database
         /// <summary>
         /// Execute without queueing for client
         /// </summary>
-        public void Execute()
+        internal UpdateQueryWorkItem<ActiveRecord> CreateWork(ProcessingUnit unit)
         {
-            var work = new UpdateQueryWorkItem<ActiveRecord>(this);
-            work.SetClient(Select.Response.Client);
-            work.EnqueueToProcessor();
+            return new UpdateQueryWorkItem<ActiveRecord>(unit, this);
         }
     }
 }

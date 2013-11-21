@@ -8,7 +8,7 @@ using ServeRick.Processing;
 
 namespace ServeRick.Database
 {
-    class RowQueryWorkItem<ActiveRecord>: DatabaseWorkItem
+    class RowQueryWorkItem<ActiveRecord> : DatabaseWorkItem
         where ActiveRecord : DataRecord
     {
         /// <summary>
@@ -21,7 +21,8 @@ namespace ServeRick.Database
         /// </summary>
         private readonly RowExecutor<ActiveRecord> _executor;
 
-        internal RowQueryWorkItem(SelectQuery<ActiveRecord> query, RowExecutor<ActiveRecord> executor)
+        internal RowQueryWorkItem(ProcessingUnit unit, SelectQuery<ActiveRecord> query, RowExecutor<ActiveRecord> executor)
+            : base(unit)
         {
             _query = query;
             _executor = executor;
@@ -39,7 +40,8 @@ namespace ServeRick.Database
         /// query execution is done.
         /// </summary>
         /// <param name="row">Retrieved row.</param>
-        private void _handler(ActiveRecord row) {
+        private void _handler(ActiveRecord row)
+        {
             _executor(row);
             Complete();
         }

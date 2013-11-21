@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Net;
 using System.Net.Sockets;
 
 using ServeRick.Memory;
@@ -26,6 +27,13 @@ namespace ServeRick.Networking
     delegate void SendHandler();
 
     /// <summary>
+    /// Filler used for accessing clients buffer for sending
+    /// </summary>
+    /// <param name="buffer">Buffer that will be filled via filler</param>
+    /// <returns>Length of data filled in buffer from its begining</returns>
+    delegate int BufferFiller(byte[] buffer);
+
+    /// <summary>
     /// Representation of http client
     /// </summary>
     public class Client
@@ -36,11 +44,6 @@ namespace ServeRick.Networking
         /// Socket for communication with client
         /// </summary>
         readonly TcpClient _socket;
-
-        /// <summary>
-        /// Clients buffer
-        /// </summary>
-        readonly DataBuffer _buffer;
 
         /// <summary>
         /// Queue used for work items that are waiting for processing.
@@ -56,6 +59,11 @@ namespace ServeRick.Networking
         #endregion
 
         #region Internal API exposed by client
+
+        /// <summary>
+        /// Clients buffer
+        /// </summary>
+        internal readonly DataBuffer Buffer;
 
         /// <summary>
         /// Parser for http requests
@@ -75,6 +83,15 @@ namespace ServeRick.Networking
         /// ID resolved for client
         /// </summary>
         public string SessionID { get; internal set; }
+
+        public IPAddress IP
+        {
+            get
+            {
+                var ep = _socket.Client.RemoteEndPoint as IPEndPoint;
+                return ep == null ? null : ep.Address;
+            }
+        }
 
         /// <summary>
         /// Response object is used for creating response for client
@@ -96,7 +113,7 @@ namespace ServeRick.Networking
         internal Client(TcpClient clientSocket, DataBuffer clientBuffer)
         {
             _socket = clientSocket;
-            _buffer = clientBuffer;
+            Buffer = clientBuffer;
         }
 
         #region Network API for communication with client
@@ -111,11 +128,11 @@ namespace ServeRick.Networking
             Log.Trace("Client.Recieve {0}", this);
 
             //limit maximum bytes that can be recieved according to buffer storage size
-            if (maxBytesRecieve > _buffer.Storage.Length)
-                maxBytesRecieve = _buffer.Storage.Length;
+            if (maxBytesRecieve > Buffer.Storage.Length)
+                maxBytesRecieve = Buffer.Storage.Length;
 
             SocketError error;
-            _socket.Client.BeginReceive(_buffer.Storage, 0, maxBytesRecieve, SocketFlags.None, out error, _onRecieved, handler);
+            _socket.Client.BeginReceive(Buffer.Storage, 0, maxBytesRecieve, SocketFlags.None, out error, _onRecieved, handler);
 
             checkError("Client.Recieve", error);
         }
@@ -162,7 +179,7 @@ namespace ServeRick.Networking
             }
 
             var handler = result.AsyncState as RecieveHandler;
-            handler(this, _buffer.Storage, dataLength);
+            handler(this, Buffer.Storage, dataLength);
         }
 
         private void _onSended(IAsyncResult result)
@@ -248,7 +265,7 @@ namespace ServeRick.Networking
         /// </summary>
         private void onDisconnected()
         {
-            _buffer.Recycle();
+            Buffer.Recycle();
         }
 
         /// <summary>
@@ -281,6 +298,8 @@ namespace ServeRick.Networking
         }
 
         #endregion
+
+
 
     }
 }

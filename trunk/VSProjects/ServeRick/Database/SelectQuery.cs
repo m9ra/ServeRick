@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using ServeRick.Processing;
+
 namespace ServeRick.Database
 {
     /// <summary>
@@ -41,23 +43,20 @@ namespace ServeRick.Database
     public class SelectQuery<ActiveRecord> : SelectQuery
         where ActiveRecord : DataRecord
     {
-        internal readonly Response Response;
-
         public readonly WhereClause Condition;
 
         public int MaxCount { get; private set; }
 
         public int Start { get; private set; }
 
-        internal SelectQuery(Response response)
-            : this(response, new WhereClause())
+        internal SelectQuery()
+            : this(new WhereClause())
         {
             MaxCount = int.MaxValue;
         }
 
-        internal SelectQuery(Response response, WhereClause where)
+        internal SelectQuery(WhereClause where)
         {
-            Response = response;
             Condition = where;
         }
 
@@ -102,21 +101,19 @@ namespace ServeRick.Database
             return clonned;
         }
 
-        public void ExecuteRow(RowExecutor<ActiveRecord> executor)
+        internal RowQueryWorkItem<ActiveRecord> CreateWork(ProcessingUnit unit, RowExecutor<ActiveRecord> executor)
         {
-            var work = new RowQueryWorkItem<ActiveRecord>(this, executor);
-            Response.Client.EnqueueWork(work);
+            return new RowQueryWorkItem<ActiveRecord>(unit, this, executor);
         }
 
-        public void ExecuteRows(RowsExecutor<ActiveRecord> executor)
+        internal RowsQueryWorkItem<ActiveRecord> CreateWork(ProcessingUnit unit, RowsExecutor<ActiveRecord> executor)
         {
-            var work = new RowsQueryWorkItem<ActiveRecord>(this, executor);
-            Response.Client.EnqueueWork(work);
+            return new RowsQueryWorkItem<ActiveRecord>(unit, this, executor);
         }
 
         internal SelectQuery<ActiveRecord> Clone(WhereClause where)
         {
-            var query = new SelectQuery<ActiveRecord>(Response, where);
+            var query = new SelectQuery<ActiveRecord>(where);
             query.Start = Start;
             query.MaxCount = MaxCount;
 

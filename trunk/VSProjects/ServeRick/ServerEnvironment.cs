@@ -23,7 +23,7 @@ namespace ServeRick
     {
         static List<WebApplication> _applications = new List<WebApplication>();
 
-        public static void Start()
+        public static HttpServer Start()
         {
             LoadToolchains();
 
@@ -35,6 +35,8 @@ namespace ServeRick
 
             var server = new HttpServer(_applications[0], netConfig, memConfig);
             server.Start();
+
+            return server;
         }
 
         public static void LoadToolchains()

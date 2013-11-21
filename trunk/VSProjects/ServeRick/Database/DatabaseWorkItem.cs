@@ -9,11 +9,14 @@ using ServeRick.Processing;
 
 namespace ServeRick.Database
 {
-    abstract class DatabaseWorkItem:ClientWorkItem
+    abstract class DatabaseWorkItem : WorkItem
     {
-        protected override WorkProcessor getPlannedProcessor()
+        internal readonly ProcessingUnit Unit;
+
+        internal DatabaseWorkItem(ProcessingUnit unit)
         {
-            return Unit.Database;
+            Unit = unit;
+            PlanProcessor(unit.Database);
         }
     }
 }

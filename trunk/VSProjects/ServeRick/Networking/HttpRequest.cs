@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Net;
 using System.Web;
 
 using System.Diagnostics;
@@ -19,6 +20,10 @@ namespace ServeRick.Networking
     public class HttpRequest
     {
         public static readonly string CookieHeader = "Cookie";
+
+        public static readonly string IPHeader = "IP:";
+
+
 
         #region Private members
 
@@ -47,6 +52,7 @@ namespace ServeRick.Networking
         #endregion
 
         #region Main HTTP request headers
+
         /// <summary>
         /// Request method in upper case
         /// </summary>
@@ -90,6 +96,17 @@ namespace ServeRick.Networking
         /// </summary>
         public bool ContainsError { get; private set; }
 
+
+        public string IP
+        {
+            get
+            {
+                string ip;
+                _headers.TryGetValue(IPHeader, out ip);
+                return ip;
+            }
+        }
+
         #endregion
 
         /// <summary>
@@ -103,6 +120,8 @@ namespace ServeRick.Networking
             Method = method.ToUpper();
             URI = uri;
             HttpVersion = httpVersion.ToUpper();
+
+
 
             _getVariables = getVariables;
         }
@@ -128,7 +147,7 @@ namespace ServeRick.Networking
 
         internal bool TryGetCookie(string cookie, out string cookieValue)
         {
-            return _cookies.TryGetValue(cookie,out cookieValue);
+            return _cookies.TryGetValue(cookie, out cookieValue);
         }
 
         /// <summary>
@@ -178,7 +197,7 @@ namespace ServeRick.Networking
         /// <param name="headerValue">Value of setted header</param>
         internal void SetHeader(string headerName, string headerValue)
         {
-            Debug.Assert(!IsHeadComplete);
+//            Debug.Assert(!IsHeadComplete);
 
             if (headerName == CookieHeader)
             {
@@ -212,6 +231,8 @@ namespace ServeRick.Networking
             _postVariables[varName] = varValue;
         }
         #endregion
+
+
 
     }
 }
