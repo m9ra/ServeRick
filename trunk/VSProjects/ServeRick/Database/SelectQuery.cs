@@ -80,6 +80,14 @@ namespace ServeRick.Database
             return query;
         }
 
+
+        public RemoveQuery<ActiveRecord> Remove()
+        {
+            var remove = new RemoveQuery<ActiveRecord>(this);
+
+            return remove;
+        }
+
         public UpdateQuery<ActiveRecord> Update(string column, object value)
         {
             var update = new UpdateQuery<ActiveRecord>(this);
@@ -124,5 +132,5 @@ namespace ServeRick.Database
         {
             return Clone(Condition);
         }
-    }
+ }
 }

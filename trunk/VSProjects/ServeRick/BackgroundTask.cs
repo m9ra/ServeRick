@@ -127,6 +127,13 @@ namespace ServeRick
             item.EnqueueToProcessor();
         }
 
+        protected void Execute<T>(RemoveQuery<T> query)
+         where T : DataRecord
+        {
+            var item = query.CreateWork(_unit);
+            item.EnqueueToProcessor();
+        }
+
         protected void Execute<T>(InsertQuery<T> query, InsertExecutor<T> executor)
             where T : DataRecord
         {

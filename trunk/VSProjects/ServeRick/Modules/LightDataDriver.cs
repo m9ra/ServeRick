@@ -76,7 +76,18 @@ namespace ServeRick.Modules
             executor(query.Rows);
         }
 
+        public override void RemoveRows<ActiveRecord>(DataTable<ActiveRecord> table, RemoveQuery<ActiveRecord> query, Action executor)
+        {
+            ExecuteRows(table, query.Select, (res) =>
+            {
+                foreach (var row in res.Rows)
+                {
+                    table.MemoryRecords.Remove(row.ID);
+                }
+            });
 
+            executor();
+        }
 
         public override void UpdateRows<ActiveRecord>(DataTable<ActiveRecord> table, UpdateQuery<ActiveRecord> query, Action executor)
         {

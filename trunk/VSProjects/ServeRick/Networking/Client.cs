@@ -61,6 +61,12 @@ namespace ServeRick.Networking
         #region Internal API exposed by client
 
         /// <summary>
+        /// Handler that is called after client is closed
+        /// Is called asynchronously
+        /// </summary>
+        internal event Action OnClose;
+
+        /// <summary>
         /// Clients buffer
         /// </summary>
         internal readonly DataBuffer Buffer;
@@ -266,6 +272,8 @@ namespace ServeRick.Networking
         private void onDisconnected()
         {
             Buffer.Recycle();
+            if (OnClose != null)
+                OnClose();
         }
 
         /// <summary>

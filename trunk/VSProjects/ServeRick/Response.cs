@@ -33,6 +33,8 @@ namespace ServeRick
         private bool _closeAfterSend = false;
         private bool _closed = false;
 
+        private Action _afterSend;
+
         private string _statusLine;
 
         protected Queue<byte[]> _toSend = new Queue<byte[]>();
@@ -138,6 +140,13 @@ namespace ServeRick
             }
         }
 
+        internal void Flush(Action onFlushed)
+        {
+            _afterSend = onFlushed;
+
+            sendQueue();
+        }
+
         internal void ContentFor(string yieldIdentifier, ResponseHandler handler)
         {
             _contentsFor[yieldIdentifier] = handler;
@@ -156,6 +165,12 @@ namespace ServeRick
 
             if (_toSend.Count == 0)
             {
+                if (_afterSend != null)
+                {
+                    _afterSend();
+                    _afterSend = null;
+                }
+
                 //nothing more to send
                 if (_closeAfterSend)
                 {

@@ -23,7 +23,7 @@ namespace ServeRick
 
         private ProcessingUnit Unit { get { return Client.Unit; } }
 
-        protected Response Response { get; private set; }
+        public Response Response { get; private set; }
 
         protected HttpRequest Request { get { return Client.Request; } }
 

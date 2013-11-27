@@ -101,11 +101,13 @@
     <Compile Include="Compiling\TypeFactory.cs" />
     <Compile Include="Compiling\TypeHelper.cs" />
     <Compile Include="Compiling\WebMethods.cs" />
+    <Compile Include="Database\RemoveQueryWorkItem.cs" />
     <Compile Include="Database\DatabaseProcessor.cs" />
     <Compile Include="Database\DatabaseWorkItem.cs" />
     <Compile Include="Database\DataDriver.cs" />
     <Compile Include="Database\InsertQuery.cs" />
     <Compile Include="Database\InsertQueryWorkItem.cs" />
+    <Compile Include="Database\RemoveQuery.cs" />
     <Compile Include="Database\RowQueryWorkItem.cs" />
     <Compile Include="Database\DataTable.cs" />
     <Compile Include="Database\RowsQueryWorkItem.cs" />
@@ -124,6 +126,8 @@
     <Compile Include="Modules\Input\MultiPart.cs" />
     <Compile Include="Modules\Input\PartStream.cs" />
     <Compile Include="Modules\LightDataDriver.cs" />
+    <Compile Include="Modules\MySQL\MySqlDriver.cs" />
+    <Compile Include="Modules\MySQL\QueryWorker.cs" />
     <Compile Include="Modules\NamespaceDoc.cs" />
     <Compile Include="Processing\ClientWorkItem.cs" />
     <Compile Include="Processing\ClientWorkItemWrap.cs" />
@@ -170,6 +174,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\External sources\mysql-connector\Source\MySql.Data\MySql.Data.csproj">
+      <Project>{e9df5ed1-4cbd-4226-b931-9a51610ac14d}</Project>
+      <Name>MySql.Data</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Parsing\Parsing.csproj">
       <Project>{abf0c475-c489-4c87-aa03-b8cf49f89f76}</Project>
       <Name>Parsing</Name>

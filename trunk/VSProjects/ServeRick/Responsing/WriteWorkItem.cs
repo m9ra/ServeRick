@@ -12,7 +12,7 @@ namespace ServeRick.Responsing
 {
     class WriteWorkItem : ClientWorkItem
     {
-        private readonly DataStream _data;
+        private DataStream _data;
 
         internal WriteWorkItem(DataStream data)
         {
@@ -26,10 +26,16 @@ namespace ServeRick.Responsing
 
         internal override void Run()
         {
+            Client.OnClose += close;
             sendHandler();
         }
 
         private void sendHandler()
+        {
+            Client.Response.Flush(onFlushed);
+        }
+
+        private void onFlushed()
         {
             _data.BeginRead(Client.Buffer.Storage, onDataAvailable);
         }
@@ -49,6 +55,15 @@ namespace ServeRick.Responsing
         protected override void onComplete()
         {
             base.onComplete();
+            close();
+        }
+
+        private void close()
+        {
+            if (_data == null)
+                //already closed
+                return;
+
             _data.Close();
         }
     }
