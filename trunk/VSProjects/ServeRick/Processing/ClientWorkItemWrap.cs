@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 
 namespace ServeRick.Processing
 {
-    class ClientWorkItemWrap:ClientWorkItem
+    class ClientWorkItemWrap : ClientWorkItem
     {
         readonly WorkItem _wrapped;
 
         internal ClientWorkItemWrap(WorkItem wrapped)
         {
             _wrapped = wrapped;
+            _wrapped.OnComplete += Complete;
         }
 
         protected override WorkProcessor getPlannedProcessor()
@@ -22,14 +23,7 @@ namespace ServeRick.Processing
 
         internal override void Run()
         {
-            try
-            {
-                _wrapped.Run();
-            }
-            finally
-            {
-                Complete();
-            }
+            _wrapped.Run();
         }
     }
 }

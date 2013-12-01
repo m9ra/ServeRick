@@ -19,7 +19,12 @@ namespace ServeRick.Processing
         /// <summary>
         /// Determine that work item has already been enqueued at processor
         /// </summary>
-        private bool _wasEnqueued=false;
+        private bool _wasEnqueued = false;
+
+        /// <summary>
+        /// Action invoked when item is completed
+        /// </summary>
+        internal event Action OnComplete;
 
         /// <summary>
         /// Processor where work item will be processed
@@ -50,27 +55,31 @@ namespace ServeRick.Processing
             PlannedProcessor = plannedProcessor;
         }
 
-        internal void Complete() {
+        internal void Complete()
+        {
             if (IsComplete)
                 throw new NotSupportedException("Cannot complete work item twice");
 
             IsComplete = true;
             onComplete();
+            if (OnComplete != null)
+                OnComplete();
         }
 
         /// <summary>
         /// Method is called whenever work item is completed
         /// </summary>
-        protected virtual void onComplete() { 
+        protected virtual void onComplete()
+        {
             //nothing to do by default
         }
-        
+
         /// <summary>
         /// Enqueue current work item on planned processor
         /// </summary>
         internal void EnqueueToProcessor()
         {
-            Debug.Assert(_wasEnqueued == false,"Work item can be processed only once");
+            Debug.Assert(_wasEnqueued == false, "Work item can be processed only once");
             _wasEnqueued = true;
             PlannedProcessor.EnqueueWork(this);
         }

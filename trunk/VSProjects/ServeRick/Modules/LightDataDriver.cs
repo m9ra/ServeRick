@@ -69,7 +69,7 @@ namespace ServeRick.Modules
         {
             foreach (var row in query.Rows)
             {
-                table.SetColumn(row, "id", getUID(table));
+                table.SetColumnValue(row, "id", getUID(table));
                 table.MemoryRecords.Add(row.ID, row);
             }
 
@@ -97,7 +97,7 @@ namespace ServeRick.Modules
                 {
                     foreach (var update in query.Updates)
                     {
-                        table.SetColumn(row, update.Key, update.Value);
+                        table.SetColumnValue(row, update.Key, update.Value);
                     }
                 }
             });
@@ -120,7 +120,7 @@ namespace ServeRick.Modules
         {
             foreach (var row in rows)
             {
-                var column = table.GetColumn(where.Column, row);
+                var column = table.GetColumnValue(where.Column, row);
 
                 switch (where.Operation)
                 {

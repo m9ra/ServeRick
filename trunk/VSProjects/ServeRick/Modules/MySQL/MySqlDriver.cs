@@ -18,6 +18,8 @@ namespace ServeRick.Modules.MySQL
         /// </summary>
         private readonly Queue<QueryWork> _workQueue = new Queue<QueryWork>();
 
+        private readonly int _connectionPingTime = 2 * 60 * 1000;
+
         /// <summary>
         /// Lock for queue
         /// </summary>
@@ -71,10 +73,18 @@ namespace ServeRick.Modules.MySQL
             lock (_L_Queue)
             {
                 if (_workQueue.Count == 0)
-                    Monitor.Wait(_L_Queue);
+                {
+                    Monitor.Wait(_L_Queue, _connectionPingTime);
+                    if (_workQueue.Count == 0)
+                        return new QueryWork(_ping);
+                }
 
                 return _workQueue.Dequeue();
             }
+        }
+
+        private void _ping(QueryWorker worker) {
+            worker.Ping();
         }
 
         #region Driver implementation wrapped on the pool
