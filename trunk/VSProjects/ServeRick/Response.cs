@@ -33,7 +33,7 @@ namespace ServeRick
         private bool _closeAfterSend = false;
         private bool _closed = false;
 
-        private Action _afterSend;
+        private volatile Action _afterSend;
 
         private string _statusLine;
 
@@ -167,8 +167,9 @@ namespace ServeRick
             {
                 if (_afterSend != null)
                 {
-                    _afterSend();
+                    var callback = _afterSend;
                     _afterSend = null;
+                    callback();
                 }
 
                 //nothing more to send

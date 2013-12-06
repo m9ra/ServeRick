@@ -58,6 +58,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -124,6 +125,7 @@
     <Compile Include="InputManagerBase.cs" />
     <Compile Include="Languages\HAML\Compiling\Context.cs" />
     <Compile Include="Languages\HAML\Compiling\HAMLInterval.cs" />
+    <Compile Include="Modules\Captcha.cs" />
     <Compile Include="Modules\Input\Boundary.cs" />
     <Compile Include="Modules\Input\MultiPart.cs" />
     <Compile Include="Modules\Input\PartStream.cs" />

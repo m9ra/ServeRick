@@ -56,6 +56,8 @@ namespace ServeRick.Networking
         /// </summary>
         bool _isResponseWorkStarted = false;
 
+        private volatile bool _isClosed;
+
         #endregion
 
         #region Internal API exposed by client
@@ -65,6 +67,11 @@ namespace ServeRick.Networking
         /// Is called asynchronously
         /// </summary>
         internal event Action OnClose;
+
+        /// <summary>
+        /// Determine that client is alredy closed
+        /// </summary>
+        internal bool IsClosed { get { return _isClosed; } }
 
         /// <summary>
         /// Clients buffer
@@ -162,7 +169,7 @@ namespace ServeRick.Networking
         /// Close connection with client
         /// </summary>
         internal void Close()
-        {
+        {            
             if (_socket.Connected)
                 _socket.Client.BeginDisconnect(false, _onDisconnected, null);
         }
@@ -209,6 +216,7 @@ namespace ServeRick.Networking
 
         private void _onDisconnected(IAsyncResult result)
         {
+            _isClosed = true;
             _socket.Client.EndDisconnect(result);
             onDisconnected();
         }
@@ -271,9 +279,10 @@ namespace ServeRick.Networking
         /// </summary>
         private void onDisconnected()
         {
-            Buffer.Recycle();
             if (OnClose != null)
                 OnClose();
+
+            Buffer.Recycle();
         }
 
         /// <summary>
@@ -306,8 +315,5 @@ namespace ServeRick.Networking
         }
 
         #endregion
-
-
-
     }
 }

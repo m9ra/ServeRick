@@ -27,6 +27,10 @@ namespace ServeRick.Responsing
         internal override void Run()
         {
             Client.OnClose += close;
+            if (Client.IsClosed)
+            {
+                Complete();
+            }
             sendHandler();
         }
 
@@ -63,7 +67,7 @@ namespace ServeRick.Responsing
             if (_data == null)
                 //already closed
                 return;
-
+            
             _data.Close();
         }
     }

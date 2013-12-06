@@ -14,12 +14,18 @@ namespace ServeRick.Languages.SCSS
         {
             //TODO resolve placeholder sign
 
-            var prefix = parent.ToCSS();
-            for (int i = 0; i < _specifiers.Count; ++i)
+            var newSpecifiers=new List<string>();
+
+            foreach (var prefix in parent._specifiers)
             {
-                var specifier = prefix+" "+ _specifiers[i];
-                _specifiers[i] = specifier;
+                foreach(var suffix in _specifiers)
+                {
+                    var specifier = prefix + " " + suffix;
+                    newSpecifiers.Add(specifier);
+                }
             }
+
+            _specifiers=newSpecifiers;
         }
 
         internal string ToCSS()

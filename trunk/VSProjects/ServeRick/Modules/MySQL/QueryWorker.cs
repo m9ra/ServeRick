@@ -198,7 +198,7 @@ namespace ServeRick.Modules.MySQL
             }
 
             var totalRowsScalar = executeScalar("SELECT FOUND_ROWS()");
-            var totalRows = (int)(long)totalRowsScalar;
+            var totalRows = Convert.ToInt32(totalRowsScalar);
 
             var rowsResult = new RowsResult<ActiveRecord>(results, totalRows);
             executor(rowsResult);
@@ -243,7 +243,7 @@ namespace ServeRick.Modules.MySQL
 
                 //back retrieve inserted row id
                 var scalar = insertCmd.ExecuteScalar();
-                table.SetColumnValue(row, "id", (int)(ulong)scalar);
+                table.SetColumnValue(row, "id", Convert.ToInt32(scalar));
             }
 
             executor(inserted);
@@ -384,6 +384,12 @@ namespace ServeRick.Modules.MySQL
 
                 query.Append(operation);
                 isFirst = false;
+            }
+
+            var isEmpty = isFirst;
+            if (isEmpty)
+            {
+                query.Append(" 1 ");
             }
         }
 
