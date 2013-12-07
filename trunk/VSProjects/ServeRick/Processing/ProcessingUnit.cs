@@ -20,5 +20,13 @@ namespace ServeRick.Processing
             Output = new OutputProcessor();
             Database = new DatabaseProcessor();
         }
+
+        internal void EnqueueIndependent(WorkItem item)
+        {
+            var chain = new WorkChain(this);
+            chain.AppendItem(item);
+
+            chain.StartProcessing();
+        }
     }
 }

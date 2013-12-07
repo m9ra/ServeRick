@@ -24,9 +24,10 @@ namespace ServeRick.Processing
             _executionThread.Start();
         }
 
-        internal void EnqueueWork(WorkItem work)
+        internal void EnqueueChain(WorkChain chain)
         {
-            Debug.Assert(work.PlannedProcessor == this);
+            var work = chain.ProcessedItem;
+            Debug.Assert(work.PlannedProcessor == this, "Cannot process item on current processor");
 
             lock (_L_toProcess)
             {
@@ -52,5 +53,6 @@ namespace ServeRick.Processing
                 work.Run();
             }
         }
+
     }
 }

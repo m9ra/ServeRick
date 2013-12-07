@@ -45,9 +45,9 @@ namespace ServeRick.Database
         /// <summary>
         /// Execute without queueing for client
         /// </summary>
-        internal UpdateQueryWorkItem<ActiveRecord> CreateWork(ProcessingUnit unit)
+        internal UpdateQueryWorkItem<ActiveRecord> CreateWork()
         {
-            return new UpdateQueryWorkItem<ActiveRecord>(unit, this);
+            return new UpdateQueryWorkItem<ActiveRecord>(this);
         }
     }
 }

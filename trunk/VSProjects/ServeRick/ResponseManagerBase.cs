@@ -109,7 +109,7 @@ namespace ServeRick
 
         protected virtual string getUri(string relativeFilePath)
         {
-            var uri= relativeFilePath.Replace('\\', '/');
+            var uri = relativeFilePath.Replace('\\', '/');
             if (uri[0] != '/')
                 uri = '/' + uri;
 
@@ -285,10 +285,10 @@ namespace ServeRick
             }
 
             client.EnqueueWork(
-                new ResponseHandlerWorkItem(item.Handler)
+                new ResponseHandlerWorkItem(client, item.Handler)
                 );
 
-            client.StartQueueProcessing();
+            client.StartChainProcessing();
         }
 
         #endregion

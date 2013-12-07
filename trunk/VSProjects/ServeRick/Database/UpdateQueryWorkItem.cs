@@ -14,8 +14,8 @@ namespace ServeRick.Database
 
         readonly UpdateQuery<ActiveRecord> _query;
 
-        internal UpdateQueryWorkItem(ProcessingUnit unit, UpdateQuery<ActiveRecord> query)
-            : base(unit)
+        internal UpdateQueryWorkItem(UpdateQuery<ActiveRecord> query)
+            : base()
         {
             _query = query;
         }
@@ -25,7 +25,7 @@ namespace ServeRick.Database
             var table = Unit.Database.GetTable<ActiveRecord>();
             table.Driver.UpdateRows(table, _query, _handler);
         }
-            
+
         /// <summary>
         /// Update execution handler, is called asynchronously, when 
         /// query execution is done.

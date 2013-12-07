@@ -109,14 +109,14 @@ namespace ServeRick.Database
             return clonned;
         }
 
-        internal RowQueryWorkItem<ActiveRecord> CreateWork(ProcessingUnit unit, RowExecutor<ActiveRecord> executor)
+        internal RowQueryWorkItem<ActiveRecord> CreateWork(RowExecutor<ActiveRecord> executor)
         {
-            return new RowQueryWorkItem<ActiveRecord>(unit, this, executor);
+            return new RowQueryWorkItem<ActiveRecord>(this, executor);
         }
 
-        internal RowsQueryWorkItem<ActiveRecord> CreateWork(ProcessingUnit unit, RowsExecutor<ActiveRecord> executor)
+        internal RowsQueryWorkItem<ActiveRecord> CreateWork(RowsExecutor<ActiveRecord> executor)
         {
-            return new RowsQueryWorkItem<ActiveRecord>(unit, this, executor);
+            return new RowsQueryWorkItem<ActiveRecord>(this, executor);
         }
 
         internal SelectQuery<ActiveRecord> Clone(WhereClause where)
@@ -132,5 +132,5 @@ namespace ServeRick.Database
         {
             return Clone(Condition);
         }
- }
+    }
 }

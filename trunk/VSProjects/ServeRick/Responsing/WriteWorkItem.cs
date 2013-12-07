@@ -6,68 +6,63 @@ using System.Threading.Tasks;
 
 using System.IO;
 
+using ServeRick.Networking;
 using ServeRick.Processing;
 
 namespace ServeRick.Responsing
 {
-    class WriteWorkItem : ClientWorkItem
+    class WriteWorkItem : ResponseWorkItem
     {
-        private DataStream _data;
+        private readonly DataStream _data;
 
-        internal WriteWorkItem(DataStream data)
+        private readonly Client _client;
+
+        internal WriteWorkItem(Client client, DataStream data)
         {
+            _client = client;
             _data = data;
-        }
-
-        protected override WorkProcessor getPlannedProcessor()
-        {
-            return Unit.Output;
         }
 
         internal override void Run()
         {
-            Client.OnClose += close;
-            if (Client.IsClosed)
+            if (_client.IsClosed)
             {
-                Complete();
+                throw new InvalidOperationException("Cannot run, when client is closed");
             }
             sendHandler();
         }
 
         private void sendHandler()
         {
-            Client.Response.Flush(onFlushed);
+            _client.Response.Flush(onFlushed);
         }
 
         private void onFlushed()
         {
-            _data.BeginRead(Client.Buffer.Storage, onDataAvailable);
+            _data.BeginRead(_client.Buffer.Storage, onDataAvailable);
         }
 
         private void onDataAvailable(byte[] buffer, int length)
         {
             if (length > 0)
             {
-                Client.Send(buffer, sendHandler);
+                _client.Send(buffer, sendHandler);
             }
             else
             {
+                close();
                 Complete();
             }
         }
 
-        protected override void onComplete()
+        private void abort()
         {
-            base.onComplete();
             close();
+            Abort();
         }
 
         private void close()
         {
-            if (_data == null)
-                //already closed
-                return;
-            
             _data.Close();
         }
     }

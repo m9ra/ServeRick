@@ -30,10 +30,9 @@ namespace ServeRick
 
         private bool _flipSession = false;
         private bool _headersSent = false;
-        private bool _closeAfterSend = false;
         private bool _closed = false;
 
-        private volatile Action _afterSend;
+        internal event Action AfterSend;
 
         private string _statusLine;
 
@@ -126,7 +125,7 @@ namespace ServeRick
         public void Render(ResponseHandler handler)
         {
             Client.EnqueueWork(
-                new ResponseHandlerWorkItem(handler)
+                new ResponseHandlerWorkItem(Client, handler)
                 );
         }
 
@@ -142,7 +141,7 @@ namespace ServeRick
 
         internal void Flush(Action onFlushed)
         {
-            _afterSend = onFlushed;
+            AfterSend = onFlushed;
 
             sendQueue();
         }
@@ -165,18 +164,11 @@ namespace ServeRick
 
             if (_toSend.Count == 0)
             {
-                if (_afterSend != null)
+                if (AfterSend != null)
                 {
-                    var callback = _afterSend;
-                    _afterSend = null;
+                    var callback = AfterSend;
+                    AfterSend = null;
                     callback();
-                }
-
-                //nothing more to send
-                if (_closeAfterSend)
-                {
-                    //there is no other work
-                    Client.Close();
                 }
 
                 return;
@@ -223,14 +215,13 @@ namespace ServeRick
             }
 
             _closed = true;
-            _closeAfterSend = true;
 
             sendQueue();
 
             if (_flipSession)
             {
-                var flip = new FlipSessionWorkItem(Client.Unit, Client.SessionID);
-                flip.EnqueueToProcessor();
+                var flip = new FlipSessionWorkItem(Client.SessionID);
+                Client.Unit.EnqueueIndependent(flip);
             }
         }
     }

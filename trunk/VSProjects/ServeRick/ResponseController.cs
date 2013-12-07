@@ -80,7 +80,7 @@ namespace ServeRick
 
         protected void Write(DataStream data)
         {
-            Client.EnqueueWork(new WriteWorkItem(data));
+            Client.EnqueueWork(new WriteWorkItem(Client, data));
         }
 
         protected string GET(string varName)
@@ -157,32 +157,32 @@ namespace ServeRick
         protected void Execute<T>(UpdateQuery<T> query)
             where T : DataRecord
         {
-            var item = query.CreateWork(Unit);
-            item.EnqueueToProcessor();
+            var item = query.CreateWork();
+            Client.EnqueueWork(item);
         }
 
         protected void Execute<T>(InsertQuery<T> query, InsertExecutor<T> executor)
             where T : DataRecord
         {
-            var item = query.CreateWork(Unit, executor);
+            var item = query.CreateWork(executor);
 
-            Client.EnqueueWork(new ClientWorkItemWrap(item));
+            Client.EnqueueWork(item);
         }
 
         protected void ExecuteRow<T>(SelectQuery<T> query, RowExecutor<T> executor)
             where T : DataRecord
         {
-            var item = query.CreateWork(Unit, executor);
+            var item = query.CreateWork(executor);
 
-            Client.EnqueueWork(new ClientWorkItemWrap(item));
+            Client.EnqueueWork(item);
         }
 
         protected void ExecuteRows<T>(SelectQuery<T> query, RowsExecutor<T> executor)
             where T : DataRecord
         {
-            var item = query.CreateWork(Unit, executor);
+            var item = query.CreateWork(executor);
 
-            Client.EnqueueWork(new ClientWorkItemWrap(item));
+            Client.EnqueueWork(item);
         }
 
         #endregion

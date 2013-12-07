@@ -17,19 +17,16 @@ namespace ServeRick.Processing
     abstract class WorkItem
     {
         /// <summary>
-        /// Determine that work item has already been enqueued at processor
+        /// Work chain where the item belongs to
         /// </summary>
-        private bool _wasEnqueued = false;
+        private WorkChain _owningChain;
 
-        /// <summary>
-        /// Action invoked when item is completed
-        /// </summary>
-        internal event Action OnComplete;
+        protected ProcessingUnit Unit { get { return _owningChain.Unit; } }
 
         /// <summary>
         /// Processor where work item will be processed
         /// </summary>
-        internal WorkProcessor PlannedProcessor { get; private set; }
+        internal abstract WorkProcessor PlannedProcessor { get; }
 
         /// <summary>
         /// Determine that item has been completed already
@@ -40,48 +37,28 @@ namespace ServeRick.Processing
         /// When overriden run action specified by work item
         /// </summary>
         internal abstract void Run();
-
-        /// <summary>
-        /// Plan processor for current work item. Planned
-        /// processor will be used for runnig current work item.
-        /// </summary>
-        /// <param name="plannedProcessor">Processor planned for this item.</param>
-        protected void PlanProcessor(WorkProcessor plannedProcessor)
-        {
-            if (PlannedProcessor != null)
-                throw new NotSupportedException("Cannot replan processor for work item");
-
-            Debug.Assert(plannedProcessor != null, "Planned processor cannot be null");
-            PlannedProcessor = plannedProcessor;
-        }
-
+        
         internal void Complete()
         {
             if (IsComplete)
                 throw new NotSupportedException("Cannot complete work item twice");
 
             IsComplete = true;
-            onComplete();
-            if (OnComplete != null)
-                OnComplete();
+
+            _owningChain.OnComplete(this);
         }
 
-        /// <summary>
-        /// Method is called whenever work item is completed
-        /// </summary>
-        protected virtual void onComplete()
+        internal void Abort()
         {
-            //nothing to do by default
+            throw new NotImplementedException("Work item aborting");
         }
 
-        /// <summary>
-        /// Enqueue current work item on planned processor
-        /// </summary>
-        internal void EnqueueToProcessor()
+        internal void SetOwningChain(WorkChain workChain)
         {
-            Debug.Assert(_wasEnqueued == false, "Work item can be processed only once");
-            _wasEnqueued = true;
-            PlannedProcessor.EnqueueWork(this);
+            if (_owningChain != null)
+                throw new InvalidOperationException("Cannot set owning chain multiple times");
+
+            _owningChain = workChain;
         }
     }
 }

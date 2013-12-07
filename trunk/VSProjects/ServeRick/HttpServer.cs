@@ -94,7 +94,7 @@ namespace ServeRick
 
 
             //TODO selecting processor according to session data
-            client.Unit = _unit;
+            client.SetUnit(_unit);
             client.Response = new Response(client);
             SessionProvider.PrepareSessionID(client);
 

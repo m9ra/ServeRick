@@ -135,9 +135,9 @@
     <Compile Include="Modules\MySQL\QueryWorker.cs" />
     <Compile Include="Modules\MySQL\SqlQuery.cs" />
     <Compile Include="Modules\NamespaceDoc.cs" />
-    <Compile Include="Processing\ClientWorkItem.cs" />
-    <Compile Include="Processing\ClientWorkItemWrap.cs" />
     <Compile Include="Processing\ProcessingUnit.cs" />
+    <Compile Include="Processing\WorkChain.cs" />
+    <Compile Include="Responsing\ResponseWorkItem.cs" />
     <Compile Include="Responsing\WriteWorkItem.cs" />
     <Compile Include="Sessions\FlipSessionWorkItem.cs" />
     <Compile Include="Sessions\SetSessionWorkItem.cs" />

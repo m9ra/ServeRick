@@ -16,28 +16,26 @@ namespace ServeRick.Responsing
     ///     Also work items can be generated dynamically during request processing.
     /// </remarks>
     /// </summary>
-    class ResponseHandlerWorkItem : ClientWorkItem
+    class ResponseHandlerWorkItem : ResponseWorkItem
     {
         /// <summary>
         /// Handler that process given work item
         /// </summary>
-        internal readonly ResponseHandler Handler;
+        private readonly ResponseHandler _handler;
 
-        public ResponseHandlerWorkItem(ResponseHandler handler)
+        private readonly Client _client;
+
+        public ResponseHandlerWorkItem(Client client, ResponseHandler handler)
         {
-            Handler = handler;
+            _client = client;
+            _handler = handler;
         }
 
         internal override void Run()
         {
             //TODO partial buffer sending
-            Handler(Client.Response);
+            _handler(_client.Response);
             Complete();
-        }
-
-        protected override WorkProcessor getPlannedProcessor()
-        {
-            return Unit.Output;
         }
     }
 }

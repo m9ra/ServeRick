@@ -4,16 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using ServeRick.Networking;
 using ServeRick.Processing;
 
-namespace ServeRick.Database
+namespace ServeRick.Responsing
 {
-    abstract class DatabaseWorkItem : WorkItem
+    abstract class ResponseWorkItem : WorkItem
     {
         internal override WorkProcessor PlannedProcessor
         {
-            get { return Unit.Database; }
+            get { return Unit.Output; }
         }
     }
 }

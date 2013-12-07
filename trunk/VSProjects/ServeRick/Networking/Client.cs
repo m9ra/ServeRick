@@ -46,15 +46,9 @@ namespace ServeRick.Networking
         readonly TcpClient _socket;
 
         /// <summary>
-        /// Queue used for work items that are waiting for processing.
-        /// Contained work items needs to be run to complete response.
+        /// Chain of work items for processing clients response
         /// </summary>
-        readonly Queue<ClientWorkItem> _responseWork = new Queue<ClientWorkItem>();
-
-        /// <summary>
-        /// Determine that work items in work queue are sended to processors
-        /// </summary>
-        bool _isResponseWorkStarted = false;
+        WorkChain _workChain;
 
         private volatile bool _isClosed;
 
@@ -62,11 +56,6 @@ namespace ServeRick.Networking
 
         #region Internal API exposed by client
 
-        /// <summary>
-        /// Handler that is called after client is closed
-        /// Is called asynchronously
-        /// </summary>
-        internal event Action OnClose;
 
         /// <summary>
         /// Determine that client is alredy closed
@@ -84,9 +73,14 @@ namespace ServeRick.Networking
         internal readonly HttpRequestParser Parser = new HttpRequestParser();
 
         /// <summary>
+        /// Processing unit belonging to client;
+        /// </summary>
+        private ProcessingUnit _unit;
+
+        /// <summary>
         /// TODO avoid multiple assigning
         /// </summary>
-        internal ProcessingUnit Unit { get; set; }
+        internal ProcessingUnit Unit { get { return _unit; } }
 
         #endregion
 
@@ -96,6 +90,10 @@ namespace ServeRick.Networking
         /// ID resolved for client
         /// </summary>
         public string SessionID { get; internal set; }
+
+        public static object _L_activeClients = new object();
+
+        public static int ActiveClients { get; private set; }
 
         public IPAddress IP
         {
@@ -127,6 +125,20 @@ namespace ServeRick.Networking
         {
             _socket = clientSocket;
             Buffer = clientBuffer;
+
+            lock (_L_activeClients)
+            {
+                ++ActiveClients;
+            }
+        }
+
+        internal void SetUnit(ProcessingUnit unit)
+        {
+            if (_unit != null)
+                throw new InvalidOperationException("Cannot set unit multiple times");
+
+            _unit = unit;
+            initializeWorkChain();
         }
 
         #region Network API for communication with client
@@ -169,7 +181,11 @@ namespace ServeRick.Networking
         /// Close connection with client
         /// </summary>
         internal void Close()
-        {            
+        {
+            if (_isClosed)
+                return;
+
+            _isClosed = true;
             if (_socket.Connected)
                 _socket.Client.BeginDisconnect(false, _onDisconnected, null);
         }
@@ -216,8 +232,14 @@ namespace ServeRick.Networking
 
         private void _onDisconnected(IAsyncResult result)
         {
-            _isClosed = true;
             _socket.Client.EndDisconnect(result);
+            _socket.Client.Dispose();
+
+            lock (_L_activeClients)
+            {
+                --ActiveClients;
+            }
+
             onDisconnected();
         }
 
@@ -229,59 +251,69 @@ namespace ServeRick.Networking
         /// Enqueue given work items to be processed to complete client response.
         /// </summary>
         /// <param name="workItems">Work items to be enqueued.</param>
-        internal void EnqueueWork(params ClientWorkItem[] workItems)
+        internal void EnqueueWork(params WorkItem[] workItems)
         {
             foreach (var work in workItems)
             {
-                work.SetClient(this);
-                _responseWork.Enqueue(work);
+                _workChain.InsertItem(work);
             }
         }
 
         /// <summary>
         /// Start processing of response work items on client processing unit.
         /// </summary>
-        internal void StartQueueProcessing()
+        internal void StartChainProcessing()
         {
-            if (_isResponseWorkStarted)
-                throw new NotSupportedException("Work processing can be started only once");
-
-            _isResponseWorkStarted = true;
-            ProcessNextWorkItem();
-        }
-
-        /// <summary>
-        /// Process next response work item in queue. If there the queue is
-        /// empty, response is closed
-        /// </summary>
-        internal void ProcessNextWorkItem()
-        {
-            if (!_isResponseWorkStarted)
-                throw new NotSupportedException("Next work item cannot be processed until work processing starts");
-
-            if (_responseWork.Count == 0)
-            {
-                Response.Close();
-                //work for currrent client has been done
-                return;
-            }
-
-            var work = _responseWork.Dequeue();
-            work.EnqueueToProcessor();
+            _workChain.StartProcessing();
         }
 
         #endregion
 
         #region Private utilities
 
+        private void initializeWorkChain()
+        {
+            _workChain = new WorkChain(_unit);
+            _workChain.OnCompleted += onChainCompleted;
+        }
+
         /// <summary>
         /// Handler called when client is disconnected (expectedly or unexpectedly)
         /// </summary>
         private void onDisconnected()
         {
-            if (OnClose != null)
-                OnClose();
+            if (_workChain == null)
+            {
+                //there is no chain which can 
+                onChainCompleted();
+            }
+            else
+            {
+                //client has disconnected - work can be aborted
+                _workChain.Abort();
+            }
+        }
 
+        /// <summary>
+        /// Handler called after client is completed - its work, or has disconnected,...
+        /// </summary>
+        private void onChainCompleted()
+        {
+            if (Response == null)
+            {
+                //client completed before response has been started
+                dispose();
+            }
+            else
+            {
+                Response.AfterSend += dispose;
+                Response.Close();
+            }
+        }
+
+        private void dispose()
+        {
+            Close();
             Buffer.Recycle();
         }
 

@@ -13,8 +13,7 @@ namespace ServeRick.Database
     {
         readonly RemoveQuery<ActiveRecord> _query;
 
-        internal RemoveQueryWorkItem(ProcessingUnit unit, RemoveQuery<ActiveRecord> query)
-            : base(unit)
+        internal RemoveQueryWorkItem(RemoveQuery<ActiveRecord> query)            
         {
             _query = query;
         }

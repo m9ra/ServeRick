@@ -9,23 +9,19 @@ using ServeRick.Processing;
 
 namespace ServeRick.Sessions
 {
-    class FlipSessionWorkItem : WorkItem
+    class FlipSessionWorkItem : ResponseWorkItem
     {
-        readonly OutputProcessor _output;
-
         readonly string _sessionID;
 
-        internal FlipSessionWorkItem(ProcessingUnit unit, string sessionID)
+        internal FlipSessionWorkItem(string sessionID)
         {
-            _output = unit.Output;
             _sessionID = sessionID;
-
-            PlanProcessor(_output);
         }
 
         internal override void Run()
         {
-            SessionProvider.FlipFlash(_output, _sessionID);
+            SessionProvider.FlipFlash(Unit.Output, _sessionID);
+            Complete();
         }
     }
 }

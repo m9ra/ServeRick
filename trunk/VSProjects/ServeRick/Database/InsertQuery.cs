@@ -36,9 +36,9 @@ namespace ServeRick.Database
             Rows = records;
         }
 
-        internal InsertQueryWorkItem<ActiveRecord> CreateWork(ProcessingUnit unit, InsertExecutor<ActiveRecord> executor)
+        internal InsertQueryWorkItem<ActiveRecord> CreateWork(InsertExecutor<ActiveRecord> executor)
         {
-            return new InsertQueryWorkItem<ActiveRecord>(unit, this, executor);
+            return new InsertQueryWorkItem<ActiveRecord>(this, executor);
         }
     }
 }

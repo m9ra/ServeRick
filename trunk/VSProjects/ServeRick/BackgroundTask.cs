@@ -123,38 +123,43 @@ namespace ServeRick
         protected void Execute<T>(UpdateQuery<T> query)
          where T : DataRecord
         {
-            var item = query.CreateWork(_unit);
-            item.EnqueueToProcessor();
+            var item = query.CreateWork();
+            enqueue(item);
         }
 
         protected void Execute<T>(RemoveQuery<T> query)
          where T : DataRecord
         {
-            var item = query.CreateWork(_unit);
-            item.EnqueueToProcessor();
+            var item = query.CreateWork();
+            enqueue(item);
         }
 
         protected void Execute<T>(InsertQuery<T> query, InsertExecutor<T> executor)
             where T : DataRecord
         {
-            var item = query.CreateWork(_unit, executor);
-            item.EnqueueToProcessor();
+            var item = query.CreateWork(executor);
+            enqueue(item);
         }
 
         protected void ExecuteRow<T>(SelectQuery<T> query, RowExecutor<T> executor)
             where T : DataRecord
         {
-            var item = query.CreateWork(_unit, executor);
-            item.EnqueueToProcessor();
+            var item = query.CreateWork(executor);
+            enqueue(item);
         }
 
         protected void ExecuteRows<T>(SelectQuery<T> query, RowsExecutor<T> executor)
             where T : DataRecord
         {
-            var item = query.CreateWork(_unit, executor);
-            item.EnqueueToProcessor();
+            var item = query.CreateWork(executor);
+            enqueue(item);
         }
 
         #endregion
+
+        private void enqueue(WorkItem item)
+        {
+            _unit.EnqueueIndependent(item);
+        }
     }
 }

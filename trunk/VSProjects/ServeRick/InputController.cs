@@ -73,8 +73,8 @@ namespace ServeRick
         /// <param name="sessionData"></param>
         public void SetSession<T>(T sessionData)
         {
-            var work = new SetSessionWorkItem(Client.Unit, Client.SessionID, sessionData);
-            Client.Unit.Output.EnqueueWork(work);
+            var work = new SetSessionWorkItem(Client.SessionID, sessionData);
+            Client.EnqueueWork(work);
         }
 
         /// <summary>

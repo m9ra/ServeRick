@@ -15,8 +15,7 @@ namespace ServeRick.Database
         readonly InsertQuery<ActiveRecord> _query;
         readonly InsertExecutor<ActiveRecord> _executor;
 
-        internal InsertQueryWorkItem(ProcessingUnit unit, InsertQuery<ActiveRecord> query, InsertExecutor<ActiveRecord> executor)
-            :base(unit)
+        internal InsertQueryWorkItem(InsertQuery<ActiveRecord> query, InsertExecutor<ActiveRecord> executor)            
         {
             _query = query;
             _executor = executor;

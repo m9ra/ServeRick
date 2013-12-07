@@ -21,8 +21,7 @@ namespace ServeRick.Database
         /// </summary>
         private readonly RowsExecutor<ActiveRecord> _executor;
 
-        internal RowsQueryWorkItem(ProcessingUnit unit, SelectQuery<ActiveRecord> query, RowsExecutor<ActiveRecord> executor)
-            : base(unit)
+        internal RowsQueryWorkItem(SelectQuery<ActiveRecord> query, RowsExecutor<ActiveRecord> executor)
         {
             _query = query;
             _executor = executor;
