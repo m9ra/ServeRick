@@ -87,6 +87,11 @@ namespace ServeRick
             Request.SetPOST(varName, varValue);
         }
 
+        protected string GET(string varName)
+        {
+            return Request.GetGET(varName);
+        }
+
         /// <summary>
         /// Called after input download is completed
         /// </summary>

@@ -23,13 +23,20 @@ namespace ServeRick
 
         protected WebApplication()
         {
-            var helperTypes=getHelpers();
-            var webHelpers=new WebMethods(helperTypes);
+            var helperTypes = getHelpers();
+
+            //TODO better helpers handling
+            var helperTypesList = new List<Type>();
+            helperTypesList.AddRange(helperTypes);
+            helperTypesList.Add(typeof(CompilerHelpers));
+
+            var webHelpers = new WebMethods(helperTypesList.ToArray());
             HandlerProvider = new ResponseHandlerProvider(webHelpers);
         }
-        
-        internal ResponseManagerBase CreateResponseManager(){
-            var manager=createResponseManager();
+
+        internal ResponseManagerBase CreateResponseManager()
+        {
+            var manager = createResponseManager();
             return manager;
         }
 

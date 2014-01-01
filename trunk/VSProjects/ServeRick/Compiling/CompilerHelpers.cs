@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Web;
+
 namespace ServeRick.Compiling
 {
     /// <summary>
@@ -43,7 +45,11 @@ namespace ServeRick.Compiling
 
             foreach (var pair in attributesContainer)
             {
-                attributes.AppendFormat("{0}=\"{1}\" ", pair.Key, pair.Value);
+                if (pair.Key == null || pair.Value == null)
+                    continue;
+
+                var escaped = pair.Value.Replace("\"", "&quot;");
+                attributes.AppendFormat("{0}=\"{1}\" ", pair.Key, escaped);
             }
 
 
@@ -86,6 +92,22 @@ namespace ServeRick.Compiling
         {
             var result = string.Concat(parts);
             return result;
+        }
+
+        public static T EscapeHTML<T>(T html)
+        {
+            if (typeof(T) == typeof(string))
+            {
+                var htmlStr = html as string;
+                if (htmlStr != null)
+                {
+                    //escape html
+                    var result=(T)(object)HttpUtility.HtmlEncode(htmlStr);
+                    return result;
+                }
+            }
+
+            return html;
         }
 
         public static bool Not(bool value)

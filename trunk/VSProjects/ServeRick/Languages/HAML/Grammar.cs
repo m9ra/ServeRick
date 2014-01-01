@@ -58,8 +58,9 @@ namespace ServeRick.Languages.HAML
             var statement = generateStatementGrammar();
             generateTemplateGrammar(statement);
 
-            MarkPunctuation("", "!!!", ".", "#", "%", "render", "=>", ",",
-                ")", "(", "}", "{", "@", "|", "else", "if", "do", ".."
+            MarkPunctuation("", "!!!", ".", "#", "%", "render", "=>",
+                ")", "(", "@", "|", "else", "if", "do", ".."
+                , "}", "{", ","
                 );
         }
 
@@ -181,7 +182,7 @@ namespace ServeRick.Languages.HAML
             var typeModifier = T_REG("\\+", "typeModifier");
             var type = T_REG(@"\w[\w.]+", "type");
             var identifier = T_REG("[a-zA-Z_][a-zA-Z01-9_]*", "identifier");
-            var rawOutput = T_REG("[^@!%#={.(-][^\\r\\n]*", "rawOutput");
+            var rawOutput = T_REG("[^@!%#=.({-][^\\r\\n]*", "rawOutput");
 
             #endregion
 
@@ -197,7 +198,7 @@ namespace ServeRick.Languages.HAML
 
             //content rules
             content.Rule = (code | rawOutput);
-            code.Rule = codePrefix + statement;
+            code.Rule = codePrefix + Q("raw") + statement;
 
             //head rules
             head.Rule = (tag + Q(hash) + Q(attribs)) | attribs;

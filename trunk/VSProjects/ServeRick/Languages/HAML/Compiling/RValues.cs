@@ -32,12 +32,27 @@ namespace ServeRick.Languages.HAML.Compiling
     {
         readonly VariableInstruction _variable;
 
-        internal VariableValue(string variableName, Context context)
+        private VariableValue(VariableInstruction variable, Context context)
             : base(context)
         {
-            _variable = context.GetVariable(variableName);
-            if (_variable == null)
+            _variable = variable;
+        }
+
+        internal static VariableValue Get(string variableName, Context context)
+        {
+            var variable = context.GetVariable(variableName);
+            if (variable == null)
                 throw new KeyNotFoundException("Variable: " + variableName);
+
+            return new VariableValue(variable, context);
+        }
+
+        internal static VariableValue TryGet(string variableName, Context context)
+        {
+            if (context.GetVariable(variableName) == null)
+                return null;
+
+            return Get(variableName, context);
         }
 
         internal override Instruction ToInstruction()

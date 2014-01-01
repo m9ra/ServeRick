@@ -23,7 +23,7 @@ namespace ServeRick.Networking
 
         public static readonly string IPHeader = "IP:";
 
-
+        public static readonly string ForwardedHeader = "X-Forwarded-For";
 
         #region Private members
 

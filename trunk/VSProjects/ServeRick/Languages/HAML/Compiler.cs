@@ -183,6 +183,8 @@ namespace ServeRick.Languages.HAML
                 var resolved = StepToChild(block);
 
                 var compiledBlock = compileBlock(resolved);
+                if (compiledBlock == null)
+                    continue;
                 compiledBlocks.Add(compiledBlock);
             }
 
@@ -264,6 +266,9 @@ namespace ServeRick.Languages.HAML
 
         private Instruction compileCode(Node code)
         {
+            if (code == null)
+                return null;
+
             var statements = GetDescendant(code, "statement");
 
             //TODO multiple statemets handling
@@ -276,6 +281,8 @@ namespace ServeRick.Languages.HAML
                  return lastStatement;*/
 
             var prefix = GetTerminalText(code.ChildNodes[0]);
+            var isRaw = GetTerminalText(code.ChildNodes[1]) == "raw";
+
             var compiled = compileStatement(statements);
             if (compiled.ReturnType == typeof(void))
             {
@@ -287,7 +294,8 @@ namespace ServeRick.Languages.HAML
             switch (prefix)
             {
                 case "=":
-                    compiled = E.WriteInstruction(compiled);
+                    var escaped = isRaw ? compiled : escapeHTML(compiled);
+                    compiled = E.WriteInstruction(escaped);
                     break;
                 case "-":
                     //silent code
@@ -297,6 +305,13 @@ namespace ServeRick.Languages.HAML
             }
 
             return compiled;
+        }
+
+        private Instruction escapeHTML(Instruction compiled)
+        {
+            var escaped = E.Call("EscapeHTML", new Instruction[] { compiled });
+
+            return escaped;
         }
 
         private Instruction compileStatement(Node statement)
@@ -403,9 +418,12 @@ namespace ServeRick.Languages.HAML
                     var callNode = GetDescendant(node, "call");
                     return resolveMethodCall(calledObj, callNode);
                 case "identifier":
+                    var identifier = GetTerminalText(node);
+                    var variable = VariableValue.TryGet(identifier, CurrentContext);
+                    if (variable != null)
+                        return variable;
 
-                    var variableName = GetTerminalText(node);
-                    return new VariableValue(variableName, CurrentContext);
+                    return new CallValue(identifier, new RValue[0], CurrentContext);
                 default:
                     throw new NotImplementedException();
             }
@@ -414,6 +432,14 @@ namespace ServeRick.Languages.HAML
         private RValue resolveInterval(RValue fromVal, RValue toVal)
         {
             return new IntervalValue(fromVal, toVal, CurrentContext);
+        }
+
+        private RValue resolveMethodCall(RValue calledObj, string callName, IEnumerable<RValue> arguments = null)
+        {
+            if (arguments == null)
+                arguments = new RValue[0];
+
+            return new MethodCallValue(calledObj, callName, arguments.ToArray(), CurrentContext);
         }
 
         private RValue resolveMethodCall(RValue calledObj, Node callNode)
@@ -431,7 +457,7 @@ namespace ServeRick.Languages.HAML
 
                 default:
                     var args = getArguments(callNode);
-                    return new MethodCallValue(calledObj, callName, args, CurrentContext);
+                    return resolveMethodCall(calledObj, callName, args);
             }
         }
 
@@ -521,7 +547,7 @@ namespace ServeRick.Languages.HAML
 
             if (literal.StartsWith("\"") && literal.EndsWith("\""))
             {
-                literalValue = literal.Substring(1, literal.Length - 2);
+                literalValue = literal.Substring(1, literal.Length - 2).Replace("\\n", "\n");
             }
             else if (int.TryParse(literal, out number))
             {

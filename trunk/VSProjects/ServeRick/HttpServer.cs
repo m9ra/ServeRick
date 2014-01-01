@@ -98,7 +98,10 @@ namespace ServeRick
             client.Response = new Response(client);
             SessionProvider.PrepareSessionID(client);
 
-            client.Request.SetHeader(HttpRequest.IPHeader, client.IP.ToString());
+            //resolve IP address accordingly forward headers
+            string ipValue;
+            client.Request.TryGetHeader(HttpRequest.ForwardedHeader, out ipValue, client.IP.ToString());
+            client.Request.SetHeader(HttpRequest.IPHeader, ipValue);
 
             if (client.Request.ContentLength > 0)
             {

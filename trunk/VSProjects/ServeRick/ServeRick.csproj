@@ -127,8 +127,9 @@
     <Compile Include="Languages\HAML\Compiling\HAMLInterval.cs" />
     <Compile Include="Modules\Captcha.cs" />
     <Compile Include="Modules\Input\Boundary.cs" />
-    <Compile Include="Modules\Input\MultiPart.cs" />
+    <Compile Include="Modules\Input\MultiPartInput.cs" />
     <Compile Include="Modules\Input\PartStream.cs" />
+    <Compile Include="Modules\Input\UrlEncodedInput.cs" />
     <Compile Include="Modules\LightDataDriver.cs" />
     <Compile Include="Modules\MySQL\ColumnsReader.cs" />
     <Compile Include="Modules\MySQL\MySqlDriver.cs" />

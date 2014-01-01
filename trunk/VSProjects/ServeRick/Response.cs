@@ -83,6 +83,11 @@ namespace ServeRick
             SetHeader("Content-Type", mime);
         }
 
+        public void SetContentDisposition(string disposition)
+        {
+            SetHeader("Content-Disposition", disposition);
+        }
+
         public void SetLength(int contentLength)
         {
             SetHeader("Content-Length", contentLength.ToString());

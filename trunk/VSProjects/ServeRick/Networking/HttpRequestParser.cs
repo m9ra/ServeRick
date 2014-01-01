@@ -117,6 +117,26 @@ namespace ServeRick.Networking
             }
         }
 
+        public static void ParseOutVariables(string queryString, Dictionary<string, string> getVariables)
+        {
+            var match = SplitterGET.Match(queryString);
+            if (!match.Success)
+            {
+                Log.Notice("Invalid query string");
+                return;
+            }
+
+            var names = match.Groups["Name"].Captures;
+            var values = match.Groups["Value"].Captures;
+            for (int i = 0; i < names.Count; ++i)
+            {
+                var name = names[i].Value;
+                var value = values[i].Value;
+
+                getVariables[name] = value;
+            }
+        }
+
         #region Completitions handlers
 
         /// <summary>
@@ -186,30 +206,10 @@ namespace ServeRick.Networking
             {
                 uri = requestUri.Substring(0, dataStart);
                 var queryString = requestUri.Substring(dataStart + 1);
-                fillGetVars(queryString, getVariables);
+                ParseOutVariables(queryString, getVariables);
             }
 
             return new HttpRequest(method, uri, version, getVariables);
-        }
-
-        private void fillGetVars(string queryString, Dictionary<string, string> getVariables)
-        {
-            var match = SplitterGET.Match(queryString);
-            if (!match.Success)
-            {
-                Log.Notice("Invalid query string");
-                return;
-            }
-
-            var names = match.Groups["Name"].Captures;
-            var values = match.Groups["Value"].Captures;
-            for (int i = 0; i < names.Count; ++i)
-            {
-                var name = names[i].Value;
-                var value = values[i].Value;
-
-                getVariables[name] = value;
-            }
         }
 
         private int appendDataToHead(byte[] buffer, int length)

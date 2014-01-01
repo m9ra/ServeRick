@@ -18,7 +18,7 @@ namespace ServeRick.Modules.Input
     /// <summary>
     /// Class providing multi part content processing.
     /// </summary>
-    public abstract class MultiPart : InputController
+    public abstract class MultiPartInput : InputController
     {
         /// <summary>
         /// Parse content disposition entries        
@@ -87,7 +87,7 @@ namespace ServeRick.Modules.Input
         /// Create input controller for handling multipart data content
         /// </summary>
         /// <param name="boundary">Boundary used for multipart delimiting</param>
-        public MultiPart(string boundary)
+        public MultiPartInput(string boundary)
         {
             _boundary = new Boundary(boundary);
         }

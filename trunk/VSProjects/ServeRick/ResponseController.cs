@@ -98,9 +98,10 @@ namespace ServeRick
             return SessionProvider.GetData<T>(Unit.Output, Client.SessionID);
         }
 
-        protected void Session<T>(T data)
+        protected T Session<T>(T data)
         {
             SessionProvider.SetData(Unit.Output, Client.SessionID, data);
+            return data;
         }
 
         protected void RemoveSession<T>()

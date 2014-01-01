@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 using ServeRick.Memory;
 using ServeRick.Sessions;
@@ -86,12 +87,18 @@ namespace ServeRick.Networking
 
         #region Public API exposed by client
 
+        public static long TotalRecievedData;
+
+        public static long TotalSendedData;
+
+        public static long TotalClients;
+
         /// <summary>
         /// ID resolved for client
         /// </summary>
         public string SessionID { get; internal set; }
 
-        public static object _L_activeClients = new object();
+        private static object _L_activeClients = new object();
 
         public static int ActiveClients { get; private set; }
 
@@ -128,6 +135,7 @@ namespace ServeRick.Networking
 
             lock (_L_activeClients)
             {
+                ++TotalClients;
                 ++ActiveClients;
             }
         }
@@ -186,8 +194,7 @@ namespace ServeRick.Networking
                 return;
 
             _isClosed = true;
-            if (_socket.Connected)
-                _socket.Client.BeginDisconnect(false, _onDisconnected, null);
+            _socket.Client.BeginDisconnect(false, _onDisconnected, null);
         }
 
         #endregion
@@ -207,13 +214,14 @@ namespace ServeRick.Networking
                 return;
             }
 
+            Interlocked.Add(ref TotalRecievedData, dataLength);
             var handler = result.AsyncState as RecieveHandler;
             handler(this, Buffer.Storage, dataLength);
         }
 
         private void _onSended(IAsyncResult result)
         {
-            Log.Trace("Client._onRecieved {0}", this);
+            Log.Trace("Client._onSended {0}", this);
 
             SocketError error;
             var dataLength = _socket.Client.EndSend(result, out error);
@@ -226,6 +234,7 @@ namespace ServeRick.Networking
                 return;
             }
 
+            Interlocked.Add(ref TotalSendedData, dataLength);
             var handler = result.AsyncState as SendHandler;
             handler();
         }
@@ -233,12 +242,6 @@ namespace ServeRick.Networking
         private void _onDisconnected(IAsyncResult result)
         {
             _socket.Client.EndDisconnect(result);
-            _socket.Client.Dispose();
-
-            lock (_L_activeClients)
-            {
-                --ActiveClients;
-            }
 
             onDisconnected();
         }
@@ -282,9 +285,16 @@ namespace ServeRick.Networking
         /// </summary>
         private void onDisconnected()
         {
+            _socket.Client.Dispose();
+
+            lock (_L_activeClients)
+            {
+                --ActiveClients;
+            }
+
             if (_workChain == null)
             {
-                //there is no chain which can 
+                //there is no chain which can be aborted
                 onChainCompleted();
             }
             else

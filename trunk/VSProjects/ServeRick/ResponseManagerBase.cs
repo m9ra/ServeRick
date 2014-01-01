@@ -141,6 +141,7 @@ namespace ServeRick
                 case "js":
                 case "md":
                 case "swf":
+                case "html":
                     return SendRaw(file, ext);
                 default:
                     throw new NotSupportedException("Unsupported format");
