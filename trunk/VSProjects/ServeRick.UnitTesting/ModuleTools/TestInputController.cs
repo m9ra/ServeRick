@@ -8,7 +8,7 @@ using ServeRick.Modules.Input;
 
 namespace ServeRick.UnitTesting.ModuleTools
 {
-    class TestInputController : MultiPart
+    class TestInputController : MultiPartInput
     {
         internal Dispositions LastDispositions { get; private set; }
         internal TestPartStream LastStream { get; private set; }
