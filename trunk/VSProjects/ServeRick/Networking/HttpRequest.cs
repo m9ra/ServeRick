@@ -25,6 +25,8 @@ namespace ServeRick.Networking
 
         public static readonly string ForwardedHeader = "X-Forwarded-For";
 
+        public static readonly string IfNoneMatchHeader = "If-None-Match";
+
         #region Private members
 
         /// <summary>
@@ -77,6 +79,21 @@ namespace ServeRick.Networking
         /// Content length detected for request
         /// </summary>
         public int ContentLength { get; private set; }
+
+        /// <summary>
+        /// ETag expected in IfNoneMatchHeader
+        /// </summary>
+        public string ExpectedETag
+        {
+            get
+            {
+                string expectedETag;
+
+                _headers.TryGetValue(IfNoneMatchHeader, out expectedETag);
+                return expectedETag;
+            }
+        }
+
         #endregion
 
         #region Request state members

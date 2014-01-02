@@ -37,5 +37,10 @@ namespace ServeRick.Responsing
             _handler(_client.Response);
             Complete();
         }
+
+        protected override void onAbort()
+        {
+            //There is nothing to be aborted
+        }
     }
 }

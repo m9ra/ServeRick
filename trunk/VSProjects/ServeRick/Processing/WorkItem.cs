@@ -21,7 +21,18 @@ namespace ServeRick.Processing
         /// </summary>
         private WorkChain _owningChain;
 
+        /// <summary>
+        /// Determine that item is aborted
+        /// </summary>
+        private volatile bool _isAborted;
+
         protected ProcessingUnit Unit { get { return _owningChain.Unit; } }
+
+        /// <summary>
+        /// Handler called whenever work item is aborted
+        /// Is usefull for cleanup operations like closing files
+        /// </summary>
+        protected abstract void onAbort();
 
         /// <summary>
         /// Processor where work item will be processed
@@ -50,7 +61,11 @@ namespace ServeRick.Processing
 
         internal void Abort()
         {
-            throw new NotImplementedException("Work item aborting");
+            if (_isAborted)
+                return;
+
+            _isAborted = true;
+            onAbort();
         }
 
         internal void SetOwningChain(WorkChain workChain)

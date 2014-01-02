@@ -26,5 +26,10 @@ namespace ServeRick.Sessions
             SessionProvider.SetData(Unit.Output, _sessionID, _storedData);
             Complete();
         }
+
+        protected override void onAbort()
+        {
+            //nothing to be aborted
+        }
     }
 }

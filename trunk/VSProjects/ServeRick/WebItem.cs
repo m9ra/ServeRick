@@ -27,7 +27,12 @@ namespace ServeRick
         /// <remarks>Can cause reseting of handler</remarks>
         /// </summary>
         internal FileSystemWatcher Watcher;
-        
+
+        /// <summary>
+        /// ETag used in http headers
+        /// </summary>
+        internal string ETag;
+
         /// <summary>
         /// Create web item for given path
         /// </summary>

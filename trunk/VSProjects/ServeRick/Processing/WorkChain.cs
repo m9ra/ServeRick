@@ -135,6 +135,14 @@ namespace ServeRick.Processing
             if (!IsComplete)
             {
                 _isAborted = true;
+
+
+                var toAbort = _cursorItem;
+                while (toAbort != null)
+                {
+                    toAbort.Value.Abort();
+                    toAbort = toAbort.Next;
+                }
             }
         }
     }

@@ -68,6 +68,12 @@ namespace ServeRick
                 case 302:
                     _statusLine = "HTTP/1.1 302 Found";
                     break;
+                case 304:
+                    _statusLine = "HTTP/1.1 304 Not Modified";
+                    break;
+                case 404:
+                    _statusLine = "HTTP/1.1 404 Not Found";
+                    break;
                 default:
                     throw new NotImplementedException("Status code: " + statusCode);
             }
@@ -81,6 +87,14 @@ namespace ServeRick
         public void SetContentType(string mime)
         {
             SetHeader("Content-Type", mime);
+        }
+
+        public void SetETag(string etag)
+        {
+            if (etag == null)
+                return;
+
+            SetHeader("ETag", etag);
         }
 
         public void SetContentDisposition(string disposition)

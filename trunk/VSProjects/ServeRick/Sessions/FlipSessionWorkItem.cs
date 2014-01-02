@@ -23,5 +23,10 @@ namespace ServeRick.Sessions
             SessionProvider.FlipFlash(Unit.Output, _sessionID);
             Complete();
         }
+
+        protected override void onAbort()
+        {
+            //nothing to be aborted
+        }
     }
 }

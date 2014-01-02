@@ -45,6 +45,11 @@ namespace ServeRick
         protected WebItem _404;
 
         /// <summary>
+        /// Web item for not modified response
+        /// </summary>
+        protected WebItem _304;
+
+        /// <summary>
         /// Owning web application
         /// </summary>
         protected readonly WebApplication Application;
@@ -66,6 +71,8 @@ namespace ServeRick
                         registerAction(action);
                 }
             }
+
+            _304 = WebItem.Runtime(_handler_304);
         }
 
         #region Resource loading routines
@@ -217,6 +224,10 @@ namespace ServeRick
             {
                 var source = getSource(item.FilePath);
                 var contentType = getCompilationMime(language);
+                if (isCacheable(language))
+                {
+                    item.ETag = DateTime.Now.Ticks.ToString();
+                }
 
                 //TODO resolve source format
                 var handler = HandlerProvider.Compile(language, source);
@@ -242,7 +253,7 @@ namespace ServeRick
             {
                 var bytes = File.ReadAllBytes(file);
                 var mime = getMime(ext);
-
+                item.ETag = DateTime.Now.Ticks.ToString();
 
                 item.Handler = (r) =>
                 {
@@ -258,6 +269,12 @@ namespace ServeRick
         #endregion
 
         #region Internal methods for response handling
+
+        private void _handler_304(Response response)
+        {
+            response.SetStatus(304);
+            response.SetETag(response.Client.Request.ExpectedETag);
+        }
 
         /// <summary>
         /// Get handler for file
@@ -283,6 +300,19 @@ namespace ServeRick
             if (!_actions.TryGetValue(uri, out item))
             {
                 item = _404;
+                client.Response.SetStatus(404);
+            }
+
+            if (item.ETag != null)
+            {
+                if (client.Request.ExpectedETag == item.ETag)
+                {
+                    item = _304;
+                }
+                else
+                {
+                    client.Response.SetETag(item.ETag);
+                }
             }
 
             client.EnqueueWork(
@@ -409,6 +439,19 @@ namespace ServeRick
             }
         }
 
+        private bool isCacheable(string language)
+        {
+            switch (language)
+            {
+                case "scss":
+                case "css":
+                case "js":
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
 
         private string getCompilationMime(string language)
         {
