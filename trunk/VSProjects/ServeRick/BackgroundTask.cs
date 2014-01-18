@@ -33,6 +33,11 @@ namespace ServeRick
         private volatile bool _isStopped;
 
         /// <summary>
+        /// Server where task is running
+        /// </summary>
+        protected HttpServer Server { get; private set; }
+
+        /// <summary>
         /// Determine that task is running.
         /// </summary>
         public bool IsRunning { get; private set; }
@@ -62,7 +67,7 @@ namespace ServeRick
         /// Run background task in separate thread.
         /// </summary>
         /// <param name="unit">Processing unit that current taks corresponds to</param>
-        internal void Run(ProcessingUnit unit)
+        internal void Run(HttpServer server)
         {
             if (IsStopped)
                 throw new InvalidOperationException("Cannot run task when its stopped");
@@ -70,7 +75,8 @@ namespace ServeRick
             if (_thread != null)
                 throw new NotSupportedException("Cannot run task twice");
 
-            _unit = unit;
+            Server = server;
+            _unit = Server.Unit;
             _thread = new Thread(_run);
             _thread.Start();
         }

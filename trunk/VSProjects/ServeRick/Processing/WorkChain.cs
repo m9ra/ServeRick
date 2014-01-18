@@ -136,13 +136,16 @@ namespace ServeRick.Processing
             {
                 _isAborted = true;
 
-
                 var toAbort = _cursorItem;
                 while (toAbort != null)
                 {
                     toAbort.Value.Abort();
                     toAbort = toAbort.Next;
                 }
+
+          /*      if (OnCompleted != null)
+                    //run completition routines if needed
+                    OnCompleted();*/
             }
         }
     }

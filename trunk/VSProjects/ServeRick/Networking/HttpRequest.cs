@@ -63,6 +63,11 @@ namespace ServeRick.Networking
         /// <summary>
         /// Request Uri with query string
         /// </summary>
+        public readonly string RequestURI;
+
+        /// <summary>
+        /// Request Uri without query string
+        /// </summary>
         public readonly string URI;
 
         /// <summary>
@@ -78,7 +83,7 @@ namespace ServeRick.Networking
         /// <summary>
         /// Content length detected for request
         /// </summary>
-        public int ContentLength { get; private set; }
+        public long ContentLength { get; private set; }
 
         /// <summary>
         /// ETag expected in IfNoneMatchHeader
@@ -130,12 +135,13 @@ namespace ServeRick.Networking
         /// Creates http request of given method, uri and version of http protocol
         /// </summary>
         /// <param name="method">Method for request (POST, GET,..)</param>
-        /// <param name="uri">Uri of request</param>
+        /// <param name="uri">Uri of request without query string</param>
         /// <param name="httpVersion">Version of http</param>
-        internal HttpRequest(string method, string uri, string httpVersion, Dictionary<string, string> getVariables)
+        internal HttpRequest(string method, string uri, string requestUri, string httpVersion, Dictionary<string, string> getVariables)
         {
             Method = method.ToUpper();
             URI = uri;
+            RequestURI = requestUri;
             HttpVersion = httpVersion.ToUpper();
 
 
@@ -214,7 +220,7 @@ namespace ServeRick.Networking
         /// <param name="headerValue">Value of setted header</param>
         internal void SetHeader(string headerName, string headerValue)
         {
-//            Debug.Assert(!IsHeadComplete);
+            //            Debug.Assert(!IsHeadComplete);
 
             if (headerName == CookieHeader)
             {
@@ -229,7 +235,7 @@ namespace ServeRick.Networking
         /// </summary>
         /// <param name="contentEncoding">Encoding for content</param>
         /// <param name="contentLength">Length of content</param>
-        internal void CompleteHead(string contentEncoding, int contentLength)
+        internal void CompleteHead(string contentEncoding, long contentLength)
         {
             Debug.Assert(!IsHeadComplete);
 

@@ -182,7 +182,7 @@ namespace ServeRick.Networking
             string contentLengthString;
             if (Request.TryGetHeader("Content-length", out contentLengthString))
             {
-                contentLength = int.Parse(contentLengthString);
+                int.TryParse(contentLengthString, out contentLength);
             }
 
             Request.CompleteHead(encoding, contentLength);
@@ -209,7 +209,7 @@ namespace ServeRick.Networking
                 ParseOutVariables(queryString, getVariables);
             }
 
-            return new HttpRequest(method, uri, version, getVariables);
+            return new HttpRequest(method, uri, requestUri, version, getVariables);
         }
 
         private int appendDataToHead(byte[] buffer, int length)

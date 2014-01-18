@@ -28,7 +28,7 @@ namespace ServeRick
         /// TODO create better unique numbers
         /// There is problem with initialization with timestamp (making requests is getting uid closer)
         /// </summary>
-        protected long _lastUID=DateTime.Now.Ticks;
+        protected long _lastUID = DateTime.Now.Ticks;
 
         /// <summary>
         /// Creates controller for requests, containing content (POST) data. Controller
@@ -41,7 +41,10 @@ namespace ServeRick
             InputController controller;
             lock (_L_controllers)
             {
-                controller= createController(client.Request);
+                controller = createController(client.Request);
+                if (controller == null)
+                    return null;
+                    
                 ++_lastUID;
                 controller.InputUID = _lastUID;
             }

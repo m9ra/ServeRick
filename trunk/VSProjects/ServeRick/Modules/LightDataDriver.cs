@@ -128,6 +128,9 @@ namespace ServeRick.Modules
                         if (column.Equals(where.Operand))
                             yield return row;
                         break;
+
+                    case WhereOperation.IsSimilar:
+                        //TODO implement
                     case WhereOperation.HasSubstring:
                         var value = column as string;
                         if (value.Contains(where.Operand.ToString()))

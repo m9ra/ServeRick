@@ -133,7 +133,7 @@ namespace ServeRick
         {
             var file = _rootPath + relativeFilePath;
             var ext = Path.GetExtension(file).Substring(1);
-
+             
             switch (ext.ToLower())
             {
                 case "haml":
@@ -149,6 +149,7 @@ namespace ServeRick
                 case "md":
                 case "swf":
                 case "html":
+                case "ico":
                     return SendRaw(file, ext);
                 default:
                     throw new NotSupportedException("Unsupported format");
@@ -399,8 +400,9 @@ namespace ServeRick
             var handler = Expression.Lambda<ResponseHandler>(actionMethod, responseParam).Compile();
 
             var item = WebItem.Runtime(handler);
+            var name = action.Name.Replace("__", ".");
 
-            return new ActionInfo("/" + action.Name, item);
+            return new ActionInfo("/" + name, item);
         }
 
         private void addAction(string pattern, WebItem item)
@@ -425,6 +427,8 @@ namespace ServeRick
                     return "image/png";
                 case "bmp":
                     return "image/bmp";
+                case "ico":
+                    return "image/x-icon";
                 case "md":
                 case "txt":
                     return "text/plain";

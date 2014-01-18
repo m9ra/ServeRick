@@ -85,6 +85,9 @@ namespace ServeRick.Modules.MySQL
                     format = "`{0}` LIKE {1}";
                     operand = string.Format("%{0}%", operand);
                     break;
+                case WhereOperation.IsSimilar:
+                    format = "MATCH(`{0}`) AGAINST({1} IN BOOLEAN MODE)";
+                    break;
                 default:
                     throw new NotSupportedException("Cannot process operation" + item.Operation);
             }
@@ -182,6 +185,7 @@ namespace ServeRick.Modules.MySQL
         public override void ExecuteRows<ActiveRecord>(DataTable<ActiveRecord> table, SelectQuery<ActiveRecord> query, RowsExecutor<ActiveRecord> executor)
         {
             var queryCmd = createSelect(table, query.Condition, true);
+            appendOrderBy(queryCmd, query);
             appendLimit(queryCmd, query);
 
             var results = new List<ActiveRecord>();
@@ -203,7 +207,7 @@ namespace ServeRick.Modules.MySQL
             var rowsResult = new RowsResult<ActiveRecord>(results, totalRows);
             executor(rowsResult);
         }
-
+        
         public override void InsertRows<ActiveRecord>(DataTable<ActiveRecord> table, InsertQuery<ActiveRecord> query, InsertExecutor<ActiveRecord> executor)
         {
             var inserted = new List<ActiveRecord>();
@@ -408,6 +412,15 @@ namespace ServeRick.Modules.MySQL
                     queryCmd.AppendFormat(" LIMIT {0},{1} ", select.Start, select.MaxCount);
                 }
             }
+        }
+
+
+        private void appendOrderBy<ActiveRecord>(SqlQuery queryCmd, SelectQuery<ActiveRecord> query)
+            where ActiveRecord : DataRecord
+        {
+            //TODO add ordering API
+
+            queryCmd.Append(" ORDER BY id DESC ");
         }
 
         /// <summary>

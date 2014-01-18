@@ -31,7 +31,7 @@ namespace ServeRick
                 throw new NotImplementedException();
 
             var netConfig = new NetworkConfiguration(4000, IPAddress.Any);
-            var memConfig = new MemoryConfiguration(4096, 2 << 20);
+            var memConfig = new MemoryConfiguration(4096 * 2, 2 << 25);
 
             var server = new HttpServer(_applications[0], netConfig, memConfig);
             server.Start();

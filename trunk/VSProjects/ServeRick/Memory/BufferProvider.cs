@@ -10,7 +10,7 @@ namespace ServeRick.Memory
     /// Manage buffers creating and recycling
     /// <remarks>IS THREAD SAFE</remarks>
     /// </summary>
-    class BufferProvider
+    public class BufferProvider
     {
         /// <summary>
         /// Stack is used for better cache hits
@@ -33,9 +33,21 @@ namespace ServeRick.Memory
         readonly int _maximalMemoryUsage;
 
         /// <summary>
-        /// Current
+        /// Current usage of memory by allocated buffers
         /// </summary>
         int _currentMemoryUsage;
+
+        /// <summary>
+        /// How many buffers has been allocated
+        /// </summary>
+        public int AllocatedBuffers { get; private set; }
+
+        /// <summary>
+        /// How many free buffers is available in the queue
+        /// </summary>
+        public int BuffersQueue { get { return _freeBuffers.Count; } }
+
+
 
         /// <summary>
         /// Create provider of buffers with given length. Maximal memory usage is cheked.
@@ -98,6 +110,8 @@ namespace ServeRick.Memory
             {
                 throw new NotImplementedException("Strategies for PANIC situation");
             }
+
+            AllocatedBuffers += 1;
 
             _currentMemoryUsage += _bufferLength;
             return new DataBuffer(_bufferLength, this);

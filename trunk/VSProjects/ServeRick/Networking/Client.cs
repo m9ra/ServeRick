@@ -295,6 +295,7 @@ namespace ServeRick.Networking
             if (_workChain == null)
             {
                 //there is no chain which can be aborted
+                //so completition handler wont be called
                 onChainCompleted();
             }
             else

@@ -31,6 +31,9 @@ namespace ServeRick
         private bool _flipSession = false;
         private bool _headersSent = false;
         private bool _closed = false;
+        private bool _resetContentHeader = false;
+        private bool _canCache = false;
+
 
         internal event Action AfterSend;
 
@@ -46,7 +49,6 @@ namespace ServeRick
 
             SetStatus(200);
             SetHeader("Server", "ServeRick");
-            SetHeader("Cache-Control", "max-age=0, private, must-revalidate");
             SetContentType("text/html; charset=utf-8"); //default content type
         }
 
@@ -107,6 +109,16 @@ namespace ServeRick
             SetHeader("Content-Length", contentLength.ToString());
         }
 
+        [Obsolete("This is only quick workaround")]
+        public void ResetContentLength()
+        {
+            _resetContentHeader = true;
+        }
+
+        public void CanCache()
+        {
+            _canCache = true;
+        }
 
         internal void SetHeader(string header, string value)
         {
@@ -200,7 +212,24 @@ namespace ServeRick
 
         private void sendHeaders()
         {
+            if (_headersSent)
+                throw new NotSupportedException("Cannot send headers twice");
+
+            if (_canCache)
+            {
+                SetHeader("Cache-Control", "max-age=3600, public, must-revalidate");
+            }
+            else
+            {
+                SetHeader("Cache-Control", "max-age=0, private, must-revalidate");
+            }
+
             _headersSent = true;
+
+            if (_resetContentHeader)
+            {
+                _responseHeaders.Remove("Content-Length");
+            }
 
             var builder = new StringBuilder();
             builder.AppendLine(_statusLine);

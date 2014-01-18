@@ -38,30 +38,32 @@ namespace ServeRick
         /// </summary>
         readonly InputManagerBase _inputManager;
 
-        readonly ProcessingUnit _unit;
-
         readonly List<BackgroundTask> _tasks = new List<BackgroundTask>();
+
+        internal readonly ProcessingUnit Unit;
+
+        public readonly BufferProvider BufferProvider;
 
         internal HttpServer(WebApplication application, NetworkConfiguration networkConfiguration, MemoryConfiguration memoryConfiguration)
         {
-            var provider = new BufferProvider(memoryConfiguration.ClientBufferSize, memoryConfiguration.MaximalClientMemoryUsage);
+            BufferProvider = new BufferProvider(memoryConfiguration.ClientBufferSize, memoryConfiguration.MaximalClientMemoryUsage);
 
-            _accepter = new Accepter(networkConfiguration, provider, _acceptClient);
+            _accepter = new Accepter(networkConfiguration, BufferProvider, _acceptClient);
             _downloader = new Downloader(_onHeadCompleted, _onContentCompleted);
             _responseManager = application.CreateResponseManager();
             _inputManager = application.CreateInputManager();
 
-            _unit = new ProcessingUnit();
+            Unit = new ProcessingUnit();
 
             foreach (var table in application.CreateTables())
             {
-                _unit.Database.AddTable(table);
+                Unit.Database.AddTable(table);
             }
         }
 
         public void RunTask(BackgroundTask task)
         {
-            task.Run(_unit);
+            task.Run(this);
             _tasks.Add(task);
         }
 
@@ -94,7 +96,7 @@ namespace ServeRick
 
 
             //TODO selecting processor according to session data
-            client.SetUnit(_unit);
+            client.SetUnit(Unit);
             client.Response = new Response(client);
             SessionProvider.PrepareSessionID(client);
 
@@ -107,6 +109,13 @@ namespace ServeRick
             {
                 //Send to input processor
                 var inputController = _inputManager.CreateController(client);
+                if (inputController == null)
+                {
+                    //there is no input controller for client
+                    _onContentCompleted(client);
+                    return;
+                }
+
                 client.Input = inputController;
                 inputController.AcceptData(data, dataOffset, dataLength);
 

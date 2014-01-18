@@ -9,7 +9,8 @@ namespace ServeRick.Database
     public enum WhereOperation
     {
         Equal,
-        HasSubstring
+        HasSubstring,
+        IsSimilar
     }
 
     public class WhereItem
