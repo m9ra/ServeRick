@@ -125,7 +125,7 @@ namespace ServeRick
         {
             return new InsertQuery<ActiveRecord>(entries);
         }
-
+        
         protected void Execute<T>(UpdateQuery<T> query)
          where T : DataRecord
         {
