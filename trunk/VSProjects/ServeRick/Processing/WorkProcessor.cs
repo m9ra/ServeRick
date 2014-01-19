@@ -16,8 +16,7 @@ namespace ServeRick.Processing
         readonly object _L_toProcess = new object();
 
         readonly Thread _executionThread;
-
-
+        
         internal WorkProcessor()
         {
             _executionThread = new Thread(_run);

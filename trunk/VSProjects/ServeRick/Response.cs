@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Threading;
+
 using ServeRick.Processing;
 using ServeRick.Responsing;
 using ServeRick.Networking;
@@ -34,6 +36,7 @@ namespace ServeRick
         private bool _resetContentHeader = false;
         private bool _canCache = false;
 
+        private int _pendingSends = 0;
 
         internal event Action AfterSend;
 
@@ -49,6 +52,7 @@ namespace ServeRick
 
             SetStatus(200);
             SetHeader("Server", "ServeRick");
+            SetHeader("Connection", "Close");
             SetContentType("text/html; charset=utf-8"); //default content type
         }
 
@@ -187,13 +191,27 @@ namespace ServeRick
         /// </summary>
         private void sendQueue()
         {
+            Interlocked.Add(ref _pendingSends, _toSend.Count);
+
             if (!_headersSent)
             {
+                Interlocked.Add(ref _pendingSends, 1);
                 sendHeaders();
-                return;
             }
 
-            if (_toSend.Count == 0)
+            while (_toSend.Count > 0)
+            {
+                //send next data
+                var data = _toSend.Dequeue();
+                Client.Send(data, dataSended);
+            }
+        }
+
+        private void dataSended()
+        {
+            var pending = Interlocked.Decrement(ref _pendingSends);
+
+            if (pending == 0)
             {
                 if (AfterSend != null)
                 {
@@ -201,13 +219,7 @@ namespace ServeRick
                     AfterSend = null;
                     callback();
                 }
-
-                return;
             }
-
-            //send next data
-            var data = _toSend.Dequeue();
-            Client.Send(data, sendQueue);
         }
 
         private void sendHeaders()
@@ -240,7 +252,7 @@ namespace ServeRick
 
             builder.AppendLine();
             var bytes = Encoding.ASCII.GetBytes(builder.ToString());
-            Client.Send(bytes, sendQueue);
+            Client.Send(bytes, dataSended);
         }
 
         internal void SetParam(string paramName, object paramValue)

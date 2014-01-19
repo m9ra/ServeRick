@@ -31,6 +31,8 @@ namespace ServeRick.Processing
         /// </summary>
         private volatile bool _isAborted = false;
 
+        private volatile bool _isComplete = false;
+
         /// <summary>
         /// Handler called 
         /// </summary>
@@ -44,7 +46,7 @@ namespace ServeRick.Processing
         /// <summary>
         /// Determine that chain has been completed
         /// </summary>
-        internal bool IsComplete { get; private set; }
+        internal bool IsComplete { get { return _isComplete; } }
 
         /// <summary>
         /// Item that is currently processed by its planned processor
@@ -109,8 +111,11 @@ namespace ServeRick.Processing
 
             if (_processedItem == null || _isAborted)
             {
-                //there is no other item                
-                IsComplete = true;
+                //there is no other item      
+                if (IsComplete)
+                    throw new NotSupportedException("Cannot complete chain twice");
+
+                _isComplete = true;
                 if (OnCompleted != null)
                     OnCompleted();
             }
@@ -132,7 +137,7 @@ namespace ServeRick.Processing
 
         internal void Abort()
         {
-            if (!IsComplete)
+            if (!IsComplete && _isAborted)
             {
                 _isAborted = true;
 
@@ -143,9 +148,10 @@ namespace ServeRick.Processing
                     toAbort = toAbort.Next;
                 }
 
-          /*      if (OnCompleted != null)
+                _isComplete = true;
+                if (OnCompleted != null)
                     //run completition routines if needed
-                    OnCompleted();*/
+                    OnCompleted();
             }
         }
     }
