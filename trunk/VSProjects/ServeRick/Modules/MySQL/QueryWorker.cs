@@ -290,7 +290,7 @@ namespace ServeRick.Modules.MySQL
         public override void RemoveRows<ActiveRecord>(DataTable<ActiveRecord> table, RemoveQuery<ActiveRecord> query, Action executor)
         {
             var queryCmd = getQuery();
-            queryCmd.AppendFormat("DELETE FROM {0} ", table.Name);
+            queryCmd.AppendFormat("DELETE FROM {0} WHERE ", table.Name);
 
             appendCondition(queryCmd, query.Select.Condition);
             queryCmd.ExecuteNonQuery();

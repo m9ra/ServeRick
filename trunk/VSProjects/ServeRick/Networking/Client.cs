@@ -51,12 +51,24 @@ namespace ServeRick.Networking
         /// </summary>
         WorkChain _workChain;
 
+        /// <summary>
+        /// Determine that clients socket has been already closed
+        /// </summary>
         private volatile bool _isClosed;
+
+        /// <summary>
+        /// Determine that client has been completly disconnected
+        /// </summary>
+        private volatile bool _isDisconnected;
+
+        /// <summary>
+        /// Determine that disconnecting has been already started
+        /// </summary>
+        private volatile bool _disconnectingStarted;
 
         #endregion
 
         #region Internal API exposed by client
-
 
         /// <summary>
         /// Determine that client is alredy closed
@@ -194,7 +206,7 @@ namespace ServeRick.Networking
                 return;
 
             _isClosed = true;
-            _socket.Client.BeginDisconnect(false, _onDisconnected, null);
+            _socket.Client.BeginDisconnect(false, _onClosed, null);
         }
 
         #endregion
@@ -239,11 +251,13 @@ namespace ServeRick.Networking
             handler();
         }
 
-        private void _onDisconnected(IAsyncResult result)
+        private void _onClosed(IAsyncResult result = null)
         {
-            _socket.Client.EndDisconnect(result);
+            if (result != null)
+                _socket.Client.EndDisconnect(result);
 
-            onDisconnected();
+            _isClosed = true;
+            disconnect();
         }
 
         #endregion
@@ -281,27 +295,57 @@ namespace ServeRick.Networking
         }
 
         /// <summary>
-        /// Handler called when client is disconnected (expectedly or unexpectedly)
+        /// Handles correct disconnecting sequence (even in partially disconnected states)
         /// </summary>
-        private void onDisconnected()
+        private void disconnect()
         {
-            _socket.Client.Dispose();
-
-            lock (_L_activeClients)
+            if (_isDisconnected)
             {
-                --ActiveClients;
+                throw new InvalidOperationException("Cannot disconnect twice");
             }
 
-            if (_workChain == null)
+            _disconnectingStarted = true;
+
+            if (_workChain != null && !_workChain.IsComplete)
             {
-                //there is no chain which can be aborted
-                //so completition handler wont be called
-                onChainCompleted();
+                //we have to abort remaining work
+                _workChain.Abort();
+
+                //aborting workchain causes completition routine to be called
+                //so disconnecting will then continue
+                return;
+            }
+
+            if (_socket.Connected)
+            {
+                //close socket
+                Log.Trace("Client.disconnected/close {0}", this);
+
+                _socket.Client.BeginDisconnect(false, _onClosed, null);
+
+                //disconnecting continues after socket is closed
+                return;
             }
             else
             {
-                //client has disconnected - work can be aborted
-                _workChain.Abort();
+                _isClosed = true;
+            }
+
+            if (_isClosed)
+            {
+                //socket is closed - we will lease resources
+                _socket.Client.Dispose();
+                Buffer.Recycle();
+
+                _isDisconnected = true;
+
+                lock (_L_activeClients)
+                {
+                    --ActiveClients;
+                }
+
+                Log.Trace("Client.disconnected/dispose {0}", this);
+                //disconnecting is complete
             }
         }
 
@@ -310,23 +354,21 @@ namespace ServeRick.Networking
         /// </summary>
         private void onChainCompleted()
         {
-            if (Response == null)
+            if (_disconnectingStarted || Response == null)
             {
                 //client completed before response has been started
-                dispose();
+                //or client is forced to be disconnected
+                disconnect();
             }
             else
             {
-                Response.AfterSend += dispose;
+                //disconnect after response is completed
+                Response.AfterSend += disconnect;
                 Response.Close();
             }
         }
 
-        private void dispose()
-        {
-            Close();
-            Buffer.Recycle();
-        }
+
 
         /// <summary>
         /// Check error from socket operation
@@ -344,8 +386,8 @@ namespace ServeRick.Networking
                 case SocketError.ConnectionAborted:
                 case SocketError.Shutdown:
                     //client has unexpectedly disconnected
-                    Log.Error(checkingMethod + " {0} failed with {1}", this, error);
-                    onDisconnected();
+                    Log.Warning(checkingMethod + " {0} failed with {1}", this, error);
+                    _onClosed();
                     return true;
                 default:
                     throw new NotImplementedException("Socket error: " + error);

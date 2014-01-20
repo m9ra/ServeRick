@@ -142,10 +142,6 @@ namespace ServeRick.Processing
                     toAbort.Value.Abort();
                     toAbort = toAbort.Next;
                 }
-
-          /*      if (OnCompleted != null)
-                    //run completition routines if needed
-                    OnCompleted();*/
             }
         }
     }
