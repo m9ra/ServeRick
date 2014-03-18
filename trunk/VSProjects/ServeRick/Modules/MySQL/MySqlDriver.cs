@@ -83,7 +83,8 @@ namespace ServeRick.Modules.MySQL
             }
         }
 
-        private void _ping(QueryWorker worker) {
+        private void _ping(QueryWorker worker)
+        {
             worker.Ping();
         }
 
@@ -137,6 +138,15 @@ namespace ServeRick.Modules.MySQL
             });
         }
 
+        public override void Call<ActiveRecord>(DataTable<ActiveRecord> table, CallQuery<ActiveRecord> query, Action executor)
+        {
+            enqueueWork((w) =>
+            {
+                w.Call(table, query, executor);
+            });
+        }
         #endregion
+
+
     }
 }

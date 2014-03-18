@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Data;
 using System.Threading;
 
 using MySql.Data;
@@ -207,7 +208,7 @@ namespace ServeRick.Modules.MySQL
             var rowsResult = new RowsResult<ActiveRecord>(results, totalRows);
             executor(rowsResult);
         }
-        
+
         public override void InsertRows<ActiveRecord>(DataTable<ActiveRecord> table, InsertQuery<ActiveRecord> query, InsertExecutor<ActiveRecord> executor)
         {
             var inserted = new List<ActiveRecord>();
@@ -235,7 +236,7 @@ namespace ServeRick.Modules.MySQL
                     values.AppendFormat("@{0}", column.Name);
 
                     var value = table.GetColumnValue(column.Name, row);
-                    insertCmd.AddWithValue(column.Name, value);
+                    insertCmd.SetParameter(column.Name, value);
 
                     isFirst = false;
                 }
@@ -272,7 +273,7 @@ namespace ServeRick.Modules.MySQL
                 var column = table.GetColumn(columnName);
                 var operand = getSqlOperand(column, update.Value);
 
-                queryCmd.AddWithValue(columnName, operand);
+                queryCmd.SetParameter(columnName, operand);
                 queryCmd.AppendFormat(" `{0}` = @{0} ", columnName);
 
                 isFirst = false;
@@ -311,6 +312,18 @@ namespace ServeRick.Modules.MySQL
             query.Append(")");
 
             query.ExecuteNonQuery();
+        }
+
+        public override void Call<ActiveRecord>(DataTable<ActiveRecord> table, CallQuery<ActiveRecord> query, Action executor)
+        {
+            var queryCmd = getQuery();
+
+            queryCmd.AppendFormat("{0}(", query.CallName);
+            appendArgumentList(queryCmd, query.Arguments);
+            queryCmd.Append(")");
+
+            queryCmd.SetCommandType(CommandType.StoredProcedure);
+            queryCmd.ExecuteNonQuery();
         }
 
         #endregion
@@ -384,7 +397,7 @@ namespace ServeRick.Modules.MySQL
 
                 object operand;
                 var operation = getSqlOperation(item, out operand);
-                query.AddWithValue(item.Column, operand);
+                query.SetParameter(item.Column, operand);
 
                 query.Append(operation);
                 isFirst = false;
@@ -394,6 +407,29 @@ namespace ServeRick.Modules.MySQL
             if (isEmpty)
             {
                 query.Append(" 1 ");
+            }
+        }
+
+        /// <summary>
+        /// Append list of arguments to given command
+        /// </summary>
+        /// <param name="queryCmd">Query where arguments will be added</param>
+        /// <param name="arguments">Arguments that will be added</param>
+        private void appendArgumentList(SqlQuery queryCmd, IEnumerable<object> arguments)
+        {
+            var argumentIndex = 0;
+            foreach (var argument in arguments)
+            {
+                if (argumentIndex > 0)
+                {
+                    queryCmd.Append(", ");
+                }
+
+                var argumentHolder = "@" + argumentIndex;
+                queryCmd.SetParameter(argumentHolder, argument);
+                queryCmd.Append(argumentHolder);
+
+                ++argumentIndex;
             }
         }
 
@@ -447,5 +483,7 @@ namespace ServeRick.Modules.MySQL
         }
 
         #endregion
+
+
     }
 }

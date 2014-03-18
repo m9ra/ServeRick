@@ -39,7 +39,7 @@ namespace ServeRick.Database
     /// <summary>
     /// Query on table representation.
     /// </summary>
-    /// <typeparam name="ActiveRecord">Tyep of active record.</typeparam>
+    /// <typeparam name="ActiveRecord">Type of active record.</typeparam>
     public class SelectQuery<ActiveRecord> : SelectQuery
         where ActiveRecord : DataRecord
     {

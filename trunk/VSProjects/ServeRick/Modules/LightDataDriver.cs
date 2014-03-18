@@ -105,6 +105,11 @@ namespace ServeRick.Modules
             executor();
         }
 
+        public override void Call<ActiveRecord>(DataTable<ActiveRecord> table, CallQuery<ActiveRecord> query, Action executor)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
         #region Private utilities
@@ -130,7 +135,7 @@ namespace ServeRick.Modules
                         break;
 
                     case WhereOperation.IsSimilar:
-                        //TODO implement
+                    //TODO implement
                     case WhereOperation.HasSubstring:
                         var value = column as string;
                         if (value.Contains(where.Operand.ToString()))

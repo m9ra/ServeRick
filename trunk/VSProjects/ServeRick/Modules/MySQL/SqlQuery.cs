@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Data;
+
 using MySql.Data;
 using MySql.Data.MySqlClient;
 
@@ -21,7 +23,7 @@ namespace ServeRick.Modules.MySQL
             _command.Connection = connection;
         }
 
-        internal void AddWithValue(string paramName, object value)
+        internal void SetParameter(string paramName, object value)
         {
             _command.Parameters.AddWithValue(paramName, value);
         }
@@ -63,6 +65,11 @@ namespace ServeRick.Modules.MySQL
         {
             Log.Notice("MySql:{0}", _text);
             _command.CommandText = _text.ToString();
+        }
+
+        internal void SetCommandType(CommandType commandType)
+        {
+            _command.CommandType = commandType;
         }
     }
 }

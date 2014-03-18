@@ -26,7 +26,10 @@ namespace ServeRick.Database
 
         public abstract void RemoveRows<ActiveRecord>(DataTable<ActiveRecord> table, RemoveQuery<ActiveRecord> query, Action executor)
             where ActiveRecord : DataRecord;
-        
+
+        public abstract void Call<ActiveRecord>(DataTable<ActiveRecord> table, CallQuery<ActiveRecord> query, Action executor)
+            where ActiveRecord : DataRecord;
+
         public abstract void Initialize<ActiveRecord>(DataTable<ActiveRecord> table)
             where ActiveRecord : DataRecord;
     }

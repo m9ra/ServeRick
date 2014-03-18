@@ -133,7 +133,14 @@ namespace ServeRick
         {
             return new InsertQuery<ActiveRecord>(entries);
         }
-        
+
+
+        protected void Execute<T>(CallQuery<T> query)
+        where T : DataRecord
+        {
+            var item = query.CreateWork();
+            enqueue(item);
+        }
         protected void Execute<T>(UpdateQuery<T> query)
          where T : DataRecord
         {
