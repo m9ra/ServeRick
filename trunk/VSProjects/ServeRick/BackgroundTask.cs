@@ -111,6 +111,14 @@ namespace ServeRick
             }
         }
 
+        /// <summary>
+        /// Pause current task for given time
+        /// </summary>
+        /// <param name="time">Time in millisecond</param>
+        protected void Pause(int time)
+        {
+            Thread.Sleep(time);
+        }
 
         #region Database API
 

@@ -10,7 +10,9 @@ namespace ServeRick.Database
     {
         Equal,
         HasSubstring,
-        IsSimilar
+        IsSimilar,
+        LesserOrEqual,
+        Greater
     }
 
     public class WhereItem

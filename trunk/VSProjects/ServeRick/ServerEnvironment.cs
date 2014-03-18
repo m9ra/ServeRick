@@ -23,14 +23,14 @@ namespace ServeRick
     {
         static List<WebApplication> _applications = new List<WebApplication>();
 
-        public static HttpServer Start()
+        public static HttpServer Start(int port = 4000)
         {
             LoadToolchains();
 
             if (_applications.Count != 1)
                 throw new NotImplementedException();
 
-            var netConfig = new NetworkConfiguration(4000, IPAddress.Any);
+            var netConfig = new NetworkConfiguration(port, IPAddress.Any);
             var memConfig = new MemoryConfiguration(4096 * 2, 2 << 25);
 
             var server = new HttpServer(_applications[0], netConfig, memConfig);
