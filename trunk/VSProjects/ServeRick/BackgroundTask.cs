@@ -129,18 +129,24 @@ namespace ServeRick
         }
 
         protected InsertQuery<ActiveRecord> Insert<ActiveRecord>(IEnumerable<ActiveRecord> entries)
-            where ActiveRecord : DataRecord
+         where ActiveRecord : DataRecord
         {
             return new InsertQuery<ActiveRecord>(entries);
         }
 
-
-        protected void Execute<T>(CallQuery<T> query)
-        where T : DataRecord
+        protected CallQuery<ActiveRecord> Call<ActiveRecord>(string callName, IEnumerable<KeyValuePair<string, object>> arguments)
+            where ActiveRecord : DataRecord
         {
-            var item = query.CreateWork();
+            return new CallQuery<ActiveRecord>(callName, arguments);
+        }
+
+        protected void Execute<T>(CallQuery<T> query, Action action = null)
+         where T : DataRecord
+        {
+            var item = query.CreateWork(action);
             enqueue(item);
         }
+
         protected void Execute<T>(UpdateQuery<T> query)
          where T : DataRecord
         {

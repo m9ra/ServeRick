@@ -26,6 +26,7 @@ namespace ServeRick.Modules.MySQL
         internal void SetParameter(string paramName, object value)
         {
             _command.Parameters.AddWithValue(paramName, value);
+            _command.Parameters[paramName].Direction = ParameterDirection.Input;
         }
 
         internal void AppendFormat(string format, params object[] formatArgs)

@@ -21,6 +21,12 @@ namespace ServeRick.Modules
             _records = records.ToArray();
         }
 
+        public LightDataDriver(params DataRecord[] records) :
+            this((IEnumerable<DataRecord>)records)
+        {
+
+        }
+
         #region Data driver API implementation
 
         public override void Initialize<ActiveRecord>(DataTable<ActiveRecord> table)

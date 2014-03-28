@@ -11,7 +11,7 @@ using ServeRick.Database;
 
 namespace ServeRick.Modules.MySQL
 {
-    class ColumnsReader:ColumnsReaderBase
+    class ColumnsReader : ColumnsReaderBase
     {
         private readonly MySqlDataReader _reader;
 
@@ -30,6 +30,14 @@ namespace ServeRick.Modules.MySQL
             return _reader.GetInt32(ColumnName);
         }
 
+        public override int ReadEnum()
+        {
+            var value = _reader.GetString(ColumnName);
+            var parsed = (int)Enum.Parse(Column.Type, value);
+
+            return parsed;
+        }
+
         public override bool ReadBool()
         {
             return _reader.GetBoolean(ColumnName);
@@ -43,6 +51,11 @@ namespace ServeRick.Modules.MySQL
         public override TimeSpan ReadTimeSpan()
         {
             return _reader.GetTimeSpan(ColumnName);
+        }
+
+        public override double ReadDouble()
+        {
+            return _reader.GetDouble(ColumnName);
         }
     }
 }

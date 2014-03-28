@@ -106,6 +106,14 @@ namespace ServeRick.Modules.MySQL
             });
         }
 
+        public override void Call<ActiveRecord>(DataTable<ActiveRecord> table, CallQuery<ActiveRecord> query, Action executor)
+        {
+            enqueueWork((w) =>
+            {
+                w.Call(table, query, executor);
+            });
+        }
+
         public override void InsertRows<ActiveRecord>(DataTable<ActiveRecord> table, InsertQuery<ActiveRecord> query, InsertExecutor<ActiveRecord> executor)
         {
             enqueueWork((w) =>
@@ -135,14 +143,6 @@ namespace ServeRick.Modules.MySQL
             enqueueWork((w) =>
             {
                 w.Initialize(table);
-            });
-        }
-
-        public override void Call<ActiveRecord>(DataTable<ActiveRecord> table, CallQuery<ActiveRecord> query, Action executor)
-        {
-            enqueueWork((w) =>
-            {
-                w.Call(table, query, executor);
             });
         }
         #endregion

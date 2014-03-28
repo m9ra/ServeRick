@@ -205,7 +205,13 @@ namespace ServeRick.Modules.Input
 
         private void onSectionComplete()
         {
-            var contentDisposition = _dispositions["Content-Disposition"];
+            string contentDisposition;
+            if (!_dispositions.TryGetValue("Content-Disposition", out contentDisposition))
+            {
+                Log.Error("Content disposition cannot been found");
+                return;
+            }
+
             var match = ContentDispositionParser.Match(contentDisposition);
             if (!match.Success)
             {

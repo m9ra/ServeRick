@@ -14,10 +14,13 @@ namespace ServeRick.Database
 
         readonly CallQuery<ActiveRecord> _query;
 
-        internal CallQueryWorkItem(CallQuery<ActiveRecord> query)
+        readonly Action _executor;
+
+        internal CallQueryWorkItem(CallQuery<ActiveRecord> query, Action executor)
             : base()
         {
             _query = query;
+            _executor = executor;
         }
 
         internal override void Run()
@@ -32,6 +35,8 @@ namespace ServeRick.Database
         /// </summary>
         private void _handler()
         {
+            if (_executor != null)
+                _executor();
             Complete();
         }
     }

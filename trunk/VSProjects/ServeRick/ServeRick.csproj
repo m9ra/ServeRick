@@ -102,6 +102,7 @@
     <Compile Include="Compiling\TypeFactory.cs" />
     <Compile Include="Compiling\TypeHelper.cs" />
     <Compile Include="Compiling\WebMethods.cs" />
+    <Compile Include="Database\CallArguments.cs" />
     <Compile Include="Database\CallQuery.cs" />
     <Compile Include="Database\Column.cs" />
     <Compile Include="Database\ColumnsReaderBase.cs" />

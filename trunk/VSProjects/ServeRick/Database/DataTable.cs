@@ -42,16 +42,17 @@ namespace ServeRick.Database
         /// <summary>
         /// Name of table, used by driver
         /// </summary>
-        public readonly string Name = typeof(ActiveRecord).Name;
+        public readonly string Name;
 
         /// <summary>
         /// Columns defined on current table
         /// </summary>
         public IEnumerable<Column> Columns { get { return _columns.Values; } }
 
-        public DataTable(DataDriver driver)
+        public DataTable(DataDriver driver, string name = null)
         {
             Driver = driver;
+            Name = name == null ? typeof(ActiveRecord).Name : name;
 
             foreach (var field in RecordType.GetFields(BindingFlags.Instance | BindingFlags.Public))
             {
@@ -97,16 +98,24 @@ namespace ServeRick.Database
             {
                 var type = column.Type;
                 object value = null;
-
                 reader.SetColumn(column);
 
                 if (type == typeof(string))
                 {
                     value = reader.ReadString();
                 }
-                else if (type == typeof(int) | type.IsEnum)
+                else if (type == typeof(int))
                 {
                     value = reader.ReadInt();
+                }
+
+                else if (type.IsEnum)
+                {
+                    value = reader.ReadEnum();
+                }
+                else if (type == typeof(double))
+                {
+                    value = reader.ReadDouble();
                 }
                 else if (type == typeof(bool))
                 {

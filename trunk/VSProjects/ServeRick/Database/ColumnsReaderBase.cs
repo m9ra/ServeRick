@@ -25,15 +25,21 @@ namespace ServeRick.Database
 
         public abstract int ReadInt();
 
+        public abstract int ReadEnum();
+
         public abstract bool ReadBool();
 
         public abstract DateTime ReadDateTime();
 
         public abstract TimeSpan ReadTimeSpan();
 
+        public abstract double ReadDouble();
+        
+
         internal void SetColumn(Column column)
         {
             Column = column;
         }
+
     }
 }

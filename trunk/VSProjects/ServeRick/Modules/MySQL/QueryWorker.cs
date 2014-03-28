@@ -22,6 +22,8 @@ namespace ServeRick.Modules.MySQL
 
     class QueryWorker : DataDriver
     {
+        private static readonly Random _rnd = new Random();
+
         /// <summary>
         /// Connection used by worker
         /// </summary>
@@ -59,7 +61,28 @@ namespace ServeRick.Modules.MySQL
                     break;
                 }
 
-                work(this);
+            RETRY:
+                try
+                {
+                    work(this);
+                }
+                catch (MySqlException ex)
+                {
+                    var error = ex.ErrorCode;
+                    Log.Error("MySqlException with errorcode: {0}", error);
+
+                    switch (error)
+                    {
+                        case -2147467259:
+                            Log.Notice("Waiting for deadlock recover retry");
+                            Thread.Sleep(500 + _rnd.Next(500));
+                            //deadlock error occured
+                            goto RETRY;
+
+                        default:
+                            throw;
+                    }
+                }
             }
         }
 
@@ -142,6 +165,11 @@ namespace ServeRick.Modules.MySQL
             if (type == typeof(DateTime))
             {
                 return "DATETIME";
+            }
+
+            if (type == typeof(double))
+            {
+                return "FLOAT";
             }
 
             throw new NotImplementedException("sql type mapping for: " + type);
@@ -318,12 +346,14 @@ namespace ServeRick.Modules.MySQL
         {
             var queryCmd = getQuery();
 
-            queryCmd.AppendFormat("{0}(", query.CallName);
-            appendArgumentList(queryCmd, query.Arguments);
-            queryCmd.Append(")");
-
+            queryCmd.Append(query.CallName);
             queryCmd.SetCommandType(CommandType.StoredProcedure);
+
+            addCallArguments(queryCmd, query.Arguments);
+
             queryCmd.ExecuteNonQuery();
+
+            executor();
         }
 
         #endregion
@@ -411,25 +441,16 @@ namespace ServeRick.Modules.MySQL
         }
 
         /// <summary>
-        /// Append list of arguments to given command
+        /// Add arguments for CALL to given command
         /// </summary>
         /// <param name="queryCmd">Query where arguments will be added</param>
         /// <param name="arguments">Arguments that will be added</param>
-        private void appendArgumentList(SqlQuery queryCmd, IEnumerable<object> arguments)
+        private void addCallArguments(SqlQuery queryCmd, IEnumerable<KeyValuePair<string, object>> arguments)
         {
-            var argumentIndex = 0;
             foreach (var argument in arguments)
             {
-                if (argumentIndex > 0)
-                {
-                    queryCmd.Append(", ");
-                }
-
-                var argumentHolder = "@" + argumentIndex;
-                queryCmd.SetParameter(argumentHolder, argument);
-                queryCmd.Append(argumentHolder);
-
-                ++argumentIndex;
+                var argumentHolder = "@" + argument.Key;
+                queryCmd.SetParameter(argumentHolder, argument.Value);
             }
         }
 
