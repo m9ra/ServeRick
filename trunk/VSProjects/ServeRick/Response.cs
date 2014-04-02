@@ -49,6 +49,7 @@ namespace ServeRick
 
             SetStatus(200);
             SetHeader("Server", "ServeRick");
+            SetHeader("Accept-Ranges", "bytes");
             SetContentType("text/html; charset=utf-8"); //default content type
         }
 
@@ -65,7 +66,10 @@ namespace ServeRick
             switch (statusCode)
             {
                 case 200:
-                    _statusLine = "HTTP/1.1 200 OK"; ;
+                    _statusLine = "HTTP/1.1 200 OK"; 
+                    break;
+                case 206:
+                    _statusLine = "HTTP/1.1 206 Partial Content";
                     break;
                 case 302:
                     _statusLine = "HTTP/1.1 302 Found";

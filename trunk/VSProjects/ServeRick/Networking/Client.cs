@@ -253,8 +253,26 @@ namespace ServeRick.Networking
 
         private void _onClosed(IAsyncResult result = null)
         {
-            if (result != null)
-                _socket.Client.EndDisconnect(result);
+            if (result != null && _socket.Connected)
+            {
+                try
+                {
+                    _socket.Client.EndDisconnect(result);
+                }
+                catch (SocketException ex)
+                {
+                    //why on Earth this is solved via exceptions??
+                    switch (ex.SocketErrorCode)
+                    {
+                        case SocketError.ConnectionReset:
+                            //peer has disconnect without proper notification
+                            break;
+                        default:
+                            throw;
+                    }
+
+                }
+            }
 
             _isClosed = true;
             disconnect();

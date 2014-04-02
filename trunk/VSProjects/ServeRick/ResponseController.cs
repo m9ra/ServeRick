@@ -83,6 +83,65 @@ namespace ServeRick
             Client.EnqueueWork(new WriteWorkItem(Client, data));
         }
 
+        /// <summary>
+        /// Handle headers of partial request and response.
+        /// If request is not a partial, set appropriate content length.
+        /// </summary>
+        /// <param name="totalLength">Length of full response</param>
+        /// <returns>Start offset for response</returns>
+        protected int HandlePartial(int totalLength, out int requestedLength)
+        {
+            string rangeValue;
+            requestedLength = totalLength;
+            if (Request.TryGetHeader("Range", out rangeValue))
+            {
+                var rangePrefix = "bytes=";
+
+                var ranges = rangeValue.Split('-');
+                if (ranges.Length != 2 || !ranges[0].StartsWith(rangePrefix))
+                {
+                    //wrong range format
+                    Log.Error("Range request has wrong format {0}", rangeValue);
+                    return 0;
+                }
+
+                var from = getRangeValue(ranges[0].Substring(rangePrefix.Length), 0);
+                var to = getRangeValue(ranges[1], totalLength);
+
+                if (from >= to)
+                {
+                    Log.Error("Unsupported range specified by {0}", rangeValue);
+                    return 0;
+                }
+
+                var responseRange = "bytes " + from + "-" + (to - 1) + "/" + totalLength;
+                requestedLength = to - from;
+
+                Response.SetStatus(206);
+                Response.SetHeader("Content-Range", responseRange);
+                Response.SetLength(requestedLength);
+
+                return from;
+            }
+            else
+            {
+                //there is no range specified
+                Response.SetLength(totalLength);
+                return 0;
+            }
+        }
+
+        private int getRangeValue(string range, int borderValue)
+        {
+            if (range == "")
+                return borderValue;
+
+            int result;
+            int.TryParse(range, out result);
+
+            return result;
+        }
+
         protected string GET(string varName)
         {
             return Request.GetGET(varName);
