@@ -46,7 +46,7 @@ namespace ServeRick.Responsing
         {
             if (length > 0)
             {
-                _client.Send(buffer, sendHandler);
+                _client.Send(buffer, length, sendHandler);
             }
             else
             {

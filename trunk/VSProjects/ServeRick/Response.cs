@@ -28,6 +28,8 @@ namespace ServeRick
         protected readonly Dictionary<string, string> _responseHeaders = new Dictionary<string, string>();
         private readonly Dictionary<string, ResponseHandler> _contentsFor = new Dictionary<string, ResponseHandler>();
 
+        private readonly string _headerDelimiter = "\r\n";
+
         private bool _flipSession = false;
         private bool _headersSent = false;
         private bool _closed = false;
@@ -66,7 +68,7 @@ namespace ServeRick
             switch (statusCode)
             {
                 case 200:
-                    _statusLine = "HTTP/1.1 200 OK"; 
+                    _statusLine = "HTTP/1.1 200 OK";
                     break;
                 case 206:
                     _statusLine = "HTTP/1.1 206 Partial Content";
@@ -93,6 +95,16 @@ namespace ServeRick
         public void SetContentType(string mime)
         {
             SetHeader("Content-Type", mime);
+        }
+
+        public void SetKeepAlive(bool keepAlive)
+        {
+            SetHeader("Connection", keepAlive ? "Keep-Alive" : "Close");
+
+            if (keepAlive)
+            {
+                SetHeader("Keep-Alive", "timeout=5, max=99");
+            }
         }
 
         public void SetETag(string etag)
@@ -211,7 +223,7 @@ namespace ServeRick
 
             //send next data
             var data = _toSend.Dequeue();
-            Client.Send(data, sendQueue);
+            Client.Send(data, data.Length, sendQueue);
         }
 
         private void sendHeaders()
@@ -227,6 +239,7 @@ namespace ServeRick
             {
                 SetHeader("Cache-Control", "max-age=0, private, must-revalidate");
             }
+            
 
             _headersSent = true;
 
@@ -235,16 +248,26 @@ namespace ServeRick
                 _responseHeaders.Remove("Content-Length");
             }
 
+            var hasLength = _responseHeaders.ContainsKey("Content-Length");
+            if (!hasLength)
+            {
+                //needs to provide connection close
+                SetKeepAlive(false);
+            }
+
             var builder = new StringBuilder();
             builder.AppendLine(_statusLine);
             foreach (var pair in _responseHeaders)
             {
-                builder.AppendFormat("{0}: {1}" + Environment.NewLine, pair.Key, pair.Value);
+                builder.Append(pair.Key);
+                builder.Append(": ");
+                builder.Append(pair.Value);
+                builder.Append(_headerDelimiter);
             }
 
-            builder.AppendLine();
+            builder.Append(_headerDelimiter);
             var bytes = Encoding.ASCII.GetBytes(builder.ToString());
-            Client.Send(bytes, sendQueue);
+            Client.Send(bytes, bytes.Length, sendQueue);
         }
 
         internal void SetParam(string paramName, object paramValue)

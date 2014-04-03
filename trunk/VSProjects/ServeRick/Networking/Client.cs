@@ -186,13 +186,14 @@ namespace ServeRick.Networking
         /// Send given data from given storage. After data are sended sendHandler is called
         /// </summary>
         /// <param name="dataStorage">Storage for data to send</param>
+        /// <param name="sendedLength">Length of data that will be sended</param>
         /// <param name="sendHandler">Handler that is called after data are sended</param>
-        internal void Send(byte[] dataStorage, SendHandler sendHandler)
+        internal void Send(byte[] dataStorage, int sendedLength, SendHandler sendHandler)
         {
             Log.Trace("Client.Send {0}", this);
 
             SocketError error;
-            _socket.Client.BeginSend(dataStorage, 0, dataStorage.Length, SocketFlags.None, out error, _onSended, sendHandler);
+            _socket.Client.BeginSend(dataStorage, 0, sendedLength, SocketFlags.None, out error, _onSended, sendHandler);
 
             checkError("Client.Send", error);
         }
@@ -262,7 +263,9 @@ namespace ServeRick.Networking
                 catch (SocketException ex)
                 {
                     //why on Earth this is solved via exceptions??
-                    switch (ex.SocketErrorCode)
+                    var errorCode = ex.SocketErrorCode;
+                    Log.Error("Client._oClosed Socket exception {0}", errorCode);
+                    switch (errorCode)
                     {
                         case SocketError.ConnectionReset:
                             //peer has disconnect without proper notification
