@@ -182,7 +182,34 @@ namespace ServeRick
             enqueue(item);
         }
 
+        protected void ExecuteForeach<ItemType, ActiveRecord>(IEnumerable<ItemType> enumeration, Func<ItemType, CallQuery<ActiveRecord>> callback, Action afterAction = null)
+            where ActiveRecord : DataRecord
+        {
+            var toEnumerate = new Queue<ItemType>(enumeration);
+
+            enumerationHandler(toEnumerate, callback, afterAction);
+        }
+
         #endregion
+
+        private void enumerationHandler<ItemType, ActiveRecord>(Queue<ItemType> toEnumerate, Func<ItemType, CallQuery<ActiveRecord>> callback, Action afterAction = null)
+            where ActiveRecord : DataRecord
+        {
+            if (toEnumerate.Count == 0)
+            {
+                //everything is enumerated now
+                afterAction();
+                return;
+            }
+
+            var current = toEnumerate.Dequeue();
+            var query = callback(current);
+
+            Execute(query, () =>
+            {
+                enumerationHandler(toEnumerate, callback, afterAction);
+            });
+        }
 
         private void enqueue(WorkItem item)
         {

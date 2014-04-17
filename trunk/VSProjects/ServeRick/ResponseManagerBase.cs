@@ -125,15 +125,22 @@ namespace ServeRick
 
         private bool isPublic(string relativeFilePath)
         {
-            var ext = Path.GetExtension(relativeFilePath).Substring(1);
+            var ext = getExtension(relativeFilePath);
             return _publicExtensions.Contains(ext);
+        }
+
+        private string getExtension(string path)
+        {
+            var extWithDot = Path.GetExtension(path);
+            return extWithDot.StartsWith(".") ? extWithDot.Substring(1) : extWithDot;
         }
 
         private WebItem getWebItem(string relativeFilePath)
         {
             var file = _rootPath + relativeFilePath;
-            var ext = Path.GetExtension(file).Substring(1);
-             
+            
+            var ext = getExtension(file);
+
             switch (ext.ToLower())
             {
                 case "haml":
@@ -150,6 +157,7 @@ namespace ServeRick
                 case "swf":
                 case "html":
                 case "ico":
+                case "":
                     return SendRaw(file, ext);
                 default:
                     throw new NotSupportedException("Unsupported format");
@@ -429,6 +437,7 @@ namespace ServeRick
                     return "image/bmp";
                 case "ico":
                     return "image/x-icon";
+                case "":
                 case "md":
                 case "txt":
                     return "text/plain";

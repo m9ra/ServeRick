@@ -68,12 +68,13 @@ namespace ServeRick.Modules.MySQL
                 }
                 catch (MySqlException ex)
                 {
-                    var error = ex.ErrorCode;
-                    Log.Error("MySqlException with errorcode: {0}", error);
+                    var error = ex.Number;
+                    Log.Error("MySqlException with Number: {0}, message: {1}", error, ex);
 
                     switch (error)
                     {
-                        case -2147467259:
+                        //TODO determine number for deadlock
+                        case (int)MySqlErrorCode.LockDeadlock:
                             Log.Notice("Waiting for deadlock recover retry");
                             Thread.Sleep(500 + _rnd.Next(500));
                             //deadlock error occured

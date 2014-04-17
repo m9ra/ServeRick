@@ -106,16 +106,16 @@ namespace ServeRick
                 }
 
                 var from = getRangeValue(ranges[0].Substring(rangePrefix.Length), 0);
-                var to = getRangeValue(ranges[1], totalLength);
+                var to = getRangeValue(ranges[1], totalLength - 1);
 
-                if (from >= to)
+                if (from > to)
                 {
                     Log.Error("Unsupported range specified by {0}", rangeValue);
                     return 0;
                 }
 
-                var responseRange = "bytes " + from + "-" + (to - 1) + "/" + totalLength;
-                requestedLength = to - from;
+                var responseRange = "bytes " + from + "-" + to + "/" + totalLength;
+                requestedLength = to - from + 1;
 
                 Response.SetStatus(206);
                 Response.SetHeader("Content-Range", responseRange);
