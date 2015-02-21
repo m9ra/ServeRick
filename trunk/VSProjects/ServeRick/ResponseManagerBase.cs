@@ -87,8 +87,7 @@ namespace ServeRick
                 AddFileResource(relativeFilePath);
             }
         }
-
-
+        
         public void AddDirectoryTree(string relativeDirPath)
         {
             AddDirectoryContent(relativeDirPath);
@@ -138,7 +137,7 @@ namespace ServeRick
         private WebItem getWebItem(string relativeFilePath)
         {
             var file = _rootPath + relativeFilePath;
-            
+
             var ext = getExtension(file);
 
             switch (ext.ToLower())
@@ -395,13 +394,16 @@ namespace ServeRick
             //TODO add support for attributes
             var responseParam = Expression.Parameter(typeof(Response));
             var managerConstant = Expression.Constant(this);
+            var actionConstant = Expression.Constant(this);
 
             var controller = Expression.New(action.DeclaringType);
             var controllerVar = Expression.Variable(controller.Type);
+            var responseControllerType = typeof(ResponseController);
+            var methodFlags = BindingFlags.NonPublic | BindingFlags.Instance;
 
             var actionMethod = Expression.Block(new[] { controllerVar },
                 Expression.Assign(controllerVar, controller),
-                Expression.Call(controllerVar, typeof(ResponseController).GetMethod("SetResponse", BindingFlags.NonPublic | BindingFlags.Instance), managerConstant, responseParam),
+                Expression.Call(controllerVar, responseControllerType.GetMethod("SetResponse", methodFlags), managerConstant, responseParam),
                 Expression.Call(controllerVar, action)
             );
 

@@ -96,15 +96,22 @@ namespace ServeRick.Modules.MySQL
             _connection.Open();
         }
 
-        private string getSqlOperation(WhereItem item, out object operand)
+        private string getSqlOperation(WhereItem item, SqlQuery query)
         {
             string format;
 
-            operand = getSqlOperand(null, item.Operand);
+            var operand = getSqlOperand(null, item.Operand);
             switch (item.Operation)
             {
                 case WhereOperation.Equal:
-                    format = "`{0}` = {1}";
+                    if (operand == null)
+                    {
+                        format = "`{0}` IS {1}";
+                    }
+                    else
+                    {
+                        format = "`{0}` = {1}";
+                    }
                     break;
                 case WhereOperation.HasSubstring:
                     format = "`{0}` LIKE {1}";
@@ -113,12 +120,24 @@ namespace ServeRick.Modules.MySQL
                 case WhereOperation.IsSimilar:
                     format = "MATCH(`{0}`) AGAINST({1} IN BOOLEAN MODE)";
                     break;
+                case WhereOperation.Lesser:
+                    format = "`{0}` < {1}";
+                    break;
+                case WhereOperation.LesserOrEqual:
+                    format = "`{0}` <= {1}";
+                    break;
+                case WhereOperation.Greater:
+                    format = "`{0}` > {1}";
+                    break;
+                case WhereOperation.GreaterOrEqual:
+                    format = "`{0}` >= {1}";
+                    break;
                 default:
                     throw new NotSupportedException("Cannot process operation" + item.Operation);
             }
 
             var column = item.Column;
-            var operandHolder = '@' + column;
+            var operandHolder = query.AddParameter(column, operand);
 
             return string.Format(format, column, operandHolder);
         }
@@ -127,6 +146,9 @@ namespace ServeRick.Modules.MySQL
 
         private object getSqlOperand(Column column, object netValue)
         {
+            if (netValue == null)
+                return null;
+
             var type = netValue.GetType();
 
             if (type.IsEnum)
@@ -148,7 +170,7 @@ namespace ServeRick.Modules.MySQL
                 return "VARCHAR(100)";
             }
 
-            if (type == typeof(int) || type.IsEnum)
+            if (type == typeof(int) || type == typeof(long) || type.IsEnum)
             {
                 return "INT";
             }
@@ -262,10 +284,11 @@ namespace ServeRick.Modules.MySQL
                     }
 
                     insertCmd.AppendFormat("`{0}`", column.Name);
-                    values.AppendFormat("@{0}", column.Name);
 
                     var value = table.GetColumnValue(column.Name, row);
-                    insertCmd.SetParameter(column.Name, value);
+                    var parameter = insertCmd.AddParameter(column.Name, value);
+                    values.Append(parameter);
+
 
                     isFirst = false;
                 }
@@ -283,7 +306,7 @@ namespace ServeRick.Modules.MySQL
             executor(inserted);
         }
 
-        public override void UpdateRows<ActiveRecord>(DataTable<ActiveRecord> table, UpdateQuery<ActiveRecord> query, Action executor)
+        public override void UpdateRows<ActiveRecord>(DataTable<ActiveRecord> table, UpdateQuery<ActiveRecord> query, UpdateExecutor<ActiveRecord> executor)
         {
             var queryCmd = getQuery();
 
@@ -302,8 +325,8 @@ namespace ServeRick.Modules.MySQL
                 var column = table.GetColumn(columnName);
                 var operand = getSqlOperand(column, update.Value);
 
-                queryCmd.SetParameter(columnName, operand);
-                queryCmd.AppendFormat(" `{0}` = @{0} ", columnName);
+                var parameter = queryCmd.AddParameter(columnName, operand);
+                queryCmd.AppendFormat(" `{0}` = {1} ", columnName, parameter);
 
                 isFirst = false;
             }
@@ -313,8 +336,8 @@ namespace ServeRick.Modules.MySQL
 
             appendLimit(queryCmd, query.Select);
 
-            queryCmd.ExecuteNonQuery();
-            executor();
+            var updatedRows = queryCmd.ExecuteNonQuery();
+            executor(updatedRows);
         }
 
         public override void RemoveRows<ActiveRecord>(DataTable<ActiveRecord> table, RemoveQuery<ActiveRecord> query, Action executor)
@@ -348,7 +371,7 @@ namespace ServeRick.Modules.MySQL
             var queryCmd = getQuery();
 
             queryCmd.Append(query.CallName);
-            queryCmd.SetCommandType(CommandType.StoredProcedure);
+            queryCmd.MarkProcedure();
 
             addCallArguments(queryCmd, query.Arguments);
 
@@ -426,9 +449,7 @@ namespace ServeRick.Modules.MySQL
                     query.Append(" AND ");
                 }
 
-                object operand;
-                var operation = getSqlOperation(item, out operand);
-                query.SetParameter(item.Column, operand);
+                var operation = getSqlOperation(item, query);
 
                 query.Append(operation);
                 isFirst = false;
@@ -450,8 +471,7 @@ namespace ServeRick.Modules.MySQL
         {
             foreach (var argument in arguments)
             {
-                var argumentHolder = "@" + argument.Key;
-                queryCmd.SetParameter(argumentHolder, argument.Value);
+                queryCmd.AddParameter(argument.Key, argument.Value);
             }
         }
 

@@ -23,10 +23,19 @@ namespace ServeRick.Modules.MySQL
             _command.Connection = connection;
         }
 
-        internal void SetParameter(string paramName, object value)
+        internal string AddParameter(string paramHint, object value)
         {
-            _command.Parameters.AddWithValue(paramName, value);
-            _command.Parameters[paramName].Direction = ParameterDirection.Input;
+            var parameter = "@" + paramHint;
+            var number = 0;
+            while (_command.Parameters.Contains(parameter))
+            {
+                ++number;
+                parameter = "@" + paramHint + number;
+            }
+            _command.Parameters.AddWithValue(parameter, value);
+            _command.Parameters[parameter].Direction = ParameterDirection.Input;
+
+            return parameter;
         }
 
         internal void AppendFormat(string format, params object[] formatArgs)
@@ -56,21 +65,37 @@ namespace ServeRick.Modules.MySQL
             return _command.ExecuteScalar();
         }
 
-        internal void ExecuteNonQuery()
+        internal int ExecuteNonQuery()
         {
             prepareQuery();
-            _command.ExecuteNonQuery();
+            return _command.ExecuteNonQuery();
         }
 
         private void prepareQuery()
         {
-            Log.Notice("MySql:{0}", _text);
-            _command.CommandText = _text.ToString();
+            var text = _text.ToString().Trim();
+            Log.Notice("MySql[{2}]:{0} | {1}", text, parametersToString(), _command.Connection.GetHashCode());
+            _command.CommandText = text;
         }
 
-        internal void SetCommandType(CommandType commandType)
+        private string parametersToString()
         {
-            _command.CommandType = commandType;
+            var result = new StringBuilder();
+            foreach (MySqlParameter param in _command.Parameters)
+            {
+                if (result.Length > 0)
+                    result.Append(", ");
+                result.Append(param.ParameterName);
+                result.Append('=');
+                result.Append(param.Value);
+            }
+            return result.ToString();
+        }
+
+        internal void MarkProcedure()
+        {
+            _command.CommandType = CommandType.StoredProcedure;
+            _command.EnableCaching = false;
         }
     }
 }

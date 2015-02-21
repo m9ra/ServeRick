@@ -43,7 +43,7 @@ namespace ServeRick.Modules.MySQL
         public MySqlDriver(string connectionString, int workersCount = 5)
         {
             ConnectionString = connectionString;
-
+                       
             for (int i = 0; i < workersCount; ++i)
             {
                 _workers.Add(new QueryWorker(this));
@@ -122,7 +122,7 @@ namespace ServeRick.Modules.MySQL
             });
         }
 
-        public override void UpdateRows<ActiveRecord>(DataTable<ActiveRecord> table, UpdateQuery<ActiveRecord> query, Action executor)
+        public override void UpdateRows<ActiveRecord>(DataTable<ActiveRecord> table, UpdateQuery<ActiveRecord> query, UpdateExecutor<ActiveRecord> executor)
         {
             enqueueWork((w) =>
             {

@@ -12,6 +12,8 @@ namespace ServeRick.Database
         HasSubstring,
         IsSimilar,
         LesserOrEqual,
+        Lesser,
+        GreaterOrEqual,
         Greater
     }
 

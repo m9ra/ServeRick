@@ -36,6 +36,8 @@ namespace ServeRick.Networking
         /// </summary>
         readonly TcpListener _listener;
 
+        readonly int _bufferSize;
+
         /// <summary>
         /// Handler for accepted clients
         /// </summary>
@@ -48,10 +50,12 @@ namespace ServeRick.Networking
         /// <param name="configuration">Configuration of network</param>
         /// <param name="bufferProvider">Buffer provider for client communication</param>
         /// <param name="clientAcceptedHandler">Handler called on every accepted client. Is called synchronously</param>
-        internal Accepter(NetworkConfiguration configuration, BufferProvider bufferProvider, OnClientAccepted clientAcceptedHandler)
+        internal Accepter(NetworkConfiguration configuration, MemoryConfiguration memoryConfiguration, BufferProvider bufferProvider, OnClientAccepted clientAcceptedHandler)
         {
             _configuration = configuration;
             _bufferProvider = bufferProvider;
+
+            _bufferSize = memoryConfiguration.ClientBufferSize;
 
             _listener = new TcpListener(configuration.ListenAddress, configuration.ListenPort);
             _onClientAccepted = clientAcceptedHandler;
@@ -81,6 +85,7 @@ namespace ServeRick.Networking
         private void _acceptClient(IAsyncResult result)
         {
             var clientSocket = _listener.EndAcceptTcpClient(result);
+            clientSocket.SendBufferSize = _bufferSize;
             var buffer = _bufferProvider.GetBuffer();
 
             var client = new Client(clientSocket, buffer);

@@ -95,20 +95,22 @@ namespace ServeRick.Modules
             executor();
         }
 
-        public override void UpdateRows<ActiveRecord>(DataTable<ActiveRecord> table, UpdateQuery<ActiveRecord> query, Action executor)
+        public override void UpdateRows<ActiveRecord>(DataTable<ActiveRecord> table, UpdateQuery<ActiveRecord> query, UpdateExecutor<ActiveRecord> executor)
         {
+            int updates = 0;
             ExecuteRows(table, query.Select, (res) =>
             {
                 foreach (var row in res.Rows)
                 {
                     foreach (var update in query.Updates)
                     {
+                        ++updates;
                         table.SetColumnValue(row, update.Key, update.Value);
                     }
                 }
             });
 
-            executor();
+            executor(updates);
         }
 
         public override void Call<ActiveRecord>(DataTable<ActiveRecord> table, CallQuery<ActiveRecord> query, Action executor)

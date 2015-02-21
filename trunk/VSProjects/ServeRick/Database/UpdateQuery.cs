@@ -8,6 +8,9 @@ using ServeRick.Processing;
 
 namespace ServeRick.Database
 {
+    public delegate void UpdateExecutor<ActiveRecord>(int updatedRows)
+        where ActiveRecord : DataRecord;
+
     public abstract class UpdateQuery
     {
         //prevent creating from other assemblies
@@ -45,9 +48,9 @@ namespace ServeRick.Database
         /// <summary>
         /// Execute without queueing for client
         /// </summary>
-        internal UpdateQueryWorkItem<ActiveRecord> CreateWork()
+        internal UpdateQueryWorkItem<ActiveRecord> CreateWork(UpdateExecutor<ActiveRecord> executor)
         {
-            return new UpdateQueryWorkItem<ActiveRecord>(this);
+            return new UpdateQueryWorkItem<ActiveRecord>(this,executor);
         }
     }
 }

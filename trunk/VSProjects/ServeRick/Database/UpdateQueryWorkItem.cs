@@ -14,10 +14,13 @@ namespace ServeRick.Database
 
         readonly UpdateQuery<ActiveRecord> _query;
 
-        internal UpdateQueryWorkItem(UpdateQuery<ActiveRecord> query)
+        readonly UpdateExecutor<ActiveRecord> _executor;
+
+        internal UpdateQueryWorkItem(UpdateQuery<ActiveRecord> query,UpdateExecutor<ActiveRecord> executor)
             : base()
         {
             _query = query;
+            _executor = executor;
         }
 
         internal override void Run()
@@ -30,8 +33,10 @@ namespace ServeRick.Database
         /// Update execution handler, is called asynchronously, when 
         /// query execution is done.
         /// </summary>
-        private void _handler()
+        private void _handler(int updatedRows)
         {
+            if (_executor != null)
+                _executor(updatedRows);
             Complete();
         }
     }

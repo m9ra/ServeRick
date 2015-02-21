@@ -46,6 +46,8 @@ namespace ServeRick.Networking
         /// </summary>
         readonly TcpClient _socket;
 
+        readonly DateTime _creationTime = DateTime.Now;
+
         /// <summary>
         /// Chain of work items for processing clients response
         /// </summary>
@@ -74,6 +76,9 @@ namespace ServeRick.Networking
         /// Determine that client is alredy closed
         /// </summary>
         internal bool IsClosed { get { return _isClosed; } }
+
+
+        internal int TimeFromStart { get { return (DateTime.Now - _creationTime).Milliseconds; } }
 
         /// <summary>
         /// Clients buffer

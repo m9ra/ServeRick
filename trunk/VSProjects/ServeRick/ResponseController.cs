@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using System.IO;
 using System.Diagnostics;
+using System.Reflection;
 
 using ServeRick.Sessions;
 using ServeRick.Database;
@@ -17,17 +19,23 @@ namespace ServeRick
 {
     public abstract class ResponseController
     {
+        public static readonly int TimepointCount = 8;
+
+        private static int[] _counts = new int[TimepointCount];
+
+        private static int[] _miliseconds = new int[TimepointCount];
+
         private ResponseHandler _layout = null;
 
         private Client Client { get { return Response.Client; } }
 
         private ProcessingUnit Unit { get { return Client.Unit; } }
 
-        public Response Response { get; private set; }
-
         protected HttpRequest Request { get { return Client.Request; } }
 
         protected ResponseManagerBase Manager { get; private set; }
+
+        public Response Response { get; private set; }
 
         protected static SelectQuery<ActiveRecord> Query<ActiveRecord>()
             where ActiveRecord : DataRecord
@@ -46,6 +54,30 @@ namespace ServeRick
             Response = response;
             Manager = manager;
             Response.AllowSessionFlip();
+        }
+
+        protected void TimePoint(int id)
+        {
+            var fromStart = Client.TimeFromStart;
+            Interlocked.Add(ref _miliseconds[id], fromStart);
+            Interlocked.Increment(ref _counts[id]);
+        }
+
+        public static void ResetTimepoints()
+        {
+            _miliseconds = new int[TimepointCount];
+            _counts = new int[TimepointCount];
+        }
+
+        public static int AverageMilliseconds(int id)
+        {
+            var sum = _miliseconds[id];
+            var count = _counts[id];
+
+            if (count == 0)
+                return 0;
+
+            return sum / count;
         }
 
         protected void ContentFor(string yieldIdentifier, ResponseHandler handler)
@@ -188,7 +220,6 @@ namespace ServeRick
             return SessionProvider.GetFlash(Unit.Output, Client.SessionID, messageID);
         }
 
-
         protected void RedirectTo(string url)
         {
             Response.SetHeader("Location", url);
@@ -211,13 +242,12 @@ namespace ServeRick
             return handler;
         }
 
-
         #region Database API
 
-        protected void Execute<T>(UpdateQuery<T> query)
+        protected void Execute<T>(UpdateQuery<T> query, UpdateExecutor<T> executor = null)
             where T : DataRecord
         {
-            var item = query.CreateWork();
+            var item = query.CreateWork(executor);
             Client.EnqueueWork(item);
         }
 

@@ -128,13 +128,13 @@ namespace ServeRick
             return new SelectQuery<ActiveRecord>();
         }
 
-        protected InsertQuery<ActiveRecord> Insert<ActiveRecord>(IEnumerable<ActiveRecord> entries)
+        protected static InsertQuery<ActiveRecord> Insert<ActiveRecord>(IEnumerable<ActiveRecord> entries)
          where ActiveRecord : DataRecord
         {
             return new InsertQuery<ActiveRecord>(entries);
         }
 
-        protected CallQuery<ActiveRecord> Call<ActiveRecord>(string callName, IEnumerable<KeyValuePair<string, object>> arguments)
+        protected static CallQuery<ActiveRecord> Call<ActiveRecord>(string callName, IEnumerable<KeyValuePair<string, object>> arguments = null)
             where ActiveRecord : DataRecord
         {
             return new CallQuery<ActiveRecord>(callName, arguments);
@@ -147,10 +147,10 @@ namespace ServeRick
             enqueue(item);
         }
 
-        protected void Execute<T>(UpdateQuery<T> query)
+        protected void Execute<T>(UpdateQuery<T> query, UpdateExecutor<T> executor = null)
          where T : DataRecord
         {
-            var item = query.CreateWork();
+            var item = query.CreateWork(executor);
             enqueue(item);
         }
 

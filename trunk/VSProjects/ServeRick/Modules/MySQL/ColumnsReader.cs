@@ -22,6 +22,9 @@ namespace ServeRick.Modules.MySQL
 
         public override string ReadString()
         {
+            if (isNull())
+                return null;
+
             return _reader.GetString(ColumnName);
         }
 
@@ -56,6 +59,14 @@ namespace ServeRick.Modules.MySQL
         public override double ReadDouble()
         {
             return _reader.GetDouble(ColumnName);
+        }
+
+        private bool isNull()
+        {
+            var columnIndex = _reader.GetOrdinal(ColumnName);
+            var isNull = _reader.IsDBNull(columnIndex);
+            //Console.WriteLine("IsNull>{0},{1}:{2}", ColumnName, columnIndex, isNull);
+            return isNull;
         }
     }
 }

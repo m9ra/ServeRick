@@ -42,9 +42,12 @@ namespace ServeRick.Database
         internal CallQuery(string callName, IEnumerable<KeyValuePair<string, object>> arguments)
         {
             CallName = callName;
-            foreach (var arg in arguments)
+            if (arguments != null)
             {
-                _arguments[arg.Key] = arg.Value;
+                foreach (var arg in arguments)
+                {
+                    _arguments[arg.Key] = arg.Value;
+                }
             }
         }
 

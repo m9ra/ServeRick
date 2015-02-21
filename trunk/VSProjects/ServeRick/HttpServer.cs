@@ -48,7 +48,7 @@ namespace ServeRick
         {
             BufferProvider = new BufferProvider(memoryConfiguration.ClientBufferSize, memoryConfiguration.MaximalClientMemoryUsage);
 
-            _accepter = new Accepter(networkConfiguration, BufferProvider, _acceptClient);
+            _accepter = new Accepter(networkConfiguration, memoryConfiguration, BufferProvider, _acceptClient);
             _downloader = new Downloader(_onHeadCompleted, _onContentCompleted);
             _responseManager = application.CreateResponseManager();
             _inputManager = application.CreateInputManager();

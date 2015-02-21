@@ -99,7 +99,7 @@ namespace ServeRick.Database
                 var type = column.Type;
                 object value = null;
                 reader.SetColumn(column);
-
+                
                 if (type == typeof(string))
                 {
                     value = reader.ReadString();

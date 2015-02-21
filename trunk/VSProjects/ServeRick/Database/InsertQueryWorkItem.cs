@@ -15,7 +15,7 @@ namespace ServeRick.Database
         readonly InsertQuery<ActiveRecord> _query;
         readonly InsertExecutor<ActiveRecord> _executor;
 
-        internal InsertQueryWorkItem(InsertQuery<ActiveRecord> query, InsertExecutor<ActiveRecord> executor)            
+        internal InsertQueryWorkItem(InsertQuery<ActiveRecord> query, InsertExecutor<ActiveRecord> executor)
         {
             _query = query;
             _executor = executor;
@@ -34,7 +34,8 @@ namespace ServeRick.Database
         /// <param name="rows">Inserted rows.</param>
         private void _handler(IEnumerable<ActiveRecord> rows)
         {
-            _executor(rows);
+            if (_executor != null)
+                _executor(rows);
             Complete();
         }
     }
