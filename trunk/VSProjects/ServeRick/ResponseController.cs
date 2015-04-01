@@ -21,6 +21,8 @@ namespace ServeRick
     {
         public static readonly int TimepointCount = 8;
 
+        public string RootPath { get { return Manager.RootPath; } }
+
         private static int[] _counts = new int[TimepointCount];
 
         private static int[] _miliseconds = new int[TimepointCount];

@@ -36,7 +36,10 @@ namespace ServeRick
         private bool _resetContentHeader = false;
         private bool _canCache = false;
 
+        private readonly Stack<string> _isPartial = new Stack<string>();
 
+        public bool IsPartial { get { return _isPartial.Count > 0; } }
+        
         internal event Action AfterSend;
 
         private string _statusLine;
@@ -62,9 +65,11 @@ namespace ServeRick
         {
         }
 
-
         internal void SetStatus(int statusCode)
         {
+            if (IsPartial)
+                return;
+
             switch (statusCode)
             {
                 case 200:
@@ -94,11 +99,17 @@ namespace ServeRick
 
         public void SetContentType(string mime)
         {
+            if (IsPartial)
+                return;
+
             SetHeader("Content-Type", mime);
         }
 
         public void SetKeepAlive(bool keepAlive)
         {
+            if (IsPartial)
+                return;
+
             SetHeader("Connection", keepAlive ? "Keep-Alive" : "Close");
 
             if (keepAlive)
@@ -109,6 +120,9 @@ namespace ServeRick
 
         public void SetETag(string etag)
         {
+            if (IsPartial)
+                return;
+
             if (etag == null)
                 return;
 
@@ -138,6 +152,9 @@ namespace ServeRick
 
         internal void SetHeader(string header, string value)
         {
+            if (IsPartial)
+                return;
+
             _responseHeaders[header] = value;
         }
 
@@ -178,11 +195,20 @@ namespace ServeRick
 
         public void Yield(string identifier)
         {
-            ResponseHandler yieldHandler;
-            if (_contentsFor.TryGetValue(identifier, out yieldHandler))
+            try
             {
-                yieldHandler(this);
-                return;
+                _isPartial.Push(identifier);
+
+                ResponseHandler yieldHandler;
+                if (_contentsFor.TryGetValue(identifier, out yieldHandler))
+                {
+                    yieldHandler(this);
+                    return;
+                }
+            }
+            finally
+            {
+                _isPartial.Pop();
             }
         }
 
@@ -239,7 +265,7 @@ namespace ServeRick
             {
                 SetHeader("Cache-Control", "max-age=0, private, must-revalidate");
             }
-            
+
 
             _headersSent = true;
 

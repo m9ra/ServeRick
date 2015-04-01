@@ -16,6 +16,11 @@ namespace ServeRick
 {
     public abstract class ResponseManagerBase
     {
+        /// <summary>
+        /// Root for resource loading
+        /// </summary>
+        internal readonly string RootPath;
+
         object _L_itemRefresh = new object();
 
         /// <summary>
@@ -33,11 +38,6 @@ namespace ServeRick
         /// Extensions that are published directly via URI
         /// </summary>
         readonly HashSet<string> _publicExtensions = new HashSet<string>();
-
-        /// <summary>
-        /// Root for resource loading
-        /// </summary>
-        readonly string _rootPath;
 
         /// <summary>
         /// File for missing file action
@@ -61,7 +61,7 @@ namespace ServeRick
 
         public ResponseManagerBase(WebApplication application, string rootPath, params Type[] controllers)
         {
-            _rootPath = rootPath + Path.DirectorySeparatorChar;
+            RootPath = rootPath + Path.DirectorySeparatorChar;
             Application = application;
             foreach (var controller in controllers)
             {
@@ -81,7 +81,7 @@ namespace ServeRick
         {
             //TODO hook directory for listening changes
             relativeDirPath += Path.DirectorySeparatorChar;
-            foreach (var file in Directory.EnumerateFiles(_rootPath + relativeDirPath))
+            foreach (var file in Directory.EnumerateFiles(RootPath + relativeDirPath))
             {
                 var relativeFilePath = relativeDirPath + Path.GetFileName(file);
                 AddFileResource(relativeFilePath);
@@ -92,7 +92,7 @@ namespace ServeRick
         {
             AddDirectoryContent(relativeDirPath);
 
-            foreach (var subDir in Directory.EnumerateDirectories(_rootPath + relativeDirPath))
+            foreach (var subDir in Directory.EnumerateDirectories(RootPath + relativeDirPath))
             {
 
                 var relativeSubDirPath = relativeDirPath + Path.DirectorySeparatorChar + Path.GetFileName(subDir);
@@ -104,7 +104,7 @@ namespace ServeRick
         {
             var handler = getWebItem(relativePath);
 
-            RegisterFile(relativePath.Substring(1), handler);
+            RegisterFile(getId(relativePath), handler);
 
             if (isPublic(relativePath))
             {
@@ -112,6 +112,15 @@ namespace ServeRick
                 PublishAction(uri, handler);
             }
         }
+
+        protected string getId(string relativePath) {
+            relativePath = relativePath.Replace("\\", "/");
+            if (relativePath.StartsWith("/"))
+                relativePath = relativePath.Substring(1);
+
+            return relativePath;
+        }
+
 
         protected virtual string getUri(string relativeFilePath)
         {
@@ -136,7 +145,7 @@ namespace ServeRick
 
         private WebItem getWebItem(string relativeFilePath)
         {
-            var file = _rootPath + relativeFilePath;
+            var file = RootPath + relativeFilePath;
 
             var ext = getExtension(file);
 
@@ -155,6 +164,7 @@ namespace ServeRick
                 case "md":
                 case "swf":
                 case "html":
+                case "htm":
                 case "ico":
                 case "":
                     return SendRaw(file, ext);
@@ -443,6 +453,7 @@ namespace ServeRick
                 case "md":
                 case "txt":
                     return "text/plain";
+                case "htm":
                 case "html":
                     return "text/html";
                 case "js":

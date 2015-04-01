@@ -107,6 +107,7 @@
     <Compile Include="Database\Column.cs" />
     <Compile Include="Database\ColumnsReaderBase.cs" />
     <Compile Include="Database\CallQueryWorkItem.cs" />
+    <Compile Include="Database\OrderByClause.cs" />
     <Compile Include="Database\RemoveQueryWorkItem.cs" />
     <Compile Include="Database\DatabaseProcessor.cs" />
     <Compile Include="Database\DatabaseWorkItem.cs" />

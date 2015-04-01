@@ -237,7 +237,7 @@ namespace ServeRick.Modules.MySQL
         public override void ExecuteRows<ActiveRecord>(DataTable<ActiveRecord> table, SelectQuery<ActiveRecord> query, RowsExecutor<ActiveRecord> executor)
         {
             var queryCmd = createSelect(table, query.Condition, true);
-            appendOrderBy(queryCmd, query);
+            appendOrderBy(queryCmd, query.Ordering);
             appendLimit(queryCmd, query);
 
             var results = new List<ActiveRecord>();
@@ -493,12 +493,17 @@ namespace ServeRick.Modules.MySQL
         }
 
 
-        private void appendOrderBy<ActiveRecord>(SqlQuery queryCmd, SelectQuery<ActiveRecord> query)
-            where ActiveRecord : DataRecord
+        private void appendOrderBy(SqlQuery queryCmd, OrderByClause ordering)
         {
             //TODO add ordering API
-
-            queryCmd.Append(" ORDER BY id DESC ");
+            if (ordering.IsRandom)
+            {
+                queryCmd.Append(" ORDER BY rand() ");
+            }
+            else
+            {
+                queryCmd.Append(" ORDER BY id DESC ");
+            }
         }
 
         /// <summary>

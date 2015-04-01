@@ -45,19 +45,22 @@ namespace ServeRick.Database
     {
         public readonly WhereClause Condition;
 
+        public readonly OrderByClause Ordering;
+
         public int MaxCount { get; private set; }
 
         public int Start { get; private set; }
 
         internal SelectQuery()
-            : this(new WhereClause())
+            : this(new WhereClause(), new OrderByClause())
         {
             MaxCount = int.MaxValue;
         }
 
-        internal SelectQuery(WhereClause where)
+        internal SelectQuery(WhereClause where, OrderByClause ordering)
         {
             Condition = where;
+            Ordering=ordering;
         }
 
         public SelectQuery<ActiveRecord> Find(int id)
@@ -76,10 +79,13 @@ namespace ServeRick.Database
             var conditon = Condition.Clone();
 
             conditon.Add(item);
-            var query = Clone(conditon);
+            var query = Clone(conditon, Ordering);
             return query;
         }
 
+        public SelectQuery<ActiveRecord> OrderByRandom() {
+            return new SelectQuery<ActiveRecord>(Condition, Ordering.SetRandom(true));
+        }
 
         public RemoveQuery<ActiveRecord> Remove()
         {
@@ -119,9 +125,9 @@ namespace ServeRick.Database
             return new RowsQueryWorkItem<ActiveRecord>(this, executor);
         }
 
-        internal SelectQuery<ActiveRecord> Clone(WhereClause where)
+        internal SelectQuery<ActiveRecord> Clone(WhereClause where, OrderByClause orderBy)
         {
-            var query = new SelectQuery<ActiveRecord>(where);
+            var query = new SelectQuery<ActiveRecord>(where, orderBy);
             query.Start = Start;
             query.MaxCount = MaxCount;
 
@@ -130,7 +136,7 @@ namespace ServeRick.Database
 
         internal SelectQuery<ActiveRecord> Clone()
         {
-            return Clone(Condition);
+            return Clone(Condition,Ordering);
         }
     }
 }

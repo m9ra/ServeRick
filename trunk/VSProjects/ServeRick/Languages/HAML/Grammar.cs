@@ -96,9 +96,9 @@ namespace ServeRick.Languages.HAML
             var blockArguments = NT("blockArguments");
             var lambdaBlock = NT("lambdaBlock");
 
-            var symbol = T_REG(":[a-zA-Z][a-zA-Z01-9_]*", "symbol");
-            var shortKey = T_REG("[a-zA-Z][a-zA-Z01-9_]*:", "shortKey");
-            var identifier = T_REG("[a-zA-Z][a-zA-Z01-9_]*", "identifier")
+            var symbol = T_REG(":[a-zA-Z][a-zA-Z01-9_-]*", "symbol");
+            var shortKey = T_REG("[a-zA-Z][a-zA-Z01-9_-]*:", "shortKey");
+            var identifier = T_REG("[a-zA-Z][a-zA-Z01-9_-]*", "identifier")
                 .Exclude("yield", "if", "else", "true", "false");
 
             var boolLiteral = T_REG("(true|false)", "bool");
@@ -181,7 +181,7 @@ namespace ServeRick.Languages.HAML
 
             var typeModifier = T_REG("\\+", "typeModifier");
             var type = T_REG(@"\w[\w.]+", "type");
-            var identifier = T_REG("[a-zA-Z_][a-zA-Z01-9_]*", "identifier");
+            var identifier = T_REG("[a-zA-Z_][a-zA-Z01-9_-]*", "identifier");
             var rawOutput = T_REG("[^@!%#=.({-][^\\r\\n]*", "rawOutput");
 
             #endregion
