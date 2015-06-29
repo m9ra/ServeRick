@@ -29,7 +29,7 @@ namespace ServeRick
 
         private ResponseHandler _layout = null;
 
-        private Client Client { get { return Response.Client; } }
+        protected Client Client { get { return Response.Client; } }
 
         private ProcessingUnit Unit { get { return Client.Unit; } }
 

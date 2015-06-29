@@ -99,7 +99,7 @@ namespace ServeRick.Languages.HAML
             var symbol = T_REG(":[a-zA-Z][a-zA-Z01-9_-]*", "symbol");
             var shortKey = T_REG("[a-zA-Z][a-zA-Z01-9_-]*:", "shortKey");
             var identifier = T_REG("[a-zA-Z][a-zA-Z01-9_-]*", "identifier")
-                .Exclude("yield", "if", "else", "true", "false");
+                .Exclude("yield", "if", "else", "true", "false", "raw");
 
             var boolLiteral = T_REG("(true|false)", "bool");
             var numberLiteral = T_REG(@"\d+", "number");

@@ -71,6 +71,15 @@ namespace ServeRick.Compiling
             response.Yield(identifier);
         }
 
+        public static string Flash(Response response, string messageId)
+        {
+            var result = response.Flash(messageId);
+            if (result == null)
+                result = "";
+
+            return result;
+        }
+
         public static T Param<T>(Response response, string identifier)
         {
             var param = response.GetParam(identifier);
@@ -102,7 +111,7 @@ namespace ServeRick.Compiling
                 if (htmlStr != null)
                 {
                     //escape html
-                    var result=(T)(object)HttpUtility.HtmlEncode(htmlStr);
+                    var result = (T)(object)HttpUtility.HtmlEncode(htmlStr);
                     return result;
                 }
             }

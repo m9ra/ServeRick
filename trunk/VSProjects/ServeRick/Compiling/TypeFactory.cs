@@ -43,7 +43,11 @@ namespace ServeRick.Compiling
             for (int i = 0; i < parameters.Count; ++i)
             {
                 var parameter = parameters[i].Value;
-                paramTypes.Add(ResolveType(parameter));
+                var resolvedParameter = ResolveType(parameter);
+                if (resolvedParameter == null)
+                    throw new KeyNotFoundException("Cannot resolve type: '" + parameter+"'. Make sure it is a Fullname.");
+
+                paramTypes.Add(resolvedParameter);
             }
 
             if (paramTypes.Count > 0)
