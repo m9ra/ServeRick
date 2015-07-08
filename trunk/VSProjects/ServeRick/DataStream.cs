@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.IO;
+
 using System.Threading;
 
 namespace ServeRick
@@ -36,7 +38,14 @@ namespace ServeRick
             if (_isClosed)
                 return;
 
-            callback(data, length);
+            try
+            {
+                callback(data, length);
+            }
+            catch (IOException ex)
+            {
+                Log.Error("DataStream.onDataRead: {0}", ex.ToString());
+            }
         }
 
         public void Close()

@@ -102,7 +102,8 @@ namespace ServeRick
 
             //resolve IP address accordingly forward headers
             string ipValue;
-            client.Request.TryGetHeader(HttpRequest.ForwardedHeader, out ipValue, client.IP.ToString());
+            var defaultIP = client.IP != null ? client.IP.ToString() : "none";
+            client.Request.TryGetHeader(HttpRequest.ForwardedHeader, out ipValue, defaultIP);
             client.Request.SetHeader(HttpRequest.IPHeader, ipValue);
 
             if (client.Request.ContentLength > 0)

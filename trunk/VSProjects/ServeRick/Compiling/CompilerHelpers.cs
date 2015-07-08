@@ -18,6 +18,16 @@ namespace ServeRick.Compiling
             return data.ToString();
         }
 
+        public static bool equals(object a, object b)
+        {
+            return a.Equals(b);  
+        }
+
+        public static string concat(object a, object b)
+        {
+            return string.Format("{0}{1}", a, b);
+        }
+
         public static Dictionary<TKey, TVal> CreateDictionary<TKey, TVal>(IEnumerable<KeyValuePair<TKey, TVal>> pairs)
         {
             var dict = new Dictionary<TKey, TVal>();

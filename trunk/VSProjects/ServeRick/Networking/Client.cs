@@ -119,14 +119,7 @@ namespace ServeRick.Networking
 
         public static int ActiveClients { get; private set; }
 
-        public IPAddress IP
-        {
-            get
-            {
-                var ep = _socket.Client.RemoteEndPoint as IPEndPoint;
-                return ep == null ? null : ep.Address;
-            }
-        }
+        public readonly IPAddress IP;
 
         /// <summary>
         /// Response object is used for creating response for client
@@ -145,9 +138,10 @@ namespace ServeRick.Networking
 
         #endregion
 
-        internal Client(TcpClient clientSocket, DataBuffer clientBuffer)
+        internal Client(TcpClient clientSocket, IPAddress ip, DataBuffer clientBuffer)
         {
             _socket = clientSocket;
+            IP = ip;
             Buffer = clientBuffer;
 
             lock (_L_activeClients)

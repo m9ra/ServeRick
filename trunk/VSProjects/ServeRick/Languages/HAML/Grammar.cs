@@ -70,6 +70,7 @@ namespace ServeRick.Languages.HAML
 
             var statement = NT("statement");
             var expression = NT("expression");
+            var binaryExpression = NT("binaryExpression");
             var ifStatement = NT("ifStatement");
             var render = NT("render");
 
@@ -104,6 +105,8 @@ namespace ServeRick.Languages.HAML
             var boolLiteral = T_REG("(true|false)", "bool");
             var numberLiteral = T_REG(@"\d+", "number");
             var stringLiteral = T_REG(@""" [^""]* """, "string");
+            var binaryExpressionOperator = T_REG("==|[+]|-|[*]|/", "binaryExpressionOperator");
+
 
             #endregion
 
@@ -138,7 +141,9 @@ namespace ServeRick.Languages.HAML
 
             //expression           
             yield.Rule = "yield" + (symbol | Empty);
-            expression.Rule = yield | keyPair | symbol | value | call | methodCall | identifier | param | interval;
+            expression.Rule = yield | keyPair | symbol | value | call | identifier | param | interval | binaryExpression | methodCall | "(" + expression + ")";
+
+            binaryExpression.Rule = expression + binaryExpressionOperator + expression;
             keyPair.Rule = (symbol + "=>" + expression) | (shortKey + expression);
             keyPairs.Rule = MakeStarRule(keyPair, ",");
 

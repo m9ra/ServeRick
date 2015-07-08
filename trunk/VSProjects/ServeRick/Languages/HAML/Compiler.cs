@@ -389,6 +389,8 @@ namespace ServeRick.Languages.HAML
                     return resolveCall(node);
                 case "expression":
                     return resolveRValue(StepToChild(node));
+                case "binaryExpression":
+                    return resolveBinary(node);
                 case "symbol":
                     return resolveSymbol(node);
                 case "shortKey":
@@ -503,6 +505,30 @@ namespace ServeRick.Languages.HAML
             var callName = GetSubTerminalText(node.ChildNodes[0]);
 
             return new CallValue(callName, argValues, CurrentContext);
+        }
+
+        private RValue resolveBinary(Node node)
+        {
+            var leftOperand = resolveRValue(node.ChildNodes[0]);
+            var rightOperand = resolveRValue(node.ChildNodes[2]);
+            var binaryOperator = node.ChildNodes[1].Match.MatchedData;
+
+            string staticOperatorMethod = null;
+            switch (binaryOperator)
+            {
+                case "==":
+                    staticOperatorMethod = "equals";
+                    break;
+
+                case "+":
+                    staticOperatorMethod = "concat";
+                    break;
+
+                default:
+                    throw new NotImplementedException("Support for operator '" + binaryOperator + "' is not implemented yet");
+            }
+
+            return new CallValue(staticOperatorMethod, new[] { leftOperand, rightOperand }, CurrentContext);
         }
 
         private RValue[] getArguments(Node callNode)
