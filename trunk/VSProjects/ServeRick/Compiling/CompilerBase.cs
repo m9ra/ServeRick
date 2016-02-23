@@ -125,7 +125,7 @@ namespace ServeRick.Compiling
                 var errorTokens = new List<string>();
 
                 var lineShown = 11;
-                var lineOffset = Math.Min((lineShown - 1) / 2, lineShown - error.Location.Line);
+                var lineOffset = Math.Max((lineShown - 1) / 2, lineShown - error.Location.Line);
                 for (var i = 0; i < lineShown; ++i)
                 {
                     var lineIndex = error.Location.Line + i - lineOffset;

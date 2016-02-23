@@ -32,6 +32,11 @@ namespace ServeRick.Languages.HAML
         readonly Terminal EOL = T_SPEC(IndentOutliner.EOL);
 
         /// <summary>
+        /// Special terminal for begining of line
+        /// </summary>
+        readonly Terminal BOL = T_SPEC(IndentOutliner.BOL);
+
+        /// <summary>
         /// Nonterminal for hash expression
         /// </summary>
         readonly NonTerminal hash = NT("hash");
@@ -118,7 +123,7 @@ namespace ServeRick.Languages.HAML
             ifStatement.Rule = "if" + condition + ifBranch + Q(elseBranch);
             condition.Rule = expression;
             ifBranch.Rule = branch;
-            elseBranch.Rule = codePrefix + "else" + branch;
+            elseBranch.Rule = BOL + codePrefix + "else" + branch;
 
             //let last EOL be consumed from parent
             branch.Rule = statement | (EOL + INDENT + blocks + DEDENT);
@@ -196,12 +201,13 @@ namespace ServeRick.Languages.HAML
             block.Rule = contentBlock;
             blocks.Rule = MakeStarRule(block);
 
-            contentBlock.Rule =
+            contentBlock.Rule = BOL + (
                 (Q(head) + EOL + Q(INDENT + blocks + DEDENT)) |
-                (Q(head) + content);
+                (Q(head) + content + Q(EOL))
+                );
 
             //content rules
-            content.Rule = (code + Q(EOL)) | (Q(rawOutput) + EOL);
+            content.Rule = code | rawOutput;
             code.Rule = codePrefix + Q("raw") + statement;
 
             //head rules
@@ -219,12 +225,12 @@ namespace ServeRick.Languages.HAML
 
             //root
             doctype.Rule = "!!!" + Q(identifier);
-            view.Rule = BOF + paramDeclarations + Q(doctype + EOL) + blocks + EOF;
+            view.Rule = BOF + paramDeclarations + Q(BOL + doctype + EOL) + blocks + EOF;
             this.Root = view;
 
             //params
             paramDeclarations.Rule = MakeStarRule(paramDeclaration);
-            paramDeclaration.Rule = param + Q(typeModifier) + type + EOL;
+            paramDeclaration.Rule = BOL + param + Q(typeModifier) + type + EOL;
             param.Rule = "@" + identifier;
 
             MarkTransient(attrib);

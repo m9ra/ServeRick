@@ -30,6 +30,11 @@ namespace ServeRick.Languages.HAML
         public static readonly string EOL = "EOL";
 
         /// <summary>
+        /// Marker for Begining of line tokens
+        /// </summary>
+        public static readonly string BOL = "BOL";
+
+        /// <summary>
         /// Number of spaces to cover single tabulator
         /// </summary>
         private readonly int _tabLength;
@@ -43,7 +48,7 @@ namespace ServeRick.Languages.HAML
         /// Input tokens that will be outlined
         /// </summary>
         private readonly Token[] _inputTokens;
-      
+
         /// <summary>
         /// Initialize outliner
         /// </summary>
@@ -66,9 +71,6 @@ namespace ServeRick.Languages.HAML
             {
                 if (token.IsSpecial)
                 {
-                    if (token.Name == "EOF")
-                        result.Add(Token.Special(EOL, token.StartPosition));
-
                     //we leave special tokens as they are
                     result.Add(token);
                 }
@@ -106,6 +108,7 @@ namespace ServeRick.Languages.HAML
                 if (lineText.Length > 0)
                 {
                     //we can skip empty lines
+                    result.Add(Token.Special(BOL, lineStartAbsoluteOffset));
                     result.Add(Token.Text(lineText, lineStartAbsoluteOffset + currentIndentationLength));
                     result.Add(Token.Special(EOL, lineStartAbsoluteOffset + line.Length));
                 }
@@ -198,8 +201,8 @@ namespace ServeRick.Languages.HAML
 
                 //every indent/dedent except the last one will have preceding EOL
                 var isLast = i + 1 == changeSize;
-                if (!isLast)
-                    result.Add(Token.Special(EOL, indentationAbsoluteOffset));
+                /* if (!isLast)
+                     result.Add(Token.Special(EOL, indentationAbsoluteOffset));*/
             }
         }
     }

@@ -275,21 +275,12 @@ namespace ServeRick.Languages.HAML
             if (code == null)
                 return null;
 
-            var statements = GetDescendant(code, "statement");
-
-            //TODO multiple statemets handling
-            /*     Instruction lastStatement = null;
-                 foreach (var statement in statements.ChildNodes)
-                 {
-                     lastStatement = compileStatement(statement);
-                 }
-            
-                 return lastStatement;*/
+            var statement = GetDescendant(code, "statement");
 
             var prefix = GetTerminalText(code.ChildNodes[0]);
             var isRaw = GetTerminalText(code.ChildNodes[1]) == "raw";
 
-            var compiled = compileStatement(statements);
+            var compiled = compileStatement(statement);
             if (compiled.ReturnType == typeof(void))
             {
                 //TODO correct handling of yield
