@@ -59,6 +59,7 @@ namespace ServeRick.Compiling
         {
             var context = data.StartContext;
             var waitingContexts = new List<SourceContext>();
+            var completeContexts = new List<SourceContext>();
 
             while (context != null)
             {
@@ -67,13 +68,29 @@ namespace ServeRick.Compiling
                     waitingContexts.Add(context);
                 }
 
+                if (context.IncommingEdges.CompleteEdges.Any())
+                {
+                    completeContexts.Add(context);
+                }
+
                 context = context.NextContext;
             }
 
             var errors = new List<SyntaxError>();
             if (waitingContexts.Count == 0)
             {
-                throw new NotImplementedException("Error when there is no waiting source context");
+                if (completeContexts.Count == 0)
+                    throw new NotImplementedException("Error when there is no waiting source context");
+
+                var lastCompleteContext = completeContexts.Last();
+                foreach (var activeEdge in lastCompleteContext.IncommingEdges.ActiveEdges)
+                {
+                    var message = string.Format("expected: '{0}', but got: '{1}' for active edge: {2}", activeEdge.Label.CurrentTerm, lastCompleteContext.Token, activeEdge.Label);
+                    errors.Add(new SyntaxError(lastCompleteContext, message));
+                }
+
+                if (errors.Count == 0)
+                    errors.Add(new SyntaxError(lastCompleteContext, "Parsing cannot continue"));
             }
             else
             {
@@ -101,10 +118,40 @@ namespace ServeRick.Compiling
             var output = new StringBuilder();
             foreach (var error in errors)
             {
-                output.AppendFormat("{0} at '{1}',\nNear: '{2}'\n\n",error.Description,error.Location,error.NearPreview);
+
+                output.AppendFormat("{0} at '{1}', near: '{2}'", error.Description, error.Location, sanitizeLine(error.NearPreview));
+
+                var errorLines = new List<string>();
+                var errorTokens = new List<string>();
+
+                var lineShown = 11;
+                var lineOffset = Math.Min((lineShown - 1) / 2, lineShown - error.Location.Line);
+                for (var i = 0; i < lineShown; ++i)
+                {
+                    var lineIndex = error.Location.Line + i - lineOffset;
+                    if (lineIndex < 0)
+                        continue;
+                    var line = error.GetLine(lineIndex);
+                    var tokens = error.GetLineTokens(lineIndex);
+                    var tokensStr = string.Join("', '", tokens);
+
+                    errorLines.Add(string.Format("\n\t line {0}: '{1}'", lineIndex, sanitizeLine(line)));
+                    errorTokens.Add(string.Format("\n\t tokens {0}: '{1}'", lineIndex, sanitizeLine(tokensStr)));
+                }
+
+                foreach (var line in errorLines)
+                    output.Append(line);
+
+                output.AppendLine();
+
+                foreach (var tokens in errorTokens)
+                    output.Append(tokens);
+
+                output.AppendFormat("\n\n\n\n");
             }
 
-            return output.ToString();
+            var outputError = output.ToString();
+            return outputError;
         }
 
         /// <summary>
@@ -258,6 +305,15 @@ namespace ServeRick.Compiling
         private string[] OmitLastPart(string[] pathParts)
         {
             return pathParts.Take(pathParts.Length - 1).ToArray();
+        }
+
+        /// <summary>
+        /// Sanitize given string so it won't exceed the line.
+        /// </summary>
+        /// <returns>The sanitzed line.</returns>
+        private static string sanitizeLine(string str)
+        {
+            return str.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t").Replace("    ", "\\t");
         }
 
         #endregion

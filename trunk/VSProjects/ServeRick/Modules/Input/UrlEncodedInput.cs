@@ -33,6 +33,9 @@ namespace ServeRick.Modules.Input
 
             var stringedData = Encoding.UTF8.GetString(data, dataOffset, dataLength);
             _input.Append(stringedData);
+            if (_input.Length == _inputLimit)
+                //downloading has finished
+                ContinueDownloading = false;
         }
 
         protected override void onDownloadCompleted()

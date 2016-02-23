@@ -11,16 +11,20 @@ namespace Parsing
         private HashSet<ActiveEdge> _activeEdges = new HashSet<ActiveEdge>();
         private HashSet<CompleteEdge> _completeEdges = new HashSet<CompleteEdge>();
         private HashSet<TerminalLabel> _waitingTerminals = new HashSet<TerminalLabel>();
-        
+
         private Dictionary<Term, HashSet<ActiveEdge>> _extensibleEdges = new Dictionary<Term, HashSet<ActiveEdge>>();
 
         public IEnumerable<TerminalLabel> WaitingLabels { get { return _waitingTerminals; } }
 
+        public IEnumerable<CompleteEdge> CompleteEdges { get { return _completeEdges; } }
+
+        public IEnumerable<ActiveEdge> ActiveEdges { get { return _activeEdges; } }
+
         internal IEnumerable<ActiveEdge> ExtensibleWith(CompleteEdge edge)
-        {         
+        {
             HashSet<ActiveEdge> extensible;
             var term = edge.Parent;
-            if(_extensibleEdges.TryGetValue(term, out extensible))
+            if (_extensibleEdges.TryGetValue(term, out extensible))
                 return extensible;
             return new ActiveEdge[0];
         }
@@ -50,7 +54,7 @@ namespace Parsing
 
         internal bool Connect(CompleteEdge edge)
         {
-            if(!_completeEdges.Add(edge))
+            if (!_completeEdges.Add(edge))
                 return false;
 
             return true;

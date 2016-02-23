@@ -11,9 +11,9 @@ namespace Parsing
     /// <summary>
     /// Represents 
     /// </summary>
-    class ActiveEdge : Edge
+    public class ActiveEdge : Edge
     {
-        internal readonly ActiveLabel Label;
+        public readonly ActiveLabel Label;
 
         internal readonly ActiveEdge ExtendedEdge;
 
@@ -74,7 +74,7 @@ namespace Parsing
             }
 
             return o.Label == Label &&
-                   o.EndContext== EndContext &&
+                   o.EndContext == EndContext &&
             o.StartContext == StartContext;
         }
 

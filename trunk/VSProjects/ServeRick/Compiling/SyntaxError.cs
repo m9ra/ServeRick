@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Parsing;
 using Parsing.Source;
 
 namespace ServeRick.Compiling
@@ -62,6 +63,47 @@ namespace ServeRick.Compiling
         }
 
         /// <summary>
+        /// String representation of line with given index.
+        /// </summary>
+        public string GetLine(int line)
+        {
+            var lines = Location.Text.Split('\n');
+            if (line < 0 || line >= lines.Length)
+                return "";
+
+            return lines[line];
+        }
+
+        /// <summary>
+        /// Tokens that comes from given line.
+        /// </summary>
+        public IEnumerable<Token> GetLineTokens(int line)
+        {
+            //find first token on the line
+            var currentToken = Location.Token;
+
+            while (currentToken.Child != null && startLine(currentToken) < line)
+            {
+                currentToken = currentToken.Child;
+            }
+
+            while (startLine(currentToken.Parent) >= line)
+            {
+                currentToken = currentToken.Parent;
+            }
+
+            //iterate until last token on the line
+            var result = new List<Token>();
+            while (startLine(currentToken) == line)
+            {
+                result.Add(currentToken);
+                currentToken = currentToken.Child;
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// Initialize syntax error object
         /// </summary>
         /// <param name="location">Context where error is located</param>
@@ -71,5 +113,21 @@ namespace ServeRick.Compiling
             Description = description;
             Location = location;
         }
+
+        private int startLine(Token token)
+        {
+            if (token == null)
+                return -1;
+
+            var lineIndex = 0;
+            for (var i = 0; i < token.StartPosition; ++i)
+            {
+                if (Location.Text[i] == '\n')
+                    lineIndex += 1;
+            }
+
+            return lineIndex;
+        }
+
     }
 }

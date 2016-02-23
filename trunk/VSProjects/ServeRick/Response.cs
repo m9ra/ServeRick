@@ -173,6 +173,13 @@ namespace ServeRick
             return SessionProvider.GetFlash(Client.Unit.Output, Client.SessionID, messageID);
         }
 
+        /// <summary>
+        /// Sets Access-Control-Allow-Origin to *.
+        /// </summary>
+        public void SetAccessControlAllowOrigin_AllDomains()
+        {
+            SetHeader("Access-Control-Allow-Origin", "*");
+        }
 
         /// <summary>
         /// TODO will be changed to byte[] utf8 encoding

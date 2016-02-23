@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Parsing
 {
-    class ActiveLabel
+    public class ActiveLabel
     {
         private readonly int _index;
         private ActiveLabel[] _transitions;
@@ -21,7 +21,7 @@ namespace Parsing
 
         public IEnumerable<ActiveLabel> Transitions { get { return _transitions; } }
 
-        public ActiveLabel(GrammarSequence sequence, int index = 0)
+        internal ActiveLabel(GrammarSequence sequence, int index = 0)
         {
             _sequence = sequence;
             _index = index;

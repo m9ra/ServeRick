@@ -1,0 +1,57 @@
+[Notice] MySql[832156723]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=279
+[Notice] MySql[1047779891]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=1433
+[Notice] MySql[260077619]:SELECT SQL_CALC_FOUND_ROWS  * FROM `Video` WHERE `Saved` = @Saved AND `ShowInResults` = @ShowInResults AND `Removed` = @Removed ORDER BY rand()  LIMIT 16 | @Saved=1, @ShowInResults=1, @Removed=0
+[Notice] MySql[260077619]:SELECT FOUND_ROWS() |
+[Notice] MySql[44454451]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=37
+[Warning] Client._onSended Client: 746135216 failed with ConnectionReset
+[Notice] MySql[546117171]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=1102
+[Notice] MySql[832156723]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=2839
+[Notice] MySql[1047779891]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=37
+[Notice] MySql[260077619]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=35
+[Notice] MySql[44454451]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=1558
+[Notice] MySql[546117171]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=2147
+[Warning] Client._onSended Client: 422818128 failed with ConnectionReset
+[Warning] Client._onSended Client: 703414312 failed with ConnectionReset
+[Notice] MySql[832156723]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=2254
+[Notice] MySql[1047779891]:SELECT SQL_CALC_FOUND_ROWS  * FROM `Video` WHERE `Saved` = @Saved AND `ShowInResults` = @ShowInResults AND `Removed` = @Removed ORDER BY rand()  LIMIT 8 | @Saved=1, @ShowInResults=1, @Removed=0
+[Notice] MySql[1047779891]:SELECT FOUND_ROWS() |
+[Notice] MySql[260077619]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=2265
+[Notice] MySql[44454451]:SELECT SQL_CALC_FOUND_ROWS  * FROM `Video` WHERE `Saved` = @Saved AND `ShowInResults` = @ShowInResults AND `Removed` = @Removed AND MATCH(`Name`) AGAINST(@Name IN BOOLEAN MODE) ORDER BY id DESC  LIMIT 9 | @Saved=1, @ShowInResults=1, @Removed=0, @Name=simpsonovi - 25x15 - Válka umìní
+[Notice] MySql[44454451]:SELECT FOUND_ROWS() |
+[Warning] Client._onSended Client: 354626552 failed with ConnectionReset
+[Warning] Client._onSended Client: 735788004 failed with ConnectionReset
+[Notice] MySql[546117171]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=791
+[Notice] MySql[832156723]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=417
+[Warning] Client._onSended Client: 1029323508 failed with ConnectionReset
+[Notice] MySql[1047779891]:SELECT SQL_CALC_FOUND_ROWS  * FROM `Video` WHERE `Saved` = @Saved AND `ShowInResults` = @ShowInResults AND `Removed` = @Removed ORDER BY rand()  LIMIT 8 | @Saved=1, @ShowInResults=1, @Removed=0
+[Notice] MySql[1047779891]:SELECT FOUND_ROWS() |
+[Notice] MySql[260077619]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=2265
+[Notice] MySql[44454451]:SELECT SQL_CALC_FOUND_ROWS  * FROM `Video` WHERE `Saved` = @Saved AND `ShowInResults` = @ShowInResults AND `Removed` = @Removed AND MATCH(`Name`) AGAINST(@Name IN BOOLEAN MODE) ORDER BY id DESC  LIMIT 9 | @Saved=1, @ShowInResults=1, @Removed=0, @Name=simpsonovi - 25x15 - Válka umìní
+[Notice] MySql[44454451]:SELECT FOUND_ROWS() |
+[Warning] Client._onSended Client: 576919600 failed with Shutdown
+[Notice] MySql[546117171]:SELECT SQL_CALC_FOUND_ROWS  * FROM `Video` WHERE `Saved` = @Saved AND `ShowInResults` = @ShowInResults AND `Removed` = @Removed ORDER BY rand()  LIMIT 8 | @Saved=1, @ShowInResults=1, @Removed=0
+[Notice] MySql[546117171]:SELECT FOUND_ROWS() |
+[Notice] MySql[832156723]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=2265
+[Notice] MySql[1047779891]:SELECT SQL_CALC_FOUND_ROWS  * FROM `Video` WHERE `Saved` = @Saved AND `ShowInResults` = @ShowInResults AND `Removed` = @Removed AND MATCH(`Name`) AGAINST(@Name IN BOOLEAN MODE) ORDER BY id DESC  LIMIT 9 | @Saved=1, @ShowInResults=1, @Removed=0, @Name=simpsonovi - 25x15 - Válka umìní
+[Notice] MySql[1047779891]:SELECT FOUND_ROWS() |
+[Warning] Client._onSended Client: 730050147 failed with ConnectionReset
+[Warning] Client._onSended Client: 935945188 failed with ConnectionReset
+[Warning] Client._onSended Client: 261248232 failed with ConnectionReset
+[Notice] MySql[260077619]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=482
+[Warning] Client._onSended Client: 92081216 failed with Shutdown
+
+Unhandled Exception:
+System.Net.Sockets.SocketException: The socket is not connected
+  at System.Net.Sockets.Socket.get_RemoteEndPoint () [0x00000] in <filename unknown>:0
+  at ServeRick.Networking.Client.get_IP () [0x00000] in <filename unknown>:0
+  at ServeRick.HttpServer._onHeadCompleted (ServeRick.Networking.Client client, System.Byte[] data, Int32 dataOffset, Int32 dataLength) [0x00000] in <filename unknown>:0
+  at ServeRick.Networking.Downloader._processHead (ServeRick.Networking.Client client, System.Byte[] data, Int32 dataLength) [0x00000] in <filename unknown>:0
+  at ServeRick.Networking.Client._onRecieved (IAsyncResult result) [0x00000] in <filename unknown>:0
+[Notice] MySql[44454451]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=1433
+[Notice] MySql[546117171]:SELECT SQL_CALC_FOUND_ROWS  * FROM `Video` WHERE `Saved` = @Saved AND `ShowInResults` = @ShowInResults AND `Removed` = @Removed ORDER BY rand()  LIMIT 8 | @Saved=1, @ShowInResults=1, @Removed=0
+[Notice] MySql[546117171]:SELECT FOUND_ROWS() |
+[Notice] MySql[832156723]:SELECT * FROM `Video` WHERE `Saved` = @Saved AND `id` = @id LIMIT 1 | @Saved=1, @id=2265
+[Notice] MySql[1047779891]:SELECT SQL_CALC_FOUND_ROWS  * FROM `Video` WHERE `Saved` = @Saved AND `ShowInResults` = @ShowInResults AND `Removed` = @Removed AND MATCH(`Name`) AGAINST(@Name IN BOOLEAN MODE) ORDER BY id DESC  LIMIT 9 | @Saved=1, @ShowInResults=1, @Removed=0, @Name=simpsonovi - 25x15 - Válka umìní
+[Notice] MySql[1047779891]:SELECT FOUND_ROWS() |
+[Warning] Client._onSended Client: 858174624 failed with ConnectionReset
+root@packa3:/www/nahnoji.cz/Nahnoji/bin/Release#

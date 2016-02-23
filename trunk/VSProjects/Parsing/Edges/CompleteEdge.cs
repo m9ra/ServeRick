@@ -8,7 +8,7 @@ using Parsing.Source;
 
 namespace Parsing
 {
-    class CompleteEdge : Edge
+    public class CompleteEdge : Edge
     {
         internal readonly Term Parent;
         internal readonly CompleteLabel CompleteLabel;
@@ -25,7 +25,7 @@ namespace Parsing
         }
 
 
-        public CompleteEdge(ActiveEdge extendedEdge, CompleteEdge extendingEdge)
+        internal CompleteEdge(ActiveEdge extendedEdge, CompleteEdge extendingEdge)
             : base(extendedEdge.StartContext, extendingEdge.EndContext)
         {
             CompleteLabel = extendedEdge.Label.CompleteLabel;
@@ -49,7 +49,7 @@ namespace Parsing
 
             return o.CompleteLabel == CompleteLabel &&
                 o.Parent == Parent &&
-                o.EndContext== EndContext &&
+                o.EndContext == EndContext &&
             o.StartContext == StartContext;
         }
 

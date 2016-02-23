@@ -35,36 +35,15 @@ namespace ServeRick.Languages.HAML
         private readonly int _tabLength;
 
         /// <summary>
-        /// Determine indentation level for each processed line (only non empty lines are considered)
+        /// Determine indentation levels as they are nested.
         /// </summary>
-        private readonly Dictionary<int, int> _indentationLevels = new Dictionary<int, int>();
+        private readonly Stack<int> _indentationLevels = new Stack<int>();
 
         /// <summary>
         /// Input tokens that will be outlined
         /// </summary>
-        private readonly IEnumerable<Token> _inputTokens;
-
-        /// <summary>
-        /// Line start of currently processed line
-        /// </summary>
-        private int _currentLineStart;
-
-        /// <summary>
-        /// Text start of currently processed linie
-        /// </summary>
-        private int _currentTextStart;
-
-        /// <summary>
-        /// Indentation level of currently processed line
-        /// </summary>
-        private int _currentIndentationLevel;
-
-        /// <summary>
-        /// Indentation level of last processed line
-        /// </summary>
-        private int _lastIndentation;
-
-
+        private readonly Token[] _inputTokens;
+      
         /// <summary>
         /// Initialize outliner
         /// </summary>
@@ -73,7 +52,7 @@ namespace ServeRick.Languages.HAML
         internal IndentOutliner(IEnumerable<Token> inputTokens, int tabLength)
         {
             _tabLength = tabLength;
-            _inputTokens = inputTokens;
+            _inputTokens = inputTokens.ToArray();
         }
 
         /// <summary>
@@ -87,7 +66,10 @@ namespace ServeRick.Languages.HAML
             {
                 if (token.IsSpecial)
                 {
-                    //Comments has to be present inside single token
+                    if (token.Name == "EOF")
+                        result.Add(Token.Special(EOL, token.StartPosition));
+
+                    //we leave special tokens as they are
                     result.Add(token);
                 }
                 else
@@ -95,14 +77,6 @@ namespace ServeRick.Languages.HAML
                     outline(token, result);
                 }
             }
-
-            //add implicit dedentation before end of file  
-            var lastIndex = result.Count - 1;
-            var lastToken = result[lastIndex];
-            result.RemoveAt(lastIndex);
-
-            addTokens(lastToken.StartPosition, Dedent, _currentIndentationLevel, result);
-            result.Add(lastToken);
 
             return result;
         }
@@ -115,126 +89,118 @@ namespace ServeRick.Languages.HAML
         /// <param name="result">Here are stored resulting tokens</param>
         private void outline(Token token, List<Token> result)
         {
-            var isTextStarted = false;
-            _currentTextStart = 0;
-            _currentLineStart = 0;
-
-            var lineIndentation = 0;
-            for (int i = 0; i < token.Length; ++i)
+            var lines = token.Data.Split('\n');
+            var currentTokenOffset = 0;
+            for (var i = 0; i < lines.Length; ++i)
             {
-                var ch = token.Data[i];
+                var line = lines[i];
+                var lineStartAbsoluteOffset = currentTokenOffset + token.StartPosition;
 
-                switch (ch)
+                //handle indentation
+                var currentIndentationLength = getIndentationLength(line);
+                var indentationLevelDelta = getIndentationLevelDelta(currentIndentationLength);
+                appendIndentation(lineStartAbsoluteOffset, indentationLevelDelta, result);
+
+                //add text token
+                var lineText = line.TrimStart(' ', '\t');
+                if (lineText.Length > 0)
                 {
-                    case '\n':
-                        if (isTextStarted)
-                        {
-                            outlineText(token, i, lineIndentation, result);
-                            isTextStarted = false;
-                            _currentLineStart = i + 1;
-                        }
-                        lineIndentation = 0;
-                        //else lineStart is left from previous line
-                        //it signalizes empty line
-                        break;
-
-                    case ' ':
-                        if (!isTextStarted)
-                            lineIndentation += 1;
-                        break;
-
-                    case '\t':
-                        if (!isTextStarted)
-                            lineIndentation += _tabLength;
-                        break;
-
-                    default:
-                        if (!isTextStarted)
-                        {
-                            //non whitespace char apeared - text is starting
-                            isTextStarted = true;
-                            _currentTextStart = i;
-                        }
-                        break;
+                    //we can skip empty lines
+                    result.Add(Token.Text(lineText, lineStartAbsoluteOffset + currentIndentationLength));
+                    result.Add(Token.Special(EOL, lineStartAbsoluteOffset + line.Length));
                 }
+
+                currentTokenOffset += line.Length + 1;
             }
 
-            //process last line
-            var endPosition = token.EndPosition;
-            if (!isTextStarted)
-                _currentTextStart = endPosition;
-
-            outlineText(token, endPosition, lineIndentation, result);
+            //add implicit indentation at the end
+            appendIndentation(currentTokenOffset + token.StartPosition - 1, -getActualIndentationLevel(), result);
         }
 
-        private void outlineText(Token token, int lineEnd, int lineIndentation, List<Token> result)
+        private int getActualIndentationLevel()
         {
-            var startOffset = token.StartPosition;
+            return _indentationLevels.Count;
+        }
 
-            addIndentation(startOffset, lineIndentation, result);
+        private int getActualIndentationLength()
+        {
+            return _indentationLevels.Count > 0 ? _indentationLevels.Peek() : 0;
+        }
 
-            if (_currentLineStart != _currentTextStart)
+        private int getIndentationLevelDelta(int newIndentationLength)
+        {
+            var currentIndentationLength = getActualIndentationLength();
+            if (currentIndentationLength == newIndentationLength)
             {
-                //add prefix token
-                var prefix = token.Data.Substring(_currentLineStart, _currentTextStart - _currentLineStart);
-                var prefixToken = Token.Text(prefix, _currentLineStart + startOffset);
-                result.Add(prefixToken);
+                //nothing has changed
+                return 0;
             }
 
-            var text = token.Data.Substring(_currentTextStart, lineEnd - _currentTextStart);
-            var textToken = Token.Text(text, _currentTextStart + startOffset);
-            var eol = Token.Special(EOL, lineEnd + startOffset);
+            if (newIndentationLength > currentIndentationLength)
+            {
+                //indentation has been increased
+                _indentationLevels.Push(newIndentationLength);
+                return 1;
+            }
 
-            result.Add(textToken);
-            result.Add(eol);
+            //indentation larger than the new one
+            var decreaseLevel = -1;
+            while (currentIndentationLength > newIndentationLength)
+            {
+                ++decreaseLevel;
+                if (_indentationLevels.Count == 0)
+                {
+                    currentIndentationLength = 0;
+                    break;
+                }
+
+                currentIndentationLength = _indentationLevels.Pop();
+            }
+
+
+            if (currentIndentationLength != newIndentationLength)
+                throw new NotSupportedException("Inconsistent indentation detected");
+
+            //renew the length
+            if (newIndentationLength > 0)
+                _indentationLevels.Push(currentIndentationLength);
+
+            return -decreaseLevel;
         }
 
-        private void addIndentation(int startOffset, int lineIndentation, List<Token> result)
+        private int getIndentationLength(string line)
         {
-            if (_indentationLevels.Count > 0)
+            var indentationLength = 0;
+            for (var i = 0; i < line.Length; ++i)
             {
-                int indentationChange;
-                string indentationTokenName;
-                if (_lastIndentation < lineIndentation)
-                {
-                    //indentation increased
-                    ++_currentIndentationLevel;
-                    indentationChange = 1;
-                    indentationTokenName = Indent;
-
-                }
+                var ch = line[i];
+                if (ch == ' ')
+                    indentationLength += 1;
+                else if (ch == '\t')
+                    indentationLength += _tabLength;
                 else
-                {
-                    //indentation decreased or stay same
-                    indentationChange = computeDedentLevel(lineIndentation,_currentIndentationLevel);
-                    _currentIndentationLevel -= indentationChange;
-                    indentationTokenName = Dedent;
-                }
-
-                addTokens(_currentLineStart + startOffset, indentationTokenName, indentationChange, result);
+                    //end of indentation
+                    return indentationLength;
             }
 
-            _lastIndentation = lineIndentation;
-            _indentationLevels[lineIndentation] = _currentIndentationLevel;
+            //empty line copy indentation length from preceding lines
+            return getActualIndentationLength();
         }
 
-        private void addTokens(int tokenStart, string specialTokenName, int tokenCount, List<Token> result)
+        private void appendIndentation(int indentationAbsoluteOffset, int indentationDelta, List<Token> result)
         {
-            for (int i = 0; i < tokenCount; ++i)
+            var isIndent = indentationDelta > 0;
+            var changeSize = Math.Abs(indentationDelta);
+            for (var i = 0; i < changeSize; ++i)
             {
-                var token = Token.Special(specialTokenName, tokenStart);
-                result.Add(token);
+                var tokenType = isIndent ? Indent : Dedent;
+                result.Add(Token.Special(tokenType, indentationAbsoluteOffset));
+
+                //every indent/dedent except the last one will have preceding EOL
+                var isLast = i + 1 == changeSize;
+                if (!isLast)
+                    result.Add(Token.Special(EOL, indentationAbsoluteOffset));
             }
         }
-
-        private int computeDedentLevel(int indentation, int currentLevel)
-        {
-            int level;
-            if (_indentationLevels.TryGetValue(indentation, out level))
-                return currentLevel - level;
-
-            throw new NotSupportedException("Inconsistent indentation detected (TODO error reporting)");
-        }
-
     }
 }

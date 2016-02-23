@@ -27,7 +27,20 @@ namespace ServeRick.Compiling
         {
             matchTypeParameters();
 
-            return Expression.Call(thisObj, _method, _args);
+            var methodParameters = _method.GetParameters();
+            var boxedArgs =new List<Expression>();
+            for (var i = 0; i < _args.Length; ++i)
+            {
+                var arg = _args[i];
+                var methodParameter = methodParameters[i];
+
+                //box args if necessary
+                if (methodParameter.ParameterType == typeof(object))
+                    arg = Expression.TypeAs(arg, typeof(object));
+
+                boxedArgs.Add(arg);
+            }
+            return Expression.Call(thisObj, _method, boxedArgs.ToArray());
         }
 
         private void matchTypeParameters()

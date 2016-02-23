@@ -8,11 +8,48 @@ namespace Parsing.Source
 {
     public class SourceContext
     {
+        /// <summary>
+        /// Data 
+        /// </summary>
         private readonly SourceData _data;
 
         public readonly IncommingEdges IncommingEdges;
 
+        /// <summary>
+        /// Context represents index inside the source text.
+        /// </summary>
         public readonly int Index;
+
+        /// <summary>
+        /// Zero based index of line where this context is related to.
+        /// </summary>
+        public int Line
+        {
+            get
+            {
+                var lineCount=0;
+                for(var i=0;i<Index;++i){
+                    if (_data.Text[i] == '\n')
+                        lineCount += 1;
+                }
+                return lineCount;
+            }
+        }
+
+        public int Column
+        {
+            get
+            {
+                var columnCount = 0;
+                for (var i = Index-1; i >= 0; --i)
+                {
+                    columnCount += 1;
+                    if (_data.Text[i] == '\n')
+                        break;
+                }
+                return columnCount;
+            }
+        }
 
         public readonly Token Token;
 
@@ -183,7 +220,7 @@ namespace Parsing.Source
 
         public override string ToString()
         {
-            return "[Pos]" + Index;
+            return "[Pos]" + Index+": L"+Line+"C"+Column;
         }
     }
 }

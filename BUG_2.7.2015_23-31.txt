@@ -1,0 +1,37 @@
+                                      [EOL]
+                                  block
+                                    contentBlock
+                                      content
+                                        [rawOutput] " frameborder="0" allowfullscreen></iframe>
+                                      [EOL]
+                                [DEDENT]
+                          [DEDENT]
+                    [DEDENT]
+              [DEDENT]
+        [DEDENT]
+  [EOF]
+
+[Error] Unsupported range specified by bytes=163547366-
+[Error] Unsupported range specified by bytes=163547366-
+[Error] Unsupported range specified by bytes=165497319-
+[Error] Unsupported range specified by bytes=165321289-
+[Error] Unsupported range specified by bytes=162538361-
+[Error] Unsupported range specified by bytes=162538361-
+[Error] IP reading with exception System.Net.Sockets.SocketException: The socket is not connected
+  at System.Net.Sockets.Socket.get_RemoteEndPoint () [0x00000] in <filename unknown>:0
+  at ServeRick.Networking.Accepter._acceptClient (IAsyncResult result) [0x00000] in <filename unknown>:0
+
+Unhandled Exception:
+System.NullReferenceException: Object reference not set to an instance of an object
+  at ServeRick.HttpServer._onHeadCompleted (ServeRick.Networking.Client client, System.Byte[] data, Int32 dataOffset, Int32 dataLength) [0x00000] in <filename unknown>:0
+  at ServeRick.Networking.Downloader._processHead (ServeRick.Networking.Client client, System.Byte[] data, Int32 dataLength) [0x00000] in <filename unknown>:0
+  at ServeRick.Networking.Client._onRecieved (IAsyncResult result) [0x00000] in <filename unknown>:0
+[Error] IP reading with exception System.Net.Sockets.SocketException: The socket is not connected
+  at System.Net.Sockets.Socket.get_RemoteEndPoint () [0x00000] in <filename unknown>:0
+  at ServeRick.Networking.Accepter._acceptClient (IAsyncResult result) [0x00000] in <filename unknown>:0
+
+Unhandled Exception:
+System.NullReferenceException: Object reference not set to an instance of an object
+  at ServeRick.HttpServer._onHeadCompleted (ServeRick.Networking.Client client, System.Byte[] data, Int32 dataOffset, Int32 dataLength) [0x00000] in <filename unknown>:0
+  at ServeRick.Networking.Downloader._processHead (ServeRick.Networking.Client client, System.Byte[] data, Int32 dataLength) [0x00000] in <filename unknown>:0
+  at ServeRick.Networking.Client._onRecieved (IAsyncResult result) [0x00000] in <filename unknown>:0

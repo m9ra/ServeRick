@@ -8,7 +8,7 @@ using Parsing.Source;
 
 namespace Parsing
 {
-    class Edge
+    public class Edge
     {
         internal readonly SourceContext StartContext;
 
@@ -22,7 +22,7 @@ namespace Parsing
 
         public override string ToString()
         {
-            return string.Format("({0},{1})",StartContext,EndContext);
+            return string.Format("({0},{1})", StartContext, EndContext);
         }
     }
 }

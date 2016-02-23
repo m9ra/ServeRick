@@ -185,6 +185,7 @@ namespace ServeRick.Languages.HAML
                 var compiledBlock = compileBlock(resolved);
                 if (compiledBlock == null)
                     continue;
+
                 compiledBlocks.Add(compiledBlock);
             }
 
@@ -206,8 +207,6 @@ namespace ServeRick.Languages.HAML
                     return compileView(block);
                 case "contentBlock":
                     return compileContentBlock(block);
-                case "containerBlock":
-                    return compileContainerBlock(block);
                 default:
                     throw new NotSupportedException("Given block is not supported");
             }
@@ -224,8 +223,15 @@ namespace ServeRick.Languages.HAML
             var tag = createTag(headNode);
 
 
+            var blocksNode = GetDescendant(contentBlock, "blocks");
             var contentNode = GetDescendant(contentBlock, "content");
-            var content = compileContent(contentNode);
+            Instruction content;
+
+            if (blocksNode != null)
+                content = compileBlocks(blocksNode);
+            else
+                content = compileContent(contentNode);
+
             if (tag == null)
                 //empty tag declaration
                 return content;
@@ -363,20 +369,6 @@ namespace ServeRick.Languages.HAML
             return GetDescendant(child, "yield") != null;
         }
 
-        private Instruction compileContainerBlock(Node containerBlock)
-        {
-            var headNode = GetDescendant(containerBlock, "head");
-            var tag = createTag(headNode);
-
-            var blocksNode = GetDescendant(containerBlock, "blocks");
-            var blocks = compileBlocks(blocksNode);
-            if (tag == null)
-                return blocks;
-
-            tag.SetContent(blocks);
-
-            return tag.ToInstruction();
-        }
         #endregion
 
         #region Expression resolving

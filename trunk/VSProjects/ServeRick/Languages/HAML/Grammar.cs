@@ -165,7 +165,6 @@ namespace ServeRick.Languages.HAML
             var doctype = NT("doctype");
 
             var contentBlock = NT("contentBlock");
-            var containerBlock = NT("containerBlock");
 
             var head = NT("head");
             var content = NT("content");
@@ -194,19 +193,19 @@ namespace ServeRick.Languages.HAML
             #region Grammar rules
 
             //block rules
-            block.Rule = containerBlock | contentBlock;
+            block.Rule = contentBlock;
             blocks.Rule = MakeStarRule(block);
 
-            containerBlock.Rule = head + EOL + INDENT + blocks + DEDENT;
-            //TODO: better EOL semantics
-            contentBlock.Rule = (head + EOL + Q(INDENT + content + EOL + DEDENT)) | (Q(head) + content + Q(EOL));
+            contentBlock.Rule =
+                (Q(head) + EOL + Q(INDENT + blocks + DEDENT)) |
+                (Q(head) + content);
 
             //content rules
-            content.Rule = (code | rawOutput);
+            content.Rule = (code + Q(EOL)) | (Q(rawOutput) + EOL);
             code.Rule = codePrefix + Q("raw") + statement;
 
             //head rules
-            head.Rule = (tag + Q(hash) + Q(attribs)) | attribs;
+            head.Rule = (tag + Q(hash) + Q(attribs)) | Q(hash) + attribs;
 
             //attribute rules            
             attrib.Rule = id | cls;
@@ -242,7 +241,9 @@ namespace ServeRick.Languages.HAML
             var outliner = new IndentOutliner(tokens, TabWidth);
             var result = outliner.Outline();
 
-            return result;
+            var filteredResult = result.Where(t => t.IsSpecial || t.Data.Trim().Length > 0).ToList();
+
+            return filteredResult;
         }
     }
 }

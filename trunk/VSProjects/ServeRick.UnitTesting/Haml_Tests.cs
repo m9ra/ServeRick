@@ -38,6 +38,19 @@ namespace ServeRick.UnitTesting
         }
 
         [TestMethod]
+        public void HAML_IfStatementFollower()
+        {
+            @"
+=if true			
+ a
+=else
+ b
+
+x
+".AssertHAML(@"ax");
+        }
+
+        [TestMethod]
         public void HAML_ChainedContent()
         {
             @"

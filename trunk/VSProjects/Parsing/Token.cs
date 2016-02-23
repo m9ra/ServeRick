@@ -11,6 +11,8 @@ namespace Parsing
     /// </summary>
     public class Token
     {
+        private Token _child;
+
         public readonly string Name;
 
         public readonly string Data;
@@ -23,7 +25,23 @@ namespace Parsing
 
         public int Length { get { return IsSpecial ? 0 : Data.Length; } }
 
-        public Token Child { get; internal set; }
+        public Token Parent { get; private set; }
+
+        public Token Child
+        {
+            get { return _child; }
+            set
+            {
+                if (_child != null)
+                    throw new NotSupportedException("Cannot set child twice");
+
+                if (value == null)
+                    throw new ArgumentNullException("child");
+
+                _child = value;
+                _child.Parent = this;
+            }
+        }
 
         private Token(string tokenName, string data, int start)
         {

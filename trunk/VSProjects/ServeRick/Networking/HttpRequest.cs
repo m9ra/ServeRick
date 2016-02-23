@@ -254,8 +254,5 @@ namespace ServeRick.Networking
             _postVariables[varName] = varValue;
         }
         #endregion
-
-
-
     }
 }

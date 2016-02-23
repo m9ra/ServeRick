@@ -8,7 +8,7 @@ using Parsing.Source;
 
 namespace Parsing
 {
-   public class SourceData
+    public class SourceData
     {
         /// <summary>
         /// Contains contexts for every index in input. At every index there is first token on stream (multiple tokens on same index can start)
@@ -24,7 +24,7 @@ namespace Parsing
         public SourceContext StartContext { get; private set; }
 
         public Node Root { get; internal set; }
-        
+
         internal SourceData(string text, TokenStream sourceTokens)
         {
             Text = text;
@@ -54,16 +54,13 @@ namespace Parsing
             Token token;
             while ((token = sourceTokens.NextToken()) != null)
             {
-                if (token.StartPosition == token.EndPosition)
-                {
+                if (token.IsSpecial)
+                    //special tokens are empty - therefore we will register them explicitly
                     registerContext(token.StartPosition, token);
-                }
-                else
+
+                for (var i = token.StartPosition; i < token.EndPosition; ++i)
                 {
-                    for (var i = token.StartPosition; i < token.EndPosition; ++i)
-                    {
-                        registerContext(i, token);
-                    }
+                    registerContext(i, token);
                 }
             }
 
