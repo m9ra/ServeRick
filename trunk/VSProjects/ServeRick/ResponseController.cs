@@ -129,13 +129,14 @@ namespace ServeRick
             requestedLength = totalLength;
             if (Request.TryGetHeader("Range", out rangeValue))
             {
+                rangeValue = rangeValue.Replace("bytes:","bytes=");
                 var rangePrefix = "bytes=";
 
                 var ranges = rangeValue.Split('-');
                 if (ranges.Length != 2 || !ranges[0].StartsWith(rangePrefix))
                 {
                     //wrong range format
-                    Log.Error("Range request has wrong format {0}", rangeValue);
+                    Log.Error("Range request has wrong format '{0}'", rangeValue);
                     return 0;
                 }
 
@@ -144,7 +145,7 @@ namespace ServeRick
 
                 if (from > to)
                 {
-                    Log.Error("Unsupported range specified by {0}", rangeValue);
+                    Log.Error("Unsupported range '{0}' (violates {1}<={2})", rangeValue, from, to);
                     return 0;
                 }
 

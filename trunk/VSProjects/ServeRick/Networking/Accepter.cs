@@ -86,7 +86,7 @@ namespace ServeRick.Networking
         private void _acceptClient(IAsyncResult result)
         {
             var clientSocket = _listener.EndAcceptTcpClient(result);
-            clientSocket.SendBufferSize = _bufferSize;
+            clientSocket.SendBufferSize = 2 * _bufferSize;
             var buffer = _bufferProvider.GetBuffer();
 
             IPEndPoint ep = null;

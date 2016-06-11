@@ -237,19 +237,19 @@ namespace ServeRick.Compiling
         /// <returns>Found terminal texts</returns>
         protected string[] GetTerminalTexts(Node root, params string[] path)
         {
-            var node = GetDescendant(root, OmitLastPart(path));
-
-            if (node == null)
-                return new string[0];
+            var nodes = GetDescendants(root, OmitLastPart(path));
 
             var result = new List<string>();
-            foreach (var child in node.ChildNodes)
+            foreach (var node in nodes)
             {
-                var text = GetTerminalText(child);
-                if (text == null)
-                    continue;
+                foreach (var child in node.ChildNodes)
+                {
+                    var text = GetTerminalText(child);
+                    if (text == null)
+                        continue;
 
-                result.Add(text);
+                    result.Add(text);
+                }
             }
 
             return result.ToArray();

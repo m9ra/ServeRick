@@ -11,7 +11,7 @@ namespace ServeRick.Compiling
     /// <summary>
     /// Helpers used by compiler
     /// </summary>
-    static class CompilerHelpers
+    public static class CompilerHelpers
     {
         public static string print(object data)
         {
@@ -20,7 +20,7 @@ namespace ServeRick.Compiling
 
         public static bool equals(object a, object b)
         {
-            return a.Equals(b);  
+            return a.Equals(b);
         }
 
         public static string concat(object a, object b)
@@ -127,6 +127,11 @@ namespace ServeRick.Compiling
             }
 
             return html;
+        }
+
+        public static bool DoubleToBool(double value)
+        {
+            return !double.IsNaN(value) && value != 0;
         }
 
         public static bool Not(bool value)

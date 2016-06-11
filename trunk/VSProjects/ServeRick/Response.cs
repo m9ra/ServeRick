@@ -39,7 +39,9 @@ namespace ServeRick
         private readonly Stack<string> _isPartial = new Stack<string>();
 
         public bool IsPartial { get { return _isPartial.Count > 0; } }
-        
+
+        public HttpRequest Request { get { return Client.Request; } }
+
         internal event Action AfterSend;
 
         private string _statusLine;

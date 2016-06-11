@@ -233,8 +233,15 @@ namespace ServeRick.Languages.HAML.Compiling
             var valueInstruction = Value.ToInstruction();
             var valueType = valueInstruction.ReturnType;
             var defaultValue = E.DefaultValue(valueType);
+            switch (valueType.FullName)
+            {
+                case "System.Double":
+                    return E.Call("DoubleToBool", new[] { valueInstruction });
 
-            return E.Not(E.IsEqual(valueInstruction, defaultValue));
+                default:
+                    return E.Not(E.IsEqual(valueInstruction, defaultValue));
+
+            }
         }
 
         internal override Type ReturnType()
