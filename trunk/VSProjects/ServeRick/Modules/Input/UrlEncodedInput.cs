@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 using ServeRick.Networking;
 
+using System.Web;
+
 namespace ServeRick.Modules.Input
 {
     /// <summary>
@@ -41,14 +43,13 @@ namespace ServeRick.Modules.Input
         protected override void onDownloadCompleted()
         {
             var inputData = _input.ToString();
-            var match = HttpRequestParser.SplitterGET.Match(inputData);
 
             var variables = new Dictionary<string, string>();
             HttpRequestParser.ParseOutVariables(inputData, variables);
 
             foreach (var variable in variables)
             {
-                SetPOST(variable.Key, variable.Value);
+                SetPOST(HttpUtility.UrlDecode(variable.Key), HttpUtility.UrlDecode(variable.Value));
             }
         }
     }

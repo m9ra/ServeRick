@@ -142,6 +142,7 @@
     <Compile Include="Modules\MySQL\QueryWorker.cs" />
     <Compile Include="Modules\MySQL\SqlQuery.cs" />
     <Compile Include="Modules\NamespaceDoc.cs" />
+    <Compile Include="Modules\Output\BinaryFileStream.cs" />
     <Compile Include="Processing\ProcessingUnit.cs" />
     <Compile Include="Processing\WorkChain.cs" />
     <Compile Include="Responsing\ResponseWorkItem.cs" />
