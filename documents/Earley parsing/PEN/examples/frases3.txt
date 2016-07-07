@@ -1,0 +1,2 @@
+select name from employee
+select name from employee where age > 40

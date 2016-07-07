@@ -1,0 +1,2 @@
+-10 # QUALQUERCOISA ::= <?> <&> QUALQUERCOISA
+-10 # QUALQUERCOISA ::= <?> <@> qualquer átomo

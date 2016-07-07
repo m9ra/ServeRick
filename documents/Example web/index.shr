@@ -1,0 +1,10 @@
+var menu=$templates.Menu;
+var right=$templates.Right;
+var content=$templates.HomeContent;
+
+var layout=$templates.ThreeColumns;
+layout.Left=menu;
+layout.Center=content;
+layout.Right=right;
+
+$page.SetDisplay(layout);

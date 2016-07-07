@@ -1,0 +1,28 @@
+[As primitivas do parser são apenas 3 símbolos: 
+[ "::=" que indica o inicia do corpo de uma regra
+[ "<&>" que permite fazer a conjunção de variáveis e símbolos terminais
+[ "<?>" que é uma variável especial que pode ser instanciada com qualquer token (uma sequencia de carateres delimitado por um espaço em branco de cada lado)
+[ Variáveis são sempre escritas em maiúsculas e símbolos terminais em minúsculas
+[ A variável "RAIZ" tem de existir sempre (nas regras de alto nível) e corresponde ao nó raiz da àrvore de derivação gerada utilizando as regras especificadas
+[ Os comentários têm de ter a linha iniciada com o símbolo "["
+
+
+[Regras de alto nível]
+RAIZ ::= SELECT <&> FIELDS <&> FROM <&> TABLENAME
+RAIZ ::= SELECT <&> FIELDS <&> FROM <&> TABLENAME <&> WHERE <&> CONDITIONS
+
+
+[Regras]
+SELECT ::= select
+
+FIELDS ::= <?>
+FIELDS ::= <?> , FIELDS
+
+FROM ::= from
+
+TABLENAME ::= <?>
+
+WHERE ::= where
+
+CONDITIONS ::= <?>
+CONDITIONS ::= <?> <&> CONDITIONS

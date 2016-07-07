@@ -1,0 +1,16 @@
+RAIZ ::= QUANTO <&> custa <&> uma <&> CHAMADA <&> para <&> PAIS
+
+10 # QUANTO ::= quanto <@> QQQ
+QUANTO ::= quantos
+90 # QUANTO ::= <>
+
+CHAMADAZONA ::= chamada
+
+
+CHAMADA ::= <>
+CHAMADA ::= CHAMADAZONA
+
+PAIS ::= espanha
+PAIS ::= Espanha
+PAIS ::= 123
+PAIS ::= <>
