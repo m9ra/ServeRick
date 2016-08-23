@@ -192,7 +192,7 @@ namespace ServeRick.Networking
             Log.Trace("Client.Send {0}", this);
 
             SocketError error;
-            _socket.Client.BeginSend(dataStorage, 0, sendedLength, SocketFlags.None, out error, _onSended, sendHandler);
+            _socket.Client.BeginSend(dataStorage, 0, sendedLength, SocketFlags.None, out error, _onSended, Tuple.Create<SendHandler, Socket>(sendHandler, _socket.Client));
 
             checkError("Client.Send", error);
         }
@@ -236,7 +236,8 @@ namespace ServeRick.Networking
             Log.Trace("Client._onSended {0}", this);
 
             SocketError error;
-            var dataLength = _socket.Client.EndSend(result, out error);
+            var state = result.AsyncState as Tuple<SendHandler, Socket>;
+            var dataLength = state.Item2.EndSend(result, out error);
 
             //TODO why could sending be parted ?
 
@@ -247,7 +248,7 @@ namespace ServeRick.Networking
             }
 
             Interlocked.Add(ref TotalSendedData, dataLength);
-            var handler = result.AsyncState as SendHandler;
+            var handler = state.Item1;
             handler();
         }
 
