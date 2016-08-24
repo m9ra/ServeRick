@@ -21,11 +21,17 @@ namespace ServeRick
     {
         public static readonly int TimepointCount = 8;
 
+        public static readonly int InternalTimepointCount=8;
+
         public string RootPath { get { return Manager.RootPath; } }
 
         private static int[] _counts = new int[TimepointCount];
 
         private static int[] _miliseconds = new int[TimepointCount];
+
+        private static int[] _internalMiliseconds = new int[InternalTimepointCount];
+
+        private static int[] _internalCounts = new int[InternalTimepointCount];
 
         private ResponseHandler _layout = null;
 
@@ -63,6 +69,19 @@ namespace ServeRick
             var fromStart = Client.TimeFromStart;
             Interlocked.Add(ref _miliseconds[id], fromStart);
             Interlocked.Increment(ref _counts[id]);
+        }
+
+        internal static void InternalTimePoint(Client client, int id)
+        {
+            var fromStart = client.TimeFromStart;
+            Interlocked.Add(ref _internalMiliseconds[id], fromStart);
+            Interlocked.Increment(ref _internalCounts[id]);
+        }
+
+        public static void ResetInternalTimepoints()
+        {
+            _internalMiliseconds = new int[InternalTimepointCount];
+            _internalCounts = new int[InternalTimepointCount];
         }
 
         public static void ResetTimepoints()
