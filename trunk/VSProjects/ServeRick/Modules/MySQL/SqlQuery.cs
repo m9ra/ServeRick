@@ -11,19 +11,19 @@ using MySql.Data.MySqlClient;
 
 namespace ServeRick.Modules.MySQL
 {
-    class SqlQuery
+    public class SqlQuery
     {
         private readonly MySqlCommand _command;
 
         private readonly StringBuilder _text = new StringBuilder();
 
-        internal SqlQuery(MySqlConnection connection)
+        public SqlQuery(MySqlConnection connection)
         {
             _command = new MySqlCommand();
             _command.Connection = connection;
         }
 
-        internal string AddParameter(string paramHint, object value)
+        public string CreateParameter(string paramHint, object value)
         {
             var parameter = "@" + paramHint;
             var number = 0;
@@ -38,12 +38,12 @@ namespace ServeRick.Modules.MySQL
             return parameter;
         }
 
-        internal void AppendFormat(string format, params object[] formatArgs)
+        public void AppendFormat(string format, params object[] formatArgs)
         {
             _text.AppendFormat(format, formatArgs);
         }
 
-        internal void Append(string data)
+        public void Append(string data)
         {
             _text.Append(data);
         }
@@ -53,19 +53,19 @@ namespace ServeRick.Modules.MySQL
             _text.AppendLine(line);
         }
 
-        internal MySqlDataReader ExecuteReader()
+        public MySqlDataReader ExecuteReader()
         {
             prepareQuery();
             return _command.ExecuteReader();
         }
 
-        internal object ExecuteScalar()
+        public object ExecuteScalar()
         {
             prepareQuery();
             return _command.ExecuteScalar();
         }
 
-        internal int ExecuteNonQuery()
+        public int ExecuteNonQuery()
         {
             prepareQuery();
             return _command.ExecuteNonQuery();

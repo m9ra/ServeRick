@@ -137,7 +137,7 @@ namespace ServeRick.Modules.MySQL
             }
 
             var column = item.Column;
-            var operandHolder = query.AddParameter(column, operand);
+            var operandHolder = query.CreateParameter(column, operand);
 
             return string.Format(format, column, operandHolder);
         }
@@ -286,7 +286,7 @@ namespace ServeRick.Modules.MySQL
                     insertCmd.AppendFormat("`{0}`", column.Name);
 
                     var value = table.GetColumnValue(column.Name, row);
-                    var parameter = insertCmd.AddParameter(column.Name, value);
+                    var parameter = insertCmd.CreateParameter(column.Name, value);
                     values.Append(parameter);
 
 
@@ -325,7 +325,7 @@ namespace ServeRick.Modules.MySQL
                 var column = table.GetColumn(columnName);
                 var operand = getSqlOperand(column, update.Value);
 
-                var parameter = queryCmd.AddParameter(columnName, operand);
+                var parameter = queryCmd.CreateParameter(columnName, operand);
                 queryCmd.AppendFormat(" `{0}` = {1} ", columnName, parameter);
 
                 isFirst = false;
@@ -471,7 +471,7 @@ namespace ServeRick.Modules.MySQL
         {
             foreach (var argument in arguments)
             {
-                queryCmd.AddParameter(argument.Key, argument.Value);
+                queryCmd.CreateParameter(argument.Key, argument.Value);
             }
         }
 
