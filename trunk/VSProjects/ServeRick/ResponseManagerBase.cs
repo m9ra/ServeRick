@@ -87,7 +87,7 @@ namespace ServeRick
                 AddFileResource(relativeFilePath);
             }
         }
-        
+
         public void AddDirectoryTree(string relativeDirPath)
         {
             AddDirectoryContent(relativeDirPath);
@@ -113,7 +113,8 @@ namespace ServeRick
             }
         }
 
-        protected string getId(string relativePath) {
+        protected string getId(string relativePath)
+        {
             relativePath = relativePath.Replace("\\", "/");
             if (relativePath.StartsWith("/"))
                 relativePath = relativePath.Substring(1);
@@ -251,12 +252,20 @@ namespace ServeRick
                 var handler = HandlerProvider.Compile(language, source);
                 if (handler == null)
                 {
-                    throw new NotSupportedException("Compilation failed");
+                    throw new NotSupportedException("Compilation failed: " + language + " in " + file);
                 }
                 item.Handler = (r) =>
                 {
-                    r.SetContentType(contentType);
-                    handler(r);
+                    try
+                    {
+                        r.SetContentType(contentType);
+                        handler(r);
+                    }
+                    catch (Exception)
+                    {
+                        Log.Error("Request handling failed: {0}", r.Client.Request.URI);
+                        throw;
+                    }
                 };
             });
             return item;
