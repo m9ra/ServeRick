@@ -263,7 +263,7 @@ namespace ServeRick
                     }
                     catch (Exception)
                     {
-                        Log.Error("Request handling failed: {0}", r.Client.Request.URI);
+                        Log.Error("Request handling failed in file {0}: {1}", file, r.Client.Request.RequestURI);
                         throw;
                     }
                 };
