@@ -134,7 +134,7 @@ namespace ServeRick.Languages.HAML
 
             //arguments
             argList.Rule = ("(" + args + ")") | args | Empty;
-            args.Rule = MakePlusRule(expression, ",");
+            args.Rule = MakeStarRule(expression, ",");
 
             //call
             call.Rule = callName + argList + Q(lambdaBlock);
