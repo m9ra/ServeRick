@@ -156,6 +156,7 @@ namespace ServeRick
                     return CompileHAML(file);
                 case "scss":
                     return CompileSCSS(file);
+                case "gif":
                 case "css":
                 case "png":
                 case "jpg":
@@ -454,6 +455,8 @@ namespace ServeRick
                     return "image/jpeg";
                 case "png":
                     return "image/png";
+                case "gif":
+                    return "image/gif";
                 case "bmp":
                     return "image/bmp";
                 case "ico":

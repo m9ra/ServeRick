@@ -60,7 +60,7 @@ namespace ServeRick.Languages.SCSS
 
             relation.Rule = adjacent_relation | child_relation | pseudo_relation;
             adjacent_relation.Rule = specifier + ">" + specifier;
-            child_relation.Rule = specifier + specifier;
+            child_relation.Rule = specifier + (child_relation | specifier);
             pseudo_relation.Rule = specifier + ":" + identifier;
 
             comment_def.Rule = ("//" + line_comment) | ("/*" + multiline_comment + "*/");
