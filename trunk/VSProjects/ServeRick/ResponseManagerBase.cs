@@ -179,7 +179,6 @@ namespace ServeRick
 
         #region Controller manager services
 
-
         protected void PublicExtensions(params string[] extensions)
         {
             _publicExtensions.UnionWith(extensions);

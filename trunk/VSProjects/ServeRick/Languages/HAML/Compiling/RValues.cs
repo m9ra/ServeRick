@@ -344,11 +344,10 @@ namespace ServeRick.Languages.HAML.Compiling
             MethodInfo method = null;
             if (
                 !tryFindMethod(ref method) &&
-                !tryFindGetter(ref method) &&
-                !tryFindSetter(ref method)
+                !tryFindGetter(ref method)
                 )
-
-                throw new KeyNotFoundException("Resolve setters,...");
+                //Resolve setters
+                throw new KeyNotFoundException(MethodName);
 
             return method;
         }
@@ -366,7 +365,14 @@ namespace ServeRick.Languages.HAML.Compiling
 
         private bool tryFindMethod(ref MethodInfo method)
         {
-            method = ThisType.GetMethod(MethodName);
+            if (Args.Length == 0)
+            {
+                method = ThisType.GetMethod(MethodName, new Type[0]);
+            }
+            else
+            {
+                method = ThisType.GetMethod(MethodName);
+            }
             return method != null;
         }
 
