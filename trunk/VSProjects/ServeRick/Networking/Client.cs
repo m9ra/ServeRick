@@ -160,6 +160,14 @@ namespace ServeRick.Networking
             initializeWorkChain();
         }
 
+        /// <summary>
+        /// Removes all handlers attached 
+        /// </summary>
+        internal void RemoveHandlers()
+        {
+            //there are no handlers
+        }
+
         #region Network API for communication with client
 
         /// <summary>
@@ -248,8 +256,7 @@ namespace ServeRick.Networking
             }
 
             Interlocked.Add(ref TotalSendedData, dataLength);
-            var handler = state.Item1;
-            handler();
+            state.Item1?.Invoke();
         }
 
         private void _onClosed(IAsyncResult result = null)

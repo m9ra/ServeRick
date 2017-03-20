@@ -143,6 +143,7 @@
     <Compile Include="Modules\MySQL\SqlQuery.cs" />
     <Compile Include="Modules\NamespaceDoc.cs" />
     <Compile Include="Modules\Output\BinaryFileStream.cs" />
+    <Compile Include="Networking\WebSocket.cs" />
     <Compile Include="Processing\ProcessingUnit.cs" />
     <Compile Include="Processing\WorkChain.cs" />
     <Compile Include="Responsing\ResponseWorkItem.cs" />
@@ -183,6 +184,7 @@
     <Compile Include="WebItem.cs" />
     <Compile Include="WebMethod.cs" />
     <Compile Include="Processing\WorkItem.cs" />
+    <Compile Include="WebSocketController.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

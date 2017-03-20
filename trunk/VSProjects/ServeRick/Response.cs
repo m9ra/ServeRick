@@ -42,6 +42,8 @@ namespace ServeRick
 
         public HttpRequest Request { get { return Client.Request; } }
 
+        public bool IsWebsocketResponse { get; internal set; }
+
         internal event Action AfterSend;
 
         private string _statusLine;
@@ -324,7 +326,12 @@ namespace ServeRick
                 throw new NotSupportedException("Cannot Close response twice");
             }
 
+            if (IsWebsocketResponse)
+                //websocket takes over the communication here 
+                return;
+
             _closed = true;
+
 
             sendQueue();
 

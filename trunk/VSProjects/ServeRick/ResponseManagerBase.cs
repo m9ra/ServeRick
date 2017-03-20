@@ -368,22 +368,25 @@ namespace ServeRick
                 item.Watcher = new FileSystemWatcher(directory, fileName);
 
                 item.Watcher.EnableRaisingEvents = true;
-                item.Watcher.NotifyFilter = NotifyFilters.LastWrite;
-                item.Watcher.Changed += (s, e) =>
-                {
-                    lock (_L_itemRefresh)
-                    {
-                        try
-                        {
-                            action();
-                        }
-                        catch (Exception)
-                        {
-                            Log.Notice("Item refresh action caused exception");
-                        }
+                item.Watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName;
+                item.Watcher.Created += (s, e) => itemChangeHandler(action);
+                item.Watcher.Renamed += (s, e) => itemChangeHandler(action);
+                item.Watcher.Changed += (s, e) => itemChangeHandler(action);
+            }
+        }
 
-                    }
-                };
+        private void itemChangeHandler(Action action)
+        {
+            lock (_L_itemRefresh)
+            {
+                try
+                {
+                    action();
+                }
+                catch (Exception)
+                {
+                    Log.Notice("Item refresh action caused exception");
+                }
             }
         }
 

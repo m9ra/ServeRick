@@ -21,7 +21,7 @@ namespace ServeRick
     {
         public static readonly int TimepointCount = 8;
 
-        public static readonly int InternalTimepointCount=8;
+        public static readonly int InternalTimepointCount = 8;
 
         public string RootPath { get { return Manager.RootPath; } }
 
@@ -101,6 +101,23 @@ namespace ServeRick
             return sum / count;
         }
 
+        protected void AcceptWebSocket(WebSocketController controller)
+        {
+            //generate handshake response
+            string key;
+            Request.TryGetHeader("Sec-WebSocket-Key", out key);
+
+            if (key == null)
+            {
+                Log.Error("Invalid websocket key: " + key);
+                return;
+            }
+
+            Response.IsWebsocketResponse = true;
+            var socket = new WebSocket(controller, Client, key);
+            socket.CompleteHandshake();
+        }
+
         protected void ContentFor(string yieldIdentifier, ResponseHandler handler)
         {
             Response.ContentFor(yieldIdentifier, handler);
@@ -148,7 +165,7 @@ namespace ServeRick
             requestedLength = totalLength;
             if (Request.TryGetHeader("Range", out rangeValue))
             {
-                rangeValue = rangeValue.Replace("bytes:","bytes=");
+                rangeValue = rangeValue.Replace("bytes:", "bytes=");
                 var rangePrefix = "bytes=";
 
                 var ranges = rangeValue.Split('-');
