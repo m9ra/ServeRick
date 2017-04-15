@@ -168,6 +168,7 @@ namespace ServeRick
                 case "html":
                 case "htm":
                 case "ico":
+                case "svg":
                 case "":
                     return SendRaw(file, ext);
                 default:
@@ -354,6 +355,23 @@ namespace ServeRick
         #region Private utilities
 
         /// <summary>
+        /// Determine whether give file is locked.
+        /// </summary>
+        /// <param name="file">File to read.</param>
+        /// <returns>File content if available, null otherwise.</returns>
+        private string tryReadFile(string file)
+        {
+            try
+            {
+                return File.ReadAllText(file);
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Fill item with item.FilePath, is called on every file change
         /// </summary>
         /// <param name="item">Filled item</param>
@@ -394,6 +412,15 @@ namespace ServeRick
         {
             try
             {
+                for (var i = 0; i < 5; ++i)
+                {
+                    var content = tryReadFile(file);
+                    if (content != null)
+                        return content;
+
+                    System.Threading.Thread.Sleep(500);
+                }
+
                 return File.ReadAllText(file);
             }
             catch (Exception ex)
@@ -457,6 +484,8 @@ namespace ServeRick
                     return "image/jpeg";
                 case "png":
                     return "image/png";
+                case "svg":
+                    return "image/svg";
                 case "gif":
                     return "image/gif";
                 case "bmp":

@@ -30,6 +30,21 @@ namespace ServeRick.Networking
         /// </summary>
         private readonly string _key;
 
+        /// <summary>
+        /// Lock for message sending.
+        /// </summary>
+        private readonly object _L_send = new object();
+
+        /// <summary>
+        /// Lock for sockets fields.
+        /// </summary>
+        private readonly object _L_fields = new object();
+
+        /// <summary>
+        /// Field values.
+        /// </summary>
+        private readonly Dictionary<object, object> _fields = new Dictionary<object, object>();
+
         internal WebSocket(WebSocketController controller, Client client, string key)
         {
             if (key == null)
@@ -40,6 +55,50 @@ namespace ServeRick.Networking
             _key = key;
 
             _client.RemoveHandlers();
+        }
+
+        /// <summary>
+        /// Gets value stored for given field.
+        /// </summary>
+        /// <typeparam name="T">Type of field</typeparam>
+        /// <param name="field">The field.</param>
+        /// <returns>The value.</returns>
+        public T Get<T>(WebSocketField<T> field)
+        {
+            if (!_fields.TryGetValue(field, out object fieldValue))
+                return default(T);
+
+            return (T)fieldValue;
+        }
+
+
+        /// <summary>
+        /// Sets value for given field.
+        /// </summary>
+        /// <typeparam name="T">Type of field</typeparam>
+        /// <param name="field">The field.</param>
+        /// <param name="value">The value.</param>
+        /// <returns>The value.</returns>
+        public T Set<T>(WebSocketField<T> field, T value)
+        {
+            _fields[field] = value;
+            return value;
+        }
+
+        /// <summary>
+        /// Initialize field with given initialization value value. If field already contains a value, initializationValue is not used.
+        /// </summary>
+        /// <typeparam name="T">Type of field</typeparam>
+        /// <param name="field">The field.</param>
+        /// <param name="initializationValue">The value.</param>
+        /// <returns><c>true</c> if initalization was used, <c>false</c> otherwise</returns>
+        public bool Initialize<T>(WebSocketField<T> field, T initializationValue)
+        {
+            if (_fields.ContainsKey(field))
+                return false;
+
+            _fields[field] = initializationValue;
+            return true;
         }
 
         public void Send(string message)
@@ -69,7 +128,11 @@ namespace ServeRick.Networking
             }
 
             var buffer = header.Concat(bytes).ToArray();
-            _client.Send(buffer, buffer.Length, null);
+            lock (_L_send)
+            {
+                //TODO revise - client might be able to lock itself
+                _client.Send(buffer, buffer.Length, null);
+            }
         }
 
         internal void CompleteHandshake()
