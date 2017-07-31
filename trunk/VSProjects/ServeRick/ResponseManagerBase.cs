@@ -94,7 +94,6 @@ namespace ServeRick
 
             foreach (var subDir in Directory.EnumerateDirectories(RootPath + relativeDirPath))
             {
-
                 var relativeSubDirPath = relativeDirPath + Path.DirectorySeparatorChar + Path.GetFileName(subDir);
                 AddDirectoryTree(relativeSubDirPath);
             }
@@ -147,6 +146,8 @@ namespace ServeRick
         private WebItem getWebItem(string relativeFilePath)
         {
             var file = RootPath + relativeFilePath;
+
+            Console.WriteLine("Processing file: {0}", file);
 
             var ext = getExtension(file);
 

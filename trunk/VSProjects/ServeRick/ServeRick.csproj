@@ -62,6 +62,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -127,6 +128,8 @@
     <Compile Include="Database\WhereClause.cs" />
     <Compile Include="Database\DataRecord.cs" />
     <Compile Include="DataStream.cs" />
+    <Compile Include="Defaults\InputManager.cs" />
+    <Compile Include="Defaults\ResponseManager.cs" />
     <Compile Include="InputController.cs" />
     <Compile Include="InputManagerBase.cs" />
     <Compile Include="Languages\HAML\Compiling\Context.cs" />
@@ -147,6 +150,7 @@
     <Compile Include="Networking\WebSocketField.cs" />
     <Compile Include="Processing\ProcessingUnit.cs" />
     <Compile Include="Processing\WorkChain.cs" />
+    <Compile Include="Responsing\RawWriteWorkItem.cs" />
     <Compile Include="Responsing\ResponseWorkItem.cs" />
     <Compile Include="Responsing\WriteWorkItem.cs" />
     <Compile Include="Sessions\FlipSessionWorkItem.cs" />

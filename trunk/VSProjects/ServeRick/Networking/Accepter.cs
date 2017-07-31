@@ -85,26 +85,37 @@ namespace ServeRick.Networking
         /// <param name="result">Callback result</param>
         private void _acceptClient(IAsyncResult result)
         {
-            var clientSocket = _listener.EndAcceptTcpClient(result);
-            clientSocket.SendBufferSize = 2 * _bufferSize;
-            var buffer = _bufferProvider.GetBuffer();
-
-            IPEndPoint ep = null;
+            TcpClient clientSocket = null;
             try
             {
-                ep = clientSocket.Client.RemoteEndPoint as IPEndPoint;
+                clientSocket = _listener.EndAcceptTcpClient(result);
+                clientSocket.SendBufferSize = 2 * _bufferSize;
             }
             catch (SocketException ex)
             {
-                //Why on Earth we should suffer from exception when reading IP adress...
-                Log.Error("IP reading with exception {0}", ex);
+                Log.Error("Accepter._accetClient {0}", ex);
             }
 
-            var ip = ep == null ? null : ep.Address;
-            var client = new Client(clientSocket, ip, buffer);
-            _onClientAccepted(client);
+            if (clientSocket != null)
+            {
+                IPEndPoint ep = null;
+                try
+                {
+                    ep = clientSocket.Client.RemoteEndPoint as IPEndPoint;
+                }
+                catch (SocketException ex)
+                {
+                    //Why on Earth we should suffer from exception when reading IP adress...
+                    Log.Error("IP reading with exception {0}", ex);
+                }
+
+                var buffer = _bufferProvider.GetBuffer();
+                var ip = ep == null ? null : ep.Address;
+                var client = new Client(clientSocket, ip, buffer);
+                _onClientAccepted(client);
+            }
+
             acceptClient();
         }
-
     }
 }

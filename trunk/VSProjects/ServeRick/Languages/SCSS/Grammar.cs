@@ -36,7 +36,7 @@ namespace ServeRick.Languages.SCSS
             var tag_specifier = NT("tag_specifier");
 
             var raw_value = T_REG("[^}{\\r\\n:;]+", "raw_value");
-            var identifier = T_REG(@"[a-zA-Z][a-zA-Z1-90_()+\[\]=-]*", "identifier");
+            var identifier = T_REG(@"[@a-zA-Z][a-zA-Z1-90_()+\[\]=-]*", "identifier");
 
             var line_comment = T_REG("[^\n]*[\n]?", "line_comment");
             var multiline_comment = T_REG("( [^*] | [*][^/] )*", "multiline_comment");

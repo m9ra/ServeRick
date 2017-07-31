@@ -148,6 +148,18 @@ namespace ServeRick
             }
         }
 
+        protected void RenderJson(object data)
+        {
+            if (_layout != null)
+                throw new NotSupportedException("Cannot render json with layout");
+
+            Response.SetContentType("application/json");
+
+            var serializer = new System.Web.Script.Serialization.JavaScriptSerializer();
+            var json = serializer.Serialize(data);
+            Client.EnqueueWork(new RawWriteWorkItem(Response.Client, json));
+        }
+
         protected void Write(DataStream data)
         {
             Client.EnqueueWork(new WriteWorkItem(Client, data));
@@ -233,6 +245,22 @@ namespace ServeRick
             SessionProvider.SetData(Unit.Output, Client.SessionID, data);
             return data;
         }
+
+        protected T Session<T>(Func<T> dataFactory)
+        {
+            var data = SessionProvider.GetData<T>(Unit.Output, Client.SessionID);
+            if (object.Equals(data, default(T)))
+            {
+                data = dataFactory();
+                if (object.Equals(data, default(T)))
+                    throw new NotImplementedException("Unsupported Session data value");
+
+                SessionProvider.SetData(Unit.Output, Client.SessionID, data);
+            }
+
+            return data;
+        }
+
 
         protected void RemoveSession<T>()
         {

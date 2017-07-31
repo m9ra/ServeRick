@@ -190,7 +190,7 @@ namespace ServeRick.Networking
         }
 
         /// <summary>
-        /// Send given data from given storage. After data are sended sendHandler is called
+        /// Send given data from given storage. After data are sent sendHandler is called
         /// </summary>
         /// <param name="dataStorage">Storage for data to send</param>
         /// <param name="sendedLength">Length of data that will be sended</param>
@@ -200,7 +200,7 @@ namespace ServeRick.Networking
             Log.Trace("Client.Send {0}", this);
 
             SocketError error;
-            _socket.Client.BeginSend(dataStorage, 0, sendedLength, SocketFlags.None, out error, _onSended, Tuple.Create<SendHandler, Socket>(sendHandler, _socket.Client));
+            _socket.Client.BeginSend(dataStorage, 0, sendedLength, SocketFlags.None, out error, _onSent, Tuple.Create<SendHandler, Socket>(sendHandler, _socket.Client));
 
             checkError("Client.Send", error);
         }
@@ -239,19 +239,30 @@ namespace ServeRick.Networking
             handler(this, Buffer.Storage, dataLength);
         }
 
-        private void _onSended(IAsyncResult result)
+        private void _onSent(IAsyncResult result)
         {
-            Log.Trace("Client._onSended {0}", this);
+            Log.Trace("Client._onSent {0}", this);
 
-            SocketError error;
+            var error = SocketError.Success;
             var state = result.AsyncState as Tuple<SendHandler, Socket>;
-            var dataLength = state.Item2.EndSend(result, out error);
-
-            //TODO why could sending be parted ?
-
-            if (checkError("Client._onSended", error))
+            int dataLength = 0;
+            try
             {
-                //On error we stop processing
+                dataLength = state.Item2.EndSend(result, out error);
+
+                //TODO how could happen sending be parted ?
+
+                if (checkError("Client._onSent", error))
+                {
+                    //On error we stop processing
+                    return;
+                }
+            }
+            catch (SocketException ex)
+            {
+                var requestURI = this.Request == null ? null : this.Request.RequestURI;
+                Log.Error("Client._onSent [Exception]: {0} | {1} | {2}", requestURI, error, ex);
+                _onClosed();
                 return;
             }
 
@@ -411,6 +422,7 @@ namespace ServeRick.Networking
                     return false;
                 case SocketError.NotSocket:
                 case SocketError.ConnectionReset:
+                case SocketError.TimedOut:
                 case SocketError.ConnectionAborted:
                 case SocketError.Shutdown:
                     //client has unexpectedly disconnected
