@@ -34,7 +34,11 @@ namespace ServeRick.Database
         public abstract TimeSpan ReadTimeSpan();
 
         public abstract double ReadDouble();
-        
+
+        public abstract Int64 ReadInt64();
+
+        public abstract UInt64 ReadUInt64();
+
 
         internal void SetColumn(Column column)
         {

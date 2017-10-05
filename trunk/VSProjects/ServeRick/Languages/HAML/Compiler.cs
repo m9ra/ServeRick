@@ -36,7 +36,8 @@ namespace ServeRick.Languages.HAML
         {
             {"string","System.String"},
             {"int","System.Int32"},
-            {"bool","System.Boolean"}
+            {"bool","System.Boolean"},
+            {"double","System.Double"}
         };
 
         private Compiler(Node root, Emitter emitter)

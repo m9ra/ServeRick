@@ -235,6 +235,11 @@ namespace ServeRick
             return Request.GetPOST(varName);
         }
 
+        protected void InjectSession<T>(string sessionId, T data)
+        {
+            SessionProvider.SetData(Unit.Output, sessionId, data);
+        }
+
         protected T Session<T>()
         {
             return SessionProvider.GetData<T>(Unit.Output, Client.SessionID);
@@ -318,6 +323,13 @@ namespace ServeRick
             Client.EnqueueWork(item);
         }
 
+        protected void Execute<T>(RemoveQuery<T> query, Action action = null)
+    where T : DataRecord
+        {
+            var item = query.CreateWork(action);
+            Client.EnqueueWork(item);
+        }
+
         protected void Execute<T>(InsertQuery<T> query, InsertExecutor<T> executor)
             where T : DataRecord
         {
@@ -338,7 +350,6 @@ namespace ServeRick
             where T : DataRecord
         {
             var item = query.CreateWork(executor);
-
             Client.EnqueueWork(item);
         }
 

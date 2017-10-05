@@ -30,9 +30,9 @@ namespace ServeRick.Database
         /// <summary>
         /// Execute without queueing for client
         /// </summary>
-        internal RemoveQueryWorkItem<ActiveRecord> CreateWork()
+        internal RemoveQueryWorkItem<ActiveRecord> CreateWork(Action action)
         {
-            return new RemoveQueryWorkItem<ActiveRecord>(this);
+            return new RemoveQueryWorkItem<ActiveRecord>(this, action);
         }
     }
 

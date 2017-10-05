@@ -67,7 +67,7 @@ namespace ServeRick.Networking
         /// </summary>
         internal void Run()
         {
-            _listener.Start(1024);
+            _listener.Start(4096);
             acceptClient();
         }
 

@@ -53,7 +53,7 @@ namespace ServeRick.Modules.MySQL
         {
             prepareWorker();
 
-            for (; ; )
+            for (;;)
             {
                 var work = _owner.DequeueWork();
                 if (work == null)
@@ -61,7 +61,7 @@ namespace ServeRick.Modules.MySQL
                     break;
                 }
 
-            RETRY:
+                RETRY:
                 try
                 {
                     work(this);
@@ -142,8 +142,6 @@ namespace ServeRick.Modules.MySQL
             return string.Format(format, column, operandHolder);
         }
 
-
-
         private object getSqlOperand(Column column, object netValue)
         {
             if (netValue == null)
@@ -170,7 +168,17 @@ namespace ServeRick.Modules.MySQL
                 return "VARCHAR(100)";
             }
 
-            if (type == typeof(int) || type == typeof(long) || type.IsEnum)
+            if (type == typeof(long))
+            {
+                return "BIGINT";
+            }
+
+            if (type == typeof(ulong))
+            {
+                return "BIGINT UNSIGNED";
+            }
+
+            if (type == typeof(int) || type.IsEnum)
             {
                 return "INT";
             }
@@ -200,7 +208,7 @@ namespace ServeRick.Modules.MySQL
 
         private string sqlOptions(Column column)
         {
-            if (column.Name.ToLower() == "id")
+            if (column.Name == nameof(DataRecord.ID))
                 return "AUTO_INCREMENT PRIMARY KEY";
 
             return "";
@@ -233,6 +241,12 @@ namespace ServeRick.Modules.MySQL
             executor(result);
         }
 
+        public void ExecuteNative(string sql)
+        {
+            var queryCmd = getQuery();
+            queryCmd.Append(sql.Trim());
+            var scalarResult = queryCmd.ExecuteNonQuery();
+        }
 
         public override void ExecuteRows<ActiveRecord>(DataTable<ActiveRecord> table, SelectQuery<ActiveRecord> query, RowsExecutor<ActiveRecord> executor)
         {
@@ -273,7 +287,7 @@ namespace ServeRick.Modules.MySQL
                 var isFirst = true;
                 foreach (var column in table.Columns)
                 {
-                    if (column.Name.ToLower() == "id")
+                    if (column.Name == nameof(row.ID))
                         //id is not inserted
                         continue;
 
@@ -300,7 +314,8 @@ namespace ServeRick.Modules.MySQL
 
                 //back retrieve inserted row id
                 var scalar = insertCmd.ExecuteScalar();
-                table.SetColumnValue(row, "id", Convert.ToInt32(scalar));
+                table.SetColumnValue(row, nameof(row.ID), Convert.ToInt32(scalar));
+                inserted.Add(row);
             }
 
             executor(inserted);
@@ -311,7 +326,6 @@ namespace ServeRick.Modules.MySQL
             var queryCmd = getQuery();
 
             queryCmd.AppendFormat("UPDATE `{0}` SET ", table.Name);
-
 
             var isFirst = true;
             foreach (var update in query.Updates)
@@ -502,7 +516,7 @@ namespace ServeRick.Modules.MySQL
             }
             else
             {
-                queryCmd.Append(" ORDER BY id DESC ");
+                queryCmd.Append(" ORDER BY ID DESC ");
             }
         }
 

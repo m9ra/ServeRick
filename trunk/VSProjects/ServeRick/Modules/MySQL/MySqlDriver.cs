@@ -43,7 +43,7 @@ namespace ServeRick.Modules.MySQL
         public MySqlDriver(string connectionString, int workersCount = 5)
         {
             ConnectionString = connectionString;
-                       
+
             for (int i = 0; i < workersCount; ++i)
             {
                 _workers.Add(new QueryWorker(this));
@@ -89,6 +89,20 @@ namespace ServeRick.Modules.MySQL
         }
 
         #region Driver implementation wrapped on the pool
+
+        /// <summary>
+        /// Executes native query
+        /// </summary>
+        public void ExecuteNative(string sql)
+        {
+            lock (_L_Queue)
+            {
+                enqueueWork((w) =>
+                {
+                    w.ExecuteNative(sql);
+                });
+            }
+        }
 
         public override void ExecuteRow<ActiveRecord>(DataTable<ActiveRecord> table, SelectQuery<ActiveRecord> query, RowExecutor<ActiveRecord> executor)
         {

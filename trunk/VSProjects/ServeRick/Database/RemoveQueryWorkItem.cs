@@ -11,11 +11,15 @@ namespace ServeRick.Database
     class RemoveQueryWorkItem<ActiveRecord> : DatabaseWorkItem
           where ActiveRecord : DataRecord
     {
-        readonly RemoveQuery<ActiveRecord> _query;
+        private readonly RemoveQuery<ActiveRecord> _query;
 
-        internal RemoveQueryWorkItem(RemoveQuery<ActiveRecord> query)            
+        private readonly Action _action;
+
+
+        internal RemoveQueryWorkItem(RemoveQuery<ActiveRecord> query, Action action)
         {
             _query = query;
+            _action = action;
         }
 
         internal override void Run()
@@ -30,6 +34,7 @@ namespace ServeRick.Database
         /// </summary>
         private void _handler()
         {
+            _action?.Invoke();
             Complete();
         }
     }

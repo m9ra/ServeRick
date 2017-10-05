@@ -61,10 +61,13 @@ namespace ServeRick
             }
         }
 
+        /// <summary>
+        /// Runs background task of the server.
+        /// </summary>
         public void RunTask(BackgroundTask task)
         {
-            task.Run(this);
             _tasks.Add(task);
+            task.Run(this);
         }
 
         /// <summary>
@@ -72,6 +75,9 @@ namespace ServeRick
         /// </summary>
         internal void Start()
         {
+            foreach (var task in _tasks)
+                task.WaitUntilInitialized();
+
             _accepter.Run();
         }
 

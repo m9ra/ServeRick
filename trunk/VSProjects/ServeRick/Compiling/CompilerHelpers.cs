@@ -23,6 +23,18 @@ namespace ServeRick.Compiling
             return a.Equals(b);
         }
 
+        public static bool not(object x)
+        {
+            if (x == null)
+                return true;
+
+            if (x is int && (int)x == 0)
+                return true;
+
+            return false;
+        }
+
+
         public static string concat(object a, object b)
         {
             return string.Format("{0}{1}", a, b);

@@ -183,8 +183,7 @@ namespace ServeRick.Networking
             if (maxBytesRecieve > Buffer.Storage.Length)
                 maxBytesRecieve = Buffer.Storage.Length;
 
-            SocketError error;
-            _socket.Client.BeginReceive(Buffer.Storage, 0, maxBytesRecieve, SocketFlags.None, out error, _onRecieved, handler);
+            _socket.Client.BeginReceive(Buffer.Storage, 0, maxBytesRecieve, SocketFlags.None, out SocketError error, _onRecieved, handler);
 
             checkError("Client.Recieve", error);
         }
@@ -199,8 +198,7 @@ namespace ServeRick.Networking
         {
             Log.Trace("Client.Send {0}", this);
 
-            SocketError error;
-            _socket.Client.BeginSend(dataStorage, 0, sendedLength, SocketFlags.None, out error, _onSent, Tuple.Create<SendHandler, Socket>(sendHandler, _socket.Client));
+            _socket.Client.BeginSend(dataStorage, 0, sendedLength, SocketFlags.None, out var error, _onSent, Tuple.Create<SendHandler, Socket>(sendHandler, _socket.Client));
 
             checkError("Client.Send", error);
         }
@@ -225,8 +223,7 @@ namespace ServeRick.Networking
         {
             Log.Trace("Client._onRecieved {0}", this);
 
-            SocketError error;
-            var dataLength = _socket.Client.EndReceive(result, out error);
+            var dataLength = _socket.Client.EndReceive(result, out SocketError error);
 
             if (checkError("Client._onRecieved", error))
             {
@@ -258,9 +255,16 @@ namespace ServeRick.Networking
                     return;
                 }
             }
+            catch(ObjectDisposedException ex)
+            {
+                var requestURI = this.Request?.RequestURI;
+                Log.Error("Client._onSent [Exception]: {0} | {1} | {2}", requestURI, error, ex);
+                _onClosed();
+                return;
+            }
             catch (SocketException ex)
             {
-                var requestURI = this.Request == null ? null : this.Request.RequestURI;
+                var requestURI = this.Request?.RequestURI;
                 Log.Error("Client._onSent [Exception]: {0} | {1} | {2}", requestURI, error, ex);
                 _onClosed();
                 return;
@@ -340,7 +344,8 @@ namespace ServeRick.Networking
         {
             if (_isDisconnected)
             {
-                throw new InvalidOperationException("Cannot disconnect twice");
+                Log.Error("Cannot disconnect client {0} twice", this);
+                return;
             }
 
             _disconnectingStarted = true;
@@ -425,6 +430,9 @@ namespace ServeRick.Networking
                 case SocketError.TimedOut:
                 case SocketError.ConnectionAborted:
                 case SocketError.Shutdown:
+                case SocketError.HostUnreachable:
+                case SocketError.ConnectionRefused:
+                case SocketError.NetworkUnreachable:
                     //client has unexpectedly disconnected
                     Log.Warning(checkingMethod + " {0} failed with {1}", this, error);
                     _onClosed();

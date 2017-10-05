@@ -99,7 +99,7 @@ namespace ServeRick.Database
                 var type = column.Type;
                 object value = null;
                 reader.SetColumn(column);
-                
+
                 if (type == typeof(string))
                 {
                     value = reader.ReadString();
@@ -108,7 +108,6 @@ namespace ServeRick.Database
                 {
                     value = reader.ReadInt();
                 }
-
                 else if (type.IsEnum)
                 {
                     value = reader.ReadEnum();
@@ -128,6 +127,18 @@ namespace ServeRick.Database
                 else if (type == typeof(TimeSpan))
                 {
                     value = reader.ReadTimeSpan();
+                }
+                else if (type == typeof(long))
+                {
+                    value = reader.ReadInt64();
+                }
+                else if (type == typeof(ulong))
+                {
+                    value = reader.ReadUInt64();
+                }
+                else
+                {
+                    throw new NotImplementedException("Reader for type " + type + " is missing");
                 }
 
                 SetColumnValue(record, column.Name, value);

@@ -55,6 +55,7 @@ namespace ServeRick.Networking
         private void _processHead(Client client, byte[] data, int dataLength)
         {
             Log.Trace("Downloader._processHead client: {0}, dataLength: {1}", client, dataLength);
+            //Log.Trace("\tdata {0}: {1}", client, Encoding.ASCII.GetString(data, 0, dataLength));
 
             var notProcessedOffset = client.Parser.AppendData(data, dataLength);
             if (client.Parser.IsHeadComplete)
@@ -64,7 +65,7 @@ namespace ServeRick.Networking
                 return;
             }
 
-            if (dataLength == 0)
+            if (dataLength == 0 || client.Parser.IsError)
             {
                 Log.Notice("Downloader._onHeadCompleted {0},  recieved {1}B, incomplete header: {2}B", client, dataLength, client.Parser.RecievedBytes);
                 client.Close();

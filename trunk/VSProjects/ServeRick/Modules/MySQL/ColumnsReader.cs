@@ -33,6 +33,16 @@ namespace ServeRick.Modules.MySQL
             return _reader.GetInt32(ColumnName);
         }
 
+        public override long ReadInt64()
+        {
+            return _reader.GetInt64(ColumnName);
+        }
+
+        public override ulong ReadUInt64()
+        {
+            return _reader.GetUInt64(ColumnName);
+        }
+
         public override int ReadEnum()
         {
             var value = _reader.GetString(ColumnName);

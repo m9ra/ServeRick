@@ -170,6 +170,12 @@ namespace ServeRick
                 case "htm":
                 case "ico":
                 case "svg":
+                case "eot":
+                case "ttf":
+                case "woff":
+                case "woff2":
+                case "wasm":
+                case "mem":
                 case "":
                     return SendRaw(file, ext);
                 default:
@@ -313,7 +319,8 @@ namespace ServeRick
         internal ResponseHandler GetFileHandler(string fileName)
         {
             WebItem item;
-            _files.TryGetValue(fileName, out item);
+            if (!_files.TryGetValue(fileName, out item))
+                Log.Error("File handler for file {0} is not available.", fileName);
             return item.Handler;
         }
 
@@ -481,6 +488,14 @@ namespace ServeRick
             {
                 case "css":
                     return "text/css";
+                case "eot":
+                    return "image/eot";
+                case "ttf":
+                    return "image/ttf";
+                case "woff":
+                    return "image/woff";
+                case "woff2":
+                    return "image/woff2";
                 case "jpg":
                     return "image/jpeg";
                 case "png":
@@ -500,6 +515,8 @@ namespace ServeRick
                 case "htm":
                 case "html":
                     return "text/html";
+                case "mem":
+                case "wasm":
                 case "js":
                     return "application/javascript";
                 case "swf":

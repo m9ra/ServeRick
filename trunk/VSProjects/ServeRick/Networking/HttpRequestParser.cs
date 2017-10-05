@@ -151,7 +151,14 @@ namespace ServeRick.Networking
                 if (toks.Length != 3)
                 {
                     IsError = true;
-                    Log.Error("Invalid request with query {0}", _value);
+                    if (_value[0] == '\u0016')
+                    {
+                        Log.Notice("SSL encryption detected");
+                    }
+                    else
+                    {
+                        Log.Error("Invalid request with query {0}", _value);
+                    }                    
                     return;
                 }
 
@@ -174,13 +181,11 @@ namespace ServeRick.Networking
         private void onHeadComplete()
         {
             //resolve encoding
-            string encoding;
-            Request.TryGetHeader("Content-Encoding", out encoding, "ascii");
+            Request.TryGetHeader("Content-Encoding", out var encoding, "ascii");
 
             //resolve content length
-            int contentLength = 0;
-            string contentLengthString;
-            if (Request.TryGetHeader("Content-length", out contentLengthString))
+            var contentLength = 0;
+            if (Request.TryGetHeader("Content-length", out var contentLengthString))
             {
                 int.TryParse(contentLengthString, out contentLength);
             }

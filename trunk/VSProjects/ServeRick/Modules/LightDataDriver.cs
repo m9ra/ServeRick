@@ -8,6 +8,35 @@ using ServeRick.Database;
 
 namespace ServeRick.Modules
 {
+    public delegate void LightDataDriveCall<ActiveRecord>(CallTableApi<ActiveRecord> table, Dictionary<string, object> values)
+        where ActiveRecord : DataRecord;
+
+    public class CallTableApi<ActiveRecord>
+        where ActiveRecord : DataRecord
+    {
+        private readonly DataTable<ActiveRecord> _table;
+
+        internal CallTableApi(DataTable<ActiveRecord> table)
+        {
+            _table = table;
+        }
+
+        public void SetColumnValue(ActiveRecord row, string column, object value)
+        {
+            _table.SetColumnValue(row, column, value);
+        }
+
+        public ActiveRecord GetRecord(int id)
+        {
+            return _table.MemoryRecords[id];
+        }
+
+        public object GetColumnValue(string column, ActiveRecord row)
+        {
+            return _table.GetColumnValue(column, row);
+        }
+    }
+
     /// <summary>
     /// Light implementation of data driver, storing it's values in memory.
     /// Is supposed to be used as development only driver.
@@ -15,6 +44,8 @@ namespace ServeRick.Modules
     public class LightDataDriver : DataDriver
     {
         private readonly DataRecord[] _records;
+
+        private readonly Dictionary<string, object> _storedCalls = new Dictionary<string, object>();
 
         public LightDataDriver(IEnumerable<DataRecord> records)
         {
@@ -25,6 +56,12 @@ namespace ServeRick.Modules
             this((IEnumerable<DataRecord>)records)
         {
 
+        }
+
+        public void AddCall<ActiveRecord>(string callName, LightDataDriveCall<ActiveRecord> callHandler)
+            where ActiveRecord : DataRecord
+        {
+            _storedCalls.Add(callName, callHandler);
         }
 
         #region Data driver API implementation
@@ -75,7 +112,7 @@ namespace ServeRick.Modules
         {
             foreach (var row in query.Rows)
             {
-                table.SetColumnValue(row, "id", getUID(table));
+                table.SetColumnValue(row, nameof(row.ID), getUID(table));
                 table.MemoryRecords.Add(row.ID, row);
             }
 
@@ -115,7 +152,9 @@ namespace ServeRick.Modules
 
         public override void Call<ActiveRecord>(DataTable<ActiveRecord> table, CallQuery<ActiveRecord> query, Action executor)
         {
-            throw new NotImplementedException();
+            var callHandler = _storedCalls[query.CallName] as LightDataDriveCall<ActiveRecord>;
+            callHandler(new CallTableApi<ActiveRecord>(table), query.Arguments.ToDictionary(p => p.Key, p => p.Value));
+            executor();
         }
 
         #endregion
@@ -125,6 +164,9 @@ namespace ServeRick.Modules
         private int getUID<ActiveRecord>(DataTable<ActiveRecord> table)
             where ActiveRecord : DataRecord
         {
+            if (!table.MemoryRecords.Any())
+                return 0;
+
             return table.MemoryRecords.Keys.Max() + 1;
         }
 
@@ -171,11 +213,30 @@ namespace ServeRick.Modules
         private ActiveRecord findItem<ActiveRecord>(DataTable<ActiveRecord> table, WhereItem condition)
             where ActiveRecord : DataRecord
         {
-            if (condition.Operation != WhereOperation.Equal || condition.Column != "id")
-                throw new NotImplementedException();
-
             ActiveRecord result;
-            table.MemoryRecords.TryGetValue((int)condition.Operand, out result);
+
+            if (condition.Operation != WhereOperation.Equal || condition.Column != "ID")
+            {
+                result = null;
+                var type = typeof(ActiveRecord);
+                var field = type.GetField(condition.Column);
+                if (field == null)
+                    throw new InvalidOperationException("Unknown field: " + condition.Column);
+
+                foreach (var record in table.MemoryRecords.Values)
+                {
+                    var value = field.GetValue(record);
+                    if (condition.Operand.Equals(value))
+                    {
+                        result = record;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                table.MemoryRecords.TryGetValue((int)condition.Operand, out result);
+            }
 
             return result;
         }

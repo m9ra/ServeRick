@@ -23,7 +23,7 @@ namespace ServeRick
     {
         static List<WebApplication> _applications = new List<WebApplication>();
 
-        public static HttpServer Start(int port = 4000)
+        public static HttpServer Start(int port = 4000, params BackgroundTask[] tasks)
         {
             LoadToolchains();
 
@@ -34,6 +34,10 @@ namespace ServeRick
             var memConfig = new MemoryConfiguration(4096 * 20, 2 << 28);
 
             var server = new HttpServer(_applications[0], netConfig, memConfig);
+            foreach (var task in tasks)
+            {
+                server.RunTask(task);
+            }
             server.Start();
 
             return server;

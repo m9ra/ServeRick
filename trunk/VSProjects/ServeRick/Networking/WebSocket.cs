@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using System.Security.Cryptography;
+using System.Net.Sockets;
 
 namespace ServeRick.Networking
 {
@@ -47,12 +48,11 @@ namespace ServeRick.Networking
 
         internal WebSocket(WebSocketController controller, Client client, string key)
         {
-            if (key == null)
-                throw new NullReferenceException("_key");
+            _key = key ?? throw new NullReferenceException(nameof(key));
 
             _controller = controller;
             _client = client;
-            _key = key;
+
 
             _client.RemoveHandlers();
         }
@@ -110,9 +110,10 @@ namespace ServeRick.Networking
 
             var opcode = 1;
             var mask = 0u;
-            var header = new List<byte>(10);
-            header.Add((byte)(finFlag << 7 | opcode));
-
+            var header = new List<byte>(10)
+            {
+                (byte)(finFlag << 7 | opcode)
+            };
             if (messageLength < 126)
             {
                 header.Add((byte)(mask << 7 | messageLength));
@@ -131,7 +132,15 @@ namespace ServeRick.Networking
             lock (_L_send)
             {
                 //TODO revise - client might be able to lock itself
-                _client.Send(buffer, buffer.Length, null);
+                try
+                {
+                    _client.Send(buffer, buffer.Length, null);
+                }
+                catch (SocketException ex)
+                {
+                    closeClient();
+                    Log.Error("WebSocket.Send {0}", ex);
+                }
             }
         }
 
@@ -167,14 +176,24 @@ Sec-WebSocket-Accept: {0}" + "\r\n\r\n", acceptKey);
                 closeClient();
                 return;
             }
-            var message = GetDecodedData(data, length);
-            if (message == null)
-            {
-                closeClient();
-                return;
-            }
 
-            _controller.MessageReceived(this, message);
+            var currentStart = 0;
+            while (currentStart < length)
+            {
+                var message = GetDecodedData(data, currentStart, length, out var close, out var frameLength);
+                currentStart += frameLength;
+
+                if (close)
+                {
+                    closeClient();
+                    return;
+                }
+
+                if (message == null)
+                    continue;
+
+                _controller.MessageReceived(this, message);
+            }
             receiveFrame();
         }
 
@@ -184,29 +203,25 @@ Sec-WebSocket-Accept: {0}" + "\r\n\r\n", acceptKey);
             _controller.OnClose(this);
         }
 
-        public static string GetDecodedData(byte[] buffer, int length)
+        public static string GetDecodedData(byte[] buffer, int start, int length, out bool close, out int totalLength)
         {
-            var opcode = (buffer[0] & 0x0F);
-            var finFlag = buffer[0] & 128;
+            var opcode = (buffer[start + 0] & 0x0F);
+            var finFlag = buffer[start + 0] & 128;
             if (finFlag == 0)
-                throw new NotImplementedException();
-
-            switch (opcode)
             {
-                case 1:
-                    //text
-                    break;
-                case 8:
-                    //close
-                    return null;
-                default:
-                    throw new NotImplementedException("Unknown opcode: " + opcode);
+                Log.Error("FIN FLAG NOT IMPLEMENTED");
+                close = true;
+                totalLength = 0;
+                return null;
             }
 
-            var payloadLength = buffer[1] - 128;
+
+
+
+            var payloadLength = buffer[start + 1] - 128;
             int dataLength = 0;
-            int totalLength = 0;
             int keyIndex = 0;
+            totalLength = 0;
 
             if (payloadLength <= 125)
             {
@@ -217,32 +232,59 @@ Sec-WebSocket-Accept: {0}" + "\r\n\r\n", acceptKey);
 
             if (payloadLength == 126)
             {
-                dataLength = BitConverter.ToInt16(new byte[] { buffer[3], buffer[2] }, 0);
+                dataLength = BitConverter.ToInt16(new byte[] { buffer[start + 3], buffer[start + 2] }, 0);
                 keyIndex = 4;
                 totalLength = dataLength + 8;
             }
 
             if (payloadLength - 128 == 127)
             {
-                dataLength = (int)BitConverter.ToInt64(new byte[] { buffer[9], buffer[8], buffer[7], buffer[6], buffer[5], buffer[4], buffer[3], buffer[2] }, 0);
+                dataLength = (int)BitConverter.ToInt64(new byte[] { buffer[start + 9], buffer[start + 8], buffer[start + 7], buffer[start + 6], buffer[start + 5], buffer[start + 4], buffer[start + 3], buffer[start + 2] }, 0);
                 keyIndex = 10;
                 totalLength = dataLength + 14;
             }
 
             if (totalLength > length)
-                throw new Exception("The buffer length is smaller than the data length");
+            {
+                Log.Error("The buffer length is smaller than the data length");
+                close = true;
+                return null;
+            }
 
-            byte[] key = new byte[] { buffer[keyIndex], buffer[keyIndex + 1], buffer[keyIndex + 2], buffer[keyIndex + 3] };
+            close = false;
+            switch (opcode)
+            {
+                case 1:
+                    //text
+                    break;
+                case 8:
+                    //close
+                    close = true;
+                    return null;
+                case 9:
+                    //ping TODO implement
+                    Log.Error("Websocket.DecodeData ping not implemented");
+                    return null;
+                case 10:
+                    //we got a pong without a reason
+                    return null;
+
+                default:
+                    throw new NotImplementedException("Unknown opcode: " + opcode);
+            }
+
+
+            var key = new byte[] { buffer[start + keyIndex], buffer[start + keyIndex + 1], buffer[start + keyIndex + 2], buffer[start + keyIndex + 3] };
 
             int dataIndex = keyIndex + 4;
             int count = 0;
             for (int i = dataIndex; i < totalLength; i++)
             {
-                buffer[i] = (byte)(buffer[i] ^ key[count % 4]);
+                buffer[start + i] = (byte)(buffer[start + i] ^ key[count % 4]);
                 count++;
             }
 
-            return Encoding.ASCII.GetString(buffer, dataIndex, dataLength);
+            return Encoding.ASCII.GetString(buffer, start + dataIndex, dataLength);
         }
 
         private string calculateAcceptKey(string key)

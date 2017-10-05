@@ -18,10 +18,17 @@ namespace ServeRick
 
         protected abstract void ProcessMessage(WebSocket socket, string message);
 
+        /// <summary>
+        /// Non synchronized notification about connections/disconnections
+        /// </summary>
+        public event Action RegisteredSocketsChange;
+
         protected WebSocketController()
         {
-            _worker = new Thread(WorkerThread);
-            _worker.IsBackground = true;
+            _worker = new Thread(WorkerThread)
+            {
+                IsBackground = true
+            };
             _worker.Start();
         }
 
@@ -47,6 +54,8 @@ namespace ServeRick
             {
                 _registeredSockets.Add(webSocket);
             }
+
+            RegisteredSocketsChange?.Invoke();
         }
 
         internal void OnClose(WebSocket webSocket)
@@ -55,6 +64,8 @@ namespace ServeRick
             {
                 _registeredSockets.Remove(webSocket);
             }
+
+            RegisteredSocketsChange?.Invoke();
         }
 
         internal void MessageReceived(WebSocket socket, string message)

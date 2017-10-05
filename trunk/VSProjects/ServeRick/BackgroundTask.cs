@@ -18,6 +18,16 @@ namespace ServeRick
     public abstract class BackgroundTask
     {
         /// <summary>
+        /// Lock for making db calls blocking.
+        /// </summary>
+        private readonly object _L_databaseSync = new object();
+
+        /// <summary>
+        /// Used for holding server from running before task is initalized.
+        /// </summary>
+        private readonly ManualResetEvent _initializationLock = new ManualResetEvent(false);
+
+        /// <summary>
         /// Thread where task is running
         /// </summary>
         private Thread _thread;
@@ -63,6 +73,11 @@ namespace ServeRick
             //there is nothing to do by default
         }
 
+        protected virtual void initalize()
+        {
+            //there is nothing to do by default
+        }
+
         /// <summary>
         /// Run background task in separate thread.
         /// </summary>
@@ -79,6 +94,14 @@ namespace ServeRick
             _unit = Server.Unit;
             _thread = new Thread(_run);
             _thread.Start();
+        }
+
+        /// <summary>
+        /// Waits until task is initialized.
+        /// </summary>
+        internal void WaitUntilInitialized()
+        {
+            _initializationLock.WaitOne();
         }
 
         /// <summary>
@@ -103,6 +126,9 @@ namespace ServeRick
 
             try
             {
+                initalize();
+                _initializationLock.Set(); //initialization is complete
+
                 run();
             }
             finally
@@ -147,6 +173,19 @@ namespace ServeRick
             enqueue(item);
         }
 
+        protected void BlockingExecute<T>(CallQuery<T> query)
+      where T : DataRecord
+        {
+            requireDbLockAccess();
+
+            lock (_L_databaseSync)
+            {
+                Execute(query, unlockDbAction);
+                //wait until query is finished
+                Monitor.Wait(_L_databaseSync);
+            }
+        }
+
         protected void Execute<T>(UpdateQuery<T> query, UpdateExecutor<T> executor = null)
          where T : DataRecord
         {
@@ -154,18 +193,58 @@ namespace ServeRick
             enqueue(item);
         }
 
-        protected void Execute<T>(RemoveQuery<T> query)
+        protected void BlockingExecute<T>(UpdateQuery<T> query)
+where T : DataRecord
+        {
+            requireDbLockAccess();
+
+            lock (_L_databaseSync)
+            {
+                Execute(query, _ => unlockDbAction());
+                //wait until query is finished
+                Monitor.Wait(_L_databaseSync);
+            }
+        }
+
+        protected void Execute<T>(RemoveQuery<T> query, Action action)
          where T : DataRecord
         {
-            var item = query.CreateWork();
+            var item = query.CreateWork(action);
             enqueue(item);
         }
 
-        protected void Execute<T>(InsertQuery<T> query, InsertExecutor<T> executor)
-            where T : DataRecord
+        protected void BlockingExecute<T>(RemoveQuery<T> query)
+ where T : DataRecord
+        {
+            requireDbLockAccess();
+
+            lock (_L_databaseSync)
+            {
+                Execute(query, unlockDbAction);
+                //wait until query is finished
+                Monitor.Wait(_L_databaseSync);
+            }
+        }
+
+        protected void Execute<T>(InsertQuery<T> query, InsertExecutor<T> executor = null)
+         where T : DataRecord
         {
             var item = query.CreateWork(executor);
             enqueue(item);
+        }
+
+
+        protected void BlockingExecute<T>(InsertQuery<T> query)
+where T : DataRecord
+        {
+            requireDbLockAccess();
+
+            lock (_L_databaseSync)
+            {
+                Execute(query, _ => unlockDbAction());
+                //wait until query is finished
+                Monitor.Wait(_L_databaseSync);
+            }
         }
 
         protected void ExecuteRow<T>(SelectQuery<T> query, RowExecutor<T> executor)
@@ -180,6 +259,26 @@ namespace ServeRick
         {
             var item = query.CreateWork(executor);
             enqueue(item);
+        }
+
+        protected T[] BlockingExecuteRows<T>(SelectQuery<T> query)
+    where T : DataRecord
+        {
+            requireDbLockAccess();
+
+            lock (_L_databaseSync)
+            {
+                T[] resultRows = null;
+                ExecuteRows(query, result =>
+                {
+                    resultRows = result.Rows;
+                    unlockDbAction();
+                });
+                //wait until query is finished
+                Monitor.Wait(_L_databaseSync);
+
+                return resultRows;
+            }
         }
 
         protected void ExecuteForeach<ItemType, ActiveRecord>(IEnumerable<ItemType> enumeration, Func<ItemType, CallQuery<ActiveRecord>> callback, Action afterAction = null)
@@ -214,6 +313,18 @@ namespace ServeRick
         private void enqueue(WorkItem item)
         {
             _unit.EnqueueIndependent(item);
+        }
+
+        private void unlockDbAction()
+        {
+            lock (_L_databaseSync)
+                Monitor.Pulse(_L_databaseSync);
+        }
+
+        private void requireDbLockAccess()
+        {
+            if (Thread.CurrentThread != _thread)
+                throw new InvalidOperationException("Only task thread can lock Db.");
         }
     }
 }

@@ -34,8 +34,7 @@ namespace ServeRick.Database
         /// <param name="rows">Inserted rows.</param>
         private void _handler(IEnumerable<ActiveRecord> rows)
         {
-            if (_executor != null)
-                _executor(rows);
+            _executor?.Invoke(rows);
             Complete();
         }
     }
