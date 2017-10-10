@@ -38,12 +38,12 @@ namespace ServeRick.Networking
         /// <param name="client">Client which head will be downloaded</param>
         internal void DownloadHead(Client client)
         {
-            client.Recieve(_processHead);
+            client.Receive(_processHead);
         }
 
         internal void DownloadContent(Client client)
         {
-            client.Recieve(_processContent);
+            client.Receive(_processContent);
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace ServeRick.Networking
             input.AcceptData(data, 0, dataLength);
             if (input.ContinueDownloading && dataLength > 0)
             {
-                client.Recieve(_processContent);
+                client.Receive(_processContent);
             }
             else
             {

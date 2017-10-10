@@ -39,6 +39,8 @@ namespace ServeRick.Database
 
         public abstract UInt64 ReadUInt64();
 
+        public abstract Decimal ReadDecimal();
+
 
         internal void SetColumn(Column column)
         {

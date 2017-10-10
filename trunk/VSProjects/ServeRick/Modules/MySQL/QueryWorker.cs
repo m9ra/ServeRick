@@ -203,6 +203,11 @@ namespace ServeRick.Modules.MySQL
                 return "FLOAT";
             }
 
+            if (type == typeof(Decimal))
+            {
+                return "DECIMAL(45,30)";
+            }
+
             throw new NotImplementedException("sql type mapping for: " + type);
         }
 

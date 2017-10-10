@@ -131,16 +131,7 @@ namespace ServeRick.Networking
             var buffer = header.Concat(bytes).ToArray();
             lock (_L_send)
             {
-                //TODO revise - client might be able to lock itself
-                try
-                {
-                    _client.Send(buffer, buffer.Length, null);
-                }
-                catch (SocketException ex)
-                {
-                    closeClient();
-                    Log.Error("WebSocket.Send {0}", ex);
-                }
+                _client.Send(buffer, buffer.Length, null);
             }
         }
 
@@ -166,7 +157,7 @@ Sec-WebSocket-Accept: {0}" + "\r\n\r\n", acceptKey);
 
         private void receiveFrame()
         {
-            _client.Recieve(_onFrameReceive);
+            _client.Receive(_onFrameReceive);
         }
 
         private void _onFrameReceive(Client client, byte[] data, int length)
@@ -199,8 +190,8 @@ Sec-WebSocket-Accept: {0}" + "\r\n\r\n", acceptKey);
 
         private void closeClient()
         {
-            _client.Close();
             _controller.OnClose(this);
+            _client.Close();
         }
 
         public static string GetDecodedData(byte[] buffer, int start, int length, out bool close, out int totalLength)
@@ -209,14 +200,19 @@ Sec-WebSocket-Accept: {0}" + "\r\n\r\n", acceptKey);
             var finFlag = buffer[start + 0] & 128;
             if (finFlag == 0)
             {
-                Log.Error("FIN FLAG NOT IMPLEMENTED");
+                if (length > 3 && buffer[start + 0] == 'G' && buffer[start + 1] == 'E' && buffer[start + 2] == 'T')
+                {
+                    Log.Error("Handshake not recognized by client (GET response)");
+                    close = false; //try to give it a chance to cooperate
+                    totalLength = length;
+                    return null;
+                }
+
+                Log.Error("FIN FLAG NOT IMPLEMENTED: {0}-{1}, {2}", start, length, Encoding.ASCII.GetString(buffer, 0, Math.Min(start + length, buffer.Length - 1)));
                 close = true;
                 totalLength = 0;
                 return null;
             }
-
-
-
 
             var payloadLength = buffer[start + 1] - 128;
             int dataLength = 0;

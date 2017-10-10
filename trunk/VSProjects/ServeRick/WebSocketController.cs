@@ -52,7 +52,8 @@ namespace ServeRick
         {
             lock (_L_registered)
             {
-                _registeredSockets.Add(webSocket);
+                if (!_registeredSockets.Add(webSocket))
+                    return;
             }
 
             RegisteredSocketsChange?.Invoke();
@@ -62,15 +63,22 @@ namespace ServeRick
         {
             lock (_L_registered)
             {
-                _registeredSockets.Remove(webSocket);
+                if (!_registeredSockets.Remove(webSocket))
+                    return;
             }
 
             RegisteredSocketsChange?.Invoke();
+            ProcessDisconnection(webSocket);
         }
 
         internal void MessageReceived(WebSocket socket, string message)
         {
             ProcessMessage(socket, message);
+        }
+
+        protected virtual void ProcessDisconnection(WebSocket socket)
+        {
+            //by default there is nothing to do
         }
     }
 }

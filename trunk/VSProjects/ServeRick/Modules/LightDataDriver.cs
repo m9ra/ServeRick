@@ -116,7 +116,7 @@ namespace ServeRick.Modules
                 table.MemoryRecords.Add(row.ID, row);
             }
 
-            executor(query.Rows);
+            executor?.Invoke(query.Rows);
         }
 
         public override void RemoveRows<ActiveRecord>(DataTable<ActiveRecord> table, RemoveQuery<ActiveRecord> query, Action executor)

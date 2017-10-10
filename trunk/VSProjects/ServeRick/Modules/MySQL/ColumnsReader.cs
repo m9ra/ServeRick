@@ -71,6 +71,10 @@ namespace ServeRick.Modules.MySQL
             return _reader.GetDouble(ColumnName);
         }
 
+        public override decimal ReadDecimal()
+        {
+            return _reader.GetDecimal(ColumnName);
+        }
         private bool isNull()
         {
             var columnIndex = _reader.GetOrdinal(ColumnName);
@@ -78,5 +82,6 @@ namespace ServeRick.Modules.MySQL
             //Console.WriteLine("IsNull>{0},{1}:{2}", ColumnName, columnIndex, isNull);
             return isNull;
         }
+
     }
 }

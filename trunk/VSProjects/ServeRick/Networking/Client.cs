@@ -106,7 +106,7 @@ namespace ServeRick.Networking
 
         public static long TotalRecievedData;
 
-        public static long TotalSendedData;
+        public static long TotalSentData;
 
         public static long TotalClients;
 
@@ -171,21 +171,23 @@ namespace ServeRick.Networking
         #region Network API for communication with client
 
         /// <summary>
-        /// Recieve data with maximum size according to maxBytesRecieve
+        /// Receive data with maximum size according to maxBytesReceive
         /// </summary>
-        /// <param name="handler">Handler called when data are recieved</param>
-        /// <param name="maxBytesRecieve">Maximum bytes that can be recieved</param>
-        internal void Recieve(RecieveHandler handler, int maxBytesRecieve = int.MaxValue)
+        /// <param name="handler">Handler called when data are received</param>
+        /// <param name="maxBytesReceive">Maximum bytes that can be received</param>
+        internal void Receive(RecieveHandler handler, int maxBytesReceive = int.MaxValue)
         {
-            Log.Trace("Client.Recieve {0}", this);
+            Log.Trace("Client.Receive {0}", this);
 
-            //limit maximum bytes that can be recieved according to buffer storage size
-            if (maxBytesRecieve > Buffer.Storage.Length)
-                maxBytesRecieve = Buffer.Storage.Length;
+            //limit maximum bytes that can be received according to buffer storage size
+            if (maxBytesReceive > Buffer.Storage.Length)
+                maxBytesReceive = Buffer.Storage.Length;
 
-            _socket.Client.BeginReceive(Buffer.Storage, 0, maxBytesRecieve, SocketFlags.None, out SocketError error, _onRecieved, handler);
-
-            checkError("Client.Recieve", error);
+            socketOperationWrapper("Client.Receive", () =>
+            {
+                _socket.Client.BeginReceive(Buffer.Storage, 0, maxBytesReceive, SocketFlags.None, out SocketError error, _onReceived, handler);
+                return !checkError("Client.Recieve", error);
+            });
         }
 
         /// <summary>
@@ -198,9 +200,11 @@ namespace ServeRick.Networking
         {
             Log.Trace("Client.Send {0}", this);
 
-            _socket.Client.BeginSend(dataStorage, 0, sendedLength, SocketFlags.None, out var error, _onSent, Tuple.Create<SendHandler, Socket>(sendHandler, _socket.Client));
-
-            checkError("Client.Send", error);
+            socketOperationWrapper("Client.Close", () =>
+            {
+                _socket.Client.BeginSend(dataStorage, 0, sendedLength, SocketFlags.None, out var error, _onSent, Tuple.Create<SendHandler, Socket>(sendHandler, _socket.Client));
+                return !checkError("Client.Send", error);
+            });
         }
 
         /// <summary>
@@ -211,25 +215,31 @@ namespace ServeRick.Networking
             if (_isClosed)
                 return;
 
+            socketOperationWrapper("Client.Close", () =>
+            {
+                _socket.Client.BeginDisconnect(false, _onClosed, null);
+                return true;
+            });
+
             _isClosed = true;
-            _socket.Client.BeginDisconnect(false, _onClosed, null);
         }
 
         #endregion
 
         #region Network operation callbacks
 
-        private void _onRecieved(IAsyncResult result)
+        private void _onReceived(IAsyncResult result)
         {
-            Log.Trace("Client._onRecieved {0}", this);
+            Log.Trace("Client._onReceived {0}", this);
 
-            var dataLength = _socket.Client.EndReceive(result, out SocketError error);
-
-            if (checkError("Client._onRecieved", error))
+            int dataLength = 0;
+            if (!socketOperationWrapper("Client._onReceived", () =>
             {
+                dataLength = _socket.Client.EndReceive(result, out SocketError error);
+                return !checkError("Client._onRecieved", error);
+            }))
                 //On error we stop processing                
                 return;
-            }
 
             Interlocked.Add(ref TotalRecievedData, dataLength);
             var handler = result.AsyncState as RecieveHandler;
@@ -243,60 +253,58 @@ namespace ServeRick.Networking
             var error = SocketError.Success;
             var state = result.AsyncState as Tuple<SendHandler, Socket>;
             int dataLength = 0;
-            try
+
+            if (!socketOperationWrapper("Client._onSent", () =>
             {
                 dataLength = state.Item2.EndSend(result, out error);
 
                 //TODO how could happen sending be parted ?
 
-                if (checkError("Client._onSent", error))
-                {
-                    //On error we stop processing
-                    return;
-                }
+                return !checkError("Client._onSent", error);
+            }))
+                //on error stop processing
+                return;
+
+            Interlocked.Add(ref TotalSentData, dataLength);
+            state.Item1?.Invoke();
+        }
+
+        private bool socketOperationWrapper(string actionName, Func<bool> socketAction)
+        {
+            if (_isClosed || _isDisconnected)
+                //on closed or disconnected socket, no operations are allowed
+                return false;
+
+            try
+            {
+                return socketAction();
             }
-            catch(ObjectDisposedException ex)
+            catch (ObjectDisposedException ex)
             {
                 var requestURI = this.Request?.RequestURI;
-                Log.Error("Client._onSent [Exception]: {0} | {1} | {2}", requestURI, error, ex);
+                Log.Error(actionName + " [Exception]: {0} | {1}", requestURI, ex);
                 _onClosed();
-                return;
+                return false;
             }
             catch (SocketException ex)
             {
                 var requestURI = this.Request?.RequestURI;
-                Log.Error("Client._onSent [Exception]: {0} | {1} | {2}", requestURI, error, ex);
+                Log.Error(actionName + " [Exception]: {0} | {1}", requestURI, ex);
                 _onClosed();
-                return;
+                return false;
             }
-
-            Interlocked.Add(ref TotalSendedData, dataLength);
-            state.Item1?.Invoke();
         }
 
         private void _onClosed(IAsyncResult result = null)
         {
             if (result != null && _socket.Connected)
             {
-                try
+                //socket wrapper will not cause cycling because _onClosed will be called with result==null
+                socketOperationWrapper("Client._onClosed", () =>
                 {
                     _socket.Client.EndDisconnect(result);
-                }
-                catch (SocketException ex)
-                {
-                    //why on Earth this is solved via exceptions??
-                    var errorCode = ex.SocketErrorCode;
-                    Log.Error("Client._oClosed Socket exception {0}", errorCode);
-                    switch (errorCode)
-                    {
-                        case SocketError.ConnectionReset:
-                            //peer has disconnect without proper notification
-                            break;
-                        default:
-                            throw;
-                    }
-
-                }
+                    return true;
+                });
             }
 
             _isClosed = true;
@@ -365,7 +373,11 @@ namespace ServeRick.Networking
                 //close socket
                 Log.Trace("Client.disconnected/close {0}", this);
 
-                _socket.Client.BeginDisconnect(false, _onClosed, null);
+                socketOperationWrapper("Client.disconnect", () =>
+                {
+                    _socket.Client.BeginDisconnect(false, _onClosed, null);
+                    return true;
+                });
 
                 //disconnecting continues after socket is closed
                 return;

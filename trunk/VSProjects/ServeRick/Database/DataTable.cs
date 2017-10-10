@@ -136,6 +136,10 @@ namespace ServeRick.Database
                 {
                     value = reader.ReadUInt64();
                 }
+                else if (type == typeof(decimal))
+                {
+                    value = reader.ReadDecimal();
+                }
                 else
                 {
                     throw new NotImplementedException("Reader for type " + type + " is missing");

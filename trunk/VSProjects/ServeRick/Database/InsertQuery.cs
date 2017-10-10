@@ -31,7 +31,7 @@ namespace ServeRick.Database
         /// results</remarks>
         /// </summary>
         /// <param name="records">Recoreds that will be inserted</param>
-        internal InsertQuery(IEnumerable<ActiveRecord> records)
+        public InsertQuery(IEnumerable<ActiveRecord> records)
         {
             Rows = records;
         }
