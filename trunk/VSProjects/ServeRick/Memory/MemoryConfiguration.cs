@@ -19,9 +19,9 @@ namespace ServeRick.Memory
         /// <summary>
         /// Maximal memory that can be used for client buffers
         /// </summary>
-        internal readonly int MaximalClientMemoryUsage;
+        internal readonly long MaximalClientMemoryUsage;
 
-        internal MemoryConfiguration(int clientBufferSize, int maximalClientMemoryUsage)
+        internal MemoryConfiguration(int clientBufferSize, long maximalClientMemoryUsage)
         {
             ClientBufferSize = clientBufferSize;
             MaximalClientMemoryUsage = maximalClientMemoryUsage;

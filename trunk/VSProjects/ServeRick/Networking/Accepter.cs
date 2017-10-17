@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Sockets;
 
 using ServeRick.Memory;
+using System.Threading;
 
 namespace ServeRick.Networking
 {
@@ -67,14 +68,43 @@ namespace ServeRick.Networking
         /// </summary>
         internal void Run()
         {
-            _listener.Start(4096);
-            acceptClient();
+            _listener.Start(4096 * 4 * 2);
+            var synchronizedAccepter = new Thread(() =>
+            {
+                for (;;)
+                {
+                    TcpClient clientSocket = null;
+                    clientSocket = _listener.AcceptTcpClient();
+
+                    Task.Run(() =>
+                    {
+                        IPEndPoint ep = null;
+                        try
+                        {
+                            ep = clientSocket.Client.RemoteEndPoint as IPEndPoint;
+                        }
+                        catch (SocketException ex)
+                        {
+                            //Why on Earth we should suffer from exception when reading IP adress...
+                            Log.Error($"IP reading with errorcode {ex.ErrorCode} of exception {ex}");
+                        }
+
+                        var buffer = _bufferProvider.GetBuffer();
+                        var ip = ep == null ? null : ep.Address;
+                        var client = new Client(clientSocket, ip, buffer);
+                        _onClientAccepted(client);
+                    });
+                }
+            });
+
+            synchronizedAccepter.Start();
+            //acceptClientAsync();
         }
 
         /// <summary>
         /// Begin accepting clients
         /// </summary>
-        private void acceptClient()
+        private void acceptClientAsync()
         {
             _listener.BeginAcceptTcpClient(_acceptClient, null);
         }
@@ -106,7 +136,7 @@ namespace ServeRick.Networking
                 catch (SocketException ex)
                 {
                     //Why on Earth we should suffer from exception when reading IP adress...
-                    Log.Error("IP reading with exception {0}", ex);
+                    Log.Error($"IP reading with errorcode {ex.ErrorCode} of exception {ex}");
                 }
 
                 var buffer = _bufferProvider.GetBuffer();
@@ -115,7 +145,7 @@ namespace ServeRick.Networking
                 _onClientAccepted(client);
             }
 
-            acceptClient();
+            acceptClientAsync();
         }
     }
 }

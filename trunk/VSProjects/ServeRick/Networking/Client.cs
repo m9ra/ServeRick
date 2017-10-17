@@ -100,6 +100,11 @@ namespace ServeRick.Networking
         /// </summary>
         internal ProcessingUnit Unit { get { return _unit; } }
 
+        /// <summary>
+        /// Event fired after client is completely disconnected and resources are freed.
+        /// </summary>
+        internal event Action OnDisconnected;
+
         #endregion
 
         #region Public API exposed by client
@@ -394,6 +399,7 @@ namespace ServeRick.Networking
                 Buffer.Recycle();
 
                 _isDisconnected = true;
+                OnDisconnected?.Invoke();
 
                 lock (_L_activeClients)
                 {

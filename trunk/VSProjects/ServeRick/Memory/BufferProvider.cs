@@ -30,7 +30,7 @@ namespace ServeRick.Memory
         /// <summary>
         /// Maximal memory, that can be allocated for buffers
         /// </summary>
-        readonly int _maximalMemoryUsage;
+        readonly long _maximalMemoryUsage;
 
         /// <summary>
         /// Current usage of memory by allocated buffers
@@ -54,7 +54,7 @@ namespace ServeRick.Memory
         /// </summary>
         /// <param name="bufferLength">Length of created buffers in bytes</param>
         /// <param name="maximalMemoryUsage">Maximal memory usage in bytes</param>
-        internal BufferProvider(int bufferLength, int maximalMemoryUsage)
+        internal BufferProvider(int bufferLength, long maximalMemoryUsage)
         {
             if (bufferLength < 1)
                 throw new NotSupportedException("Cannot create buffer with given length");

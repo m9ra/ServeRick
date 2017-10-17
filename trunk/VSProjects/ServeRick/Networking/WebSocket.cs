@@ -52,7 +52,7 @@ namespace ServeRick.Networking
 
             _controller = controller;
             _client = client;
-
+            _client.OnDisconnected += onClientDisconnected;
 
             _client.RemoveHandlers();
         }
@@ -65,10 +65,14 @@ namespace ServeRick.Networking
         /// <returns>The value.</returns>
         public T Get<T>(WebSocketField<T> field)
         {
-            if (!_fields.TryGetValue(field, out object fieldValue))
-                return default(T);
+            lock (_L_fields)
+            {
+                if (!_fields.TryGetValue(field, out object fieldValue))
+                    //because of default we have to check the field presence
+                    return default(T);
 
-            return (T)fieldValue;
+                return (T)fieldValue;
+            }
         }
 
 
@@ -81,8 +85,11 @@ namespace ServeRick.Networking
         /// <returns>The value.</returns>
         public T Set<T>(WebSocketField<T> field, T value)
         {
-            _fields[field] = value;
-            return value;
+            lock (_L_fields)
+            {
+                _fields[field] = value;
+                return value;
+            }
         }
 
         /// <summary>
@@ -190,8 +197,12 @@ Sec-WebSocket-Accept: {0}" + "\r\n\r\n", acceptKey);
 
         private void closeClient()
         {
-            _controller.OnClose(this);
             _client.Close();
+        }
+
+        private void onClientDisconnected()
+        {
+            _controller.OnClose(this);
         }
 
         public static string GetDecodedData(byte[] buffer, int start, int length, out bool close, out int totalLength)

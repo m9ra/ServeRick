@@ -165,7 +165,7 @@ namespace ServeRick.Modules.MySQL
             //TODO refactor
             if (type == typeof(string))
             {
-                return "VARCHAR(100)";
+                return "VARCHAR(150)";
             }
 
             if (type == typeof(long))
