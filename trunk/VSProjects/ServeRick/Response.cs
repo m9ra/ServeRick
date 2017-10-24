@@ -162,9 +162,14 @@ namespace ServeRick
             _responseHeaders[header] = value;
         }
 
-        internal void SetCookie(string cookieName, string cookieValue)
+        public void SetCookie(string cookieName, string cookieValue)
         {
             SetHeader("Set-Cookie", cookieName + "=" + cookieValue);
+        }
+
+        public void SetCookie(string cookieName, string cookieValue, int maxAge)
+        {
+            SetHeader("Set-Cookie", cookieName + "=" + cookieValue + "; Max-Age=" + maxAge);
         }
 
         /// <summary>

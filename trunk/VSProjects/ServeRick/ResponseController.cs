@@ -160,6 +160,21 @@ namespace ServeRick
             Client.EnqueueWork(new RawWriteWorkItem(Response.Client, json));
         }
 
+        protected void RenderRawHtml(string htmlContent)
+        {
+            if (_layout != null)
+                throw new NotSupportedException("Cannot render raw with layout");
+
+            Response.SetContentType("text/html");
+            Client.EnqueueWork(new RawWriteWorkItem(Response.Client, htmlContent));
+        }
+
+
+        protected void WriteRaw(string content)
+        {
+            Client.EnqueueWork(new RawWriteWorkItem(Response.Client, content));
+        }
+
         protected void Write(DataStream data)
         {
             Client.EnqueueWork(new WriteWorkItem(Client, data));

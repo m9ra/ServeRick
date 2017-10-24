@@ -168,7 +168,7 @@ namespace ServeRick.Networking
         }
 
 
-        internal bool TryGetCookie(string cookie, out string cookieValue)
+        public bool TryGetCookie(string cookie, out string cookieValue)
         {
             return _cookies.TryGetValue(cookie, out cookieValue);
         }

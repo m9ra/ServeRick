@@ -59,6 +59,11 @@ namespace ServeRick
         /// </summary>
         protected ResponseHandlerProvider HandlerProvider { get { return Application.HandlerProvider; } }
 
+        /// <summary>
+        /// Processor which allows to change uri before action dispatch.
+        /// </summary>
+        protected virtual string uriProcessor(string originalUri, Client client) { return originalUri; }
+
         public ResponseManagerBase(WebApplication application, string rootPath, params Type[] controllers)
         {
             RootPath = rootPath + Path.DirectorySeparatorChar;
@@ -205,6 +210,14 @@ namespace ServeRick
         }
 
         /// <summary>
+        /// Determine whether there is an action regeistered with given path.
+        /// </summary>
+        protected bool HasActionFor(string relativeFilePath)
+        {
+            return _actions.ContainsKey(relativeFilePath);
+        }
+
+        /// <summary>
         /// Publish file item with given uri
         /// </summary>
         /// <param name="fileId">Id of registered file</param>
@@ -331,6 +344,7 @@ namespace ServeRick
         internal void Handle(Client client)
         {
             var uri = client.Request.URI;
+            uri = uriProcessor(uri, client);
 
             WebItem item;
             if (!_actions.TryGetValue(uri, out item))

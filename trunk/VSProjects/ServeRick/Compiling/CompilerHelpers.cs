@@ -150,5 +150,10 @@ namespace ServeRick.Compiling
         {
             return !value;
         }
+
+        public static bool IsEmpty(IEnumerable<object> enumeration)
+        {
+            return !enumeration.Any();
+        }
     }
 }

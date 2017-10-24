@@ -206,7 +206,7 @@ where T : DataRecord
             }
         }
 
-        protected void Execute<T>(RemoveQuery<T> query, Action action)
+        protected void Execute<T>(RemoveQuery<T> query, Action action = null)
          where T : DataRecord
         {
             var item = query.CreateWork(action);

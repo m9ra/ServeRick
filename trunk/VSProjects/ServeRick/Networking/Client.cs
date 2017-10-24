@@ -246,6 +246,18 @@ namespace ServeRick.Networking
                 //On error we stop processing                
                 return;
 
+            if (dataLength == 0)
+            {
+                //disconnection
+                socketOperationWrapper("Client._onReceived-emptyClose", () =>
+                {
+                    _socket.Client.Shutdown(SocketShutdown.Both);
+                    _socket.Client.Close();
+                    return true;
+                });
+                return;
+            }
+
             Interlocked.Add(ref TotalRecievedData, dataLength);
             var handler = result.AsyncState as RecieveHandler;
             handler(this, Buffer.Storage, dataLength);
@@ -308,6 +320,8 @@ namespace ServeRick.Networking
                 socketOperationWrapper("Client._onClosed", () =>
                 {
                     _socket.Client.EndDisconnect(result);
+                    _socket.Client.Shutdown(SocketShutdown.Both);
+                    _socket.Client.Close();
                     return true;
                 });
             }
