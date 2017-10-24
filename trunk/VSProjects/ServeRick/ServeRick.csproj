@@ -146,6 +146,7 @@
     <Compile Include="Modules\MySQL\SqlQuery.cs" />
     <Compile Include="Modules\NamespaceDoc.cs" />
     <Compile Include="Modules\Output\BinaryFileStream.cs" />
+    <Compile Include="Networking\Client.cs" />
     <Compile Include="Networking\WebSocket.cs" />
     <Compile Include="Networking\WebSocketField.cs" />
     <Compile Include="Processing\ProcessingUnit.cs" />
@@ -173,7 +174,6 @@
     <Compile Include="Memory\BufferProvider.cs" />
     <Compile Include="Memory\MemoryConfiguration.cs" />
     <Compile Include="Networking\Accepter.cs" />
-    <Compile Include="Networking\Client.cs" />
     <Compile Include="Networking\Downloader.cs" />
     <Compile Include="Networking\HttpRequestParser.cs" />
     <Compile Include="Networking\HttpRequest.cs" />

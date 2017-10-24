@@ -35,6 +35,11 @@ namespace ServeRick.Networking
     delegate int BufferFiller(byte[] buffer);
 
     /// <summary>
+    /// States which describes client life cycle.
+    /// </summary>
+    public enum ClientConnectionState { Connected, BeforeDisconnect, AfterDisconnect, AfterError, AfterClose, Disposed }
+
+    /// <summary>
     /// Representation of http client
     /// </summary>
     public class Client
@@ -46,27 +51,25 @@ namespace ServeRick.Networking
         /// </summary>
         readonly TcpClient _socket;
 
+        /// <summary>
+        /// When client arrived to system.
+        /// </summary>
         readonly DateTime _creationTime = DateTime.Now;
 
         /// <summary>
         /// Chain of work items for processing clients response
         /// </summary>
-        WorkChain _workChain;
+        volatile WorkChain _workChain;
 
         /// <summary>
-        /// Determine that clients socket has been already closed
+        /// Current state of client connection.
         /// </summary>
-        private volatile bool _isClosed;
+        volatile ClientConnectionState _currentConnectionState;
 
         /// <summary>
-        /// Determine that client has been completly disconnected
+        /// Access to client state has to be protected by the lock.
         /// </summary>
-        private volatile bool _isDisconnected;
-
-        /// <summary>
-        /// Determine that disconnecting has been already started
-        /// </summary>
-        private volatile bool _disconnectingStarted;
+        object _L_state = new object();
 
         #endregion
 
@@ -75,8 +78,7 @@ namespace ServeRick.Networking
         /// <summary>
         /// Determine that client is alredy closed
         /// </summary>
-        internal bool IsClosed { get { return _isClosed; } }
-
+        internal bool IsClosed { get { return _currentConnectionState != ClientConnectionState.Connected; } }
 
         internal int TimeFromStart { get { return (DateTime.Now - _creationTime).Milliseconds; } }
 
@@ -149,6 +151,8 @@ namespace ServeRick.Networking
             IP = ip;
             Buffer = clientBuffer;
 
+            _currentConnectionState = ClientConnectionState.Connected;
+
             lock (_L_activeClients)
             {
                 ++TotalClients;
@@ -163,14 +167,6 @@ namespace ServeRick.Networking
 
             _unit = unit;
             initializeWorkChain();
-        }
-
-        /// <summary>
-        /// Removes all handlers attached 
-        /// </summary>
-        internal void RemoveHandlers()
-        {
-            //there are no handlers
         }
 
         #region Network API for communication with client
@@ -191,7 +187,7 @@ namespace ServeRick.Networking
             socketOperationWrapper("Client.Receive", () =>
             {
                 _socket.Client.BeginReceive(Buffer.Storage, 0, maxBytesReceive, SocketFlags.None, out SocketError error, _onReceived, handler);
-                return !checkError("Client.Recieve", error);
+                return error;
             });
         }
 
@@ -205,28 +201,27 @@ namespace ServeRick.Networking
         {
             Log.Trace("Client.Send {0}", this);
 
-            socketOperationWrapper("Client.Close", () =>
+            socketOperationWrapper("Client.Send", () =>
             {
                 _socket.Client.BeginSend(dataStorage, 0, sendedLength, SocketFlags.None, out var error, _onSent, Tuple.Create<SendHandler, Socket>(sendHandler, _socket.Client));
-                return !checkError("Client.Send", error);
+                return error;
             });
         }
 
         /// <summary>
-        /// Close connection with client
+        /// Closes client after some unexpected behaviour.
         /// </summary>
-        internal void Close()
+        internal void CloseOnError()
         {
-            if (_isClosed)
-                return;
+            reportState(ClientConnectionState.AfterError);
+        }
 
-            socketOperationWrapper("Client.Close", () =>
-            {
-                _socket.Client.BeginDisconnect(false, _onClosed, null);
-                return true;
-            });
-
-            _isClosed = true;
+        /// <summary>
+        /// Gracefuly disconnects client.
+        /// </summary>
+        internal void Disconnect()
+        {
+            reportState(ClientConnectionState.BeforeDisconnect);
         }
 
         #endregion
@@ -241,7 +236,7 @@ namespace ServeRick.Networking
             if (!socketOperationWrapper("Client._onReceived", () =>
             {
                 dataLength = _socket.Client.EndReceive(result, out SocketError error);
-                return !checkError("Client._onRecieved", error);
+                return error;
             }))
                 //On error we stop processing                
                 return;
@@ -249,12 +244,7 @@ namespace ServeRick.Networking
             if (dataLength == 0)
             {
                 //disconnection
-                socketOperationWrapper("Client._onReceived-emptyClose", () =>
-                {
-                    _socket.Client.Shutdown(SocketShutdown.Both);
-                    _socket.Client.Close();
-                    return true;
-                });
+                reportState(ClientConnectionState.BeforeDisconnect);
                 return;
             }
 
@@ -274,10 +264,8 @@ namespace ServeRick.Networking
             if (!socketOperationWrapper("Client._onSent", () =>
             {
                 dataLength = state.Item2.EndSend(result, out error);
-
                 //TODO how could happen sending be parted ?
-
-                return !checkError("Client._onSent", error);
+                return error;
             }))
                 //on error stop processing
                 return;
@@ -286,48 +274,38 @@ namespace ServeRick.Networking
             state.Item1?.Invoke();
         }
 
-        private bool socketOperationWrapper(string actionName, Func<bool> socketAction)
+        private bool socketOperationWrapper(string actionName, Func<SocketError> socketAction, ClientConnectionState requiredMaximalState = ClientConnectionState.Connected)
         {
-            if (_isClosed || _isDisconnected)
-                //on closed or disconnected socket, no operations are allowed
-                return false;
+            lock (_L_state)
+            {
+                if (_currentConnectionState > requiredMaximalState)
+                    return false;
+            }
 
             try
             {
-                return socketAction();
+                var error = socketAction();
+                if (error != SocketError.Success)
+                {
+                    reportState(ClientConnectionState.AfterError);
+                    return false;
+                }
+                return true;
             }
             catch (ObjectDisposedException ex)
             {
                 var requestURI = this.Request?.RequestURI;
                 Log.Error(actionName + " [Exception]: {0} | {1}", requestURI, ex);
-                _onClosed();
+                reportState(ClientConnectionState.AfterError);
                 return false;
             }
             catch (SocketException ex)
             {
                 var requestURI = this.Request?.RequestURI;
                 Log.Error(actionName + " [Exception]: {0} | {1}", requestURI, ex);
-                _onClosed();
+                reportState(ClientConnectionState.AfterError);
                 return false;
             }
-        }
-
-        private void _onClosed(IAsyncResult result = null)
-        {
-            if (result != null && _socket.Connected)
-            {
-                //socket wrapper will not cause cycling because _onClosed will be called with result==null
-                socketOperationWrapper("Client._onClosed", () =>
-                {
-                    _socket.Client.EndDisconnect(result);
-                    _socket.Client.Shutdown(SocketShutdown.Both);
-                    _socket.Client.Close();
-                    return true;
-                });
-            }
-
-            _isClosed = true;
-            disconnect();
         }
 
         #endregion
@@ -364,65 +342,83 @@ namespace ServeRick.Networking
             _workChain.OnCompleted += onChainCompleted;
         }
 
+        private void reportState(ClientConnectionState state)
+        {
+            lock (_L_state)
+            {
+                if (_currentConnectionState >= state)
+                    //there is nothing to do
+                    return;
+
+                _currentConnectionState = state;
+            }
+
+            // states are ordered in a decreasing order 
+            // states can be increased only - therefore no state sequence won't be called twice
+            // howeve, in some cirmustances there can be race condition - bigger state can be called before smaller one
+            switch (state)
+            {
+                case ClientConnectionState.Connected:
+                    //there is nothing to do
+                    return;
+
+                case ClientConnectionState.BeforeDisconnect:
+                    _socket.Client.BeginDisconnect(false, _beginDisconnectCallback, this);
+                    return;
+
+                case ClientConnectionState.AfterDisconnect:
+                    _socket.Client.Close();
+                    reportState(ClientConnectionState.AfterClose);
+                    return;
+
+                case ClientConnectionState.AfterError:
+                    _socket.Client.Close();
+                    reportState(ClientConnectionState.AfterClose);
+                    return;
+
+                case ClientConnectionState.AfterClose:
+                    _socket.Client.Dispose();
+                    reportState(ClientConnectionState.Disposed);
+                    return;
+
+                case ClientConnectionState.Disposed:
+                    // each client once has to reach this state
+                    clientCleanup();
+                    return;
+
+                default:
+                    throw new NotImplementedException("Unknown state reported: " + state);
+            }
+        }
+
+        private void _beginDisconnectCallback(IAsyncResult ar)
+        {
+            //this is only paranoya - sometimes it looked 'this' was different to 'currentClient'
+            var currentClient = ar.AsyncState as Client;
+            currentClient._socket.Client.EndDisconnect(ar);
+            reportState(ClientConnectionState.AfterDisconnect);
+        }
+
         /// <summary>
         /// Handles correct disconnecting sequence (even in partially disconnected states)
         /// </summary>
-        private void disconnect()
+        private void clientCleanup()
         {
-            if (_isDisconnected)
-            {
-                Log.Error("Cannot disconnect client {0} twice", this);
-                return;
-            }
-
-            _disconnectingStarted = true;
-
             if (_workChain != null && !_workChain.IsComplete)
             {
                 //we have to abort remaining work
                 _workChain.Abort();
-
-                //aborting workchain causes completition routine to be called
-                //so disconnecting will then continue
-                return;
             }
 
-            if (_socket.Connected)
+            Buffer.Recycle();
+            OnDisconnected?.Invoke();
+
+            lock (_L_activeClients)
             {
-                //close socket
-                Log.Trace("Client.disconnected/close {0}", this);
-
-                socketOperationWrapper("Client.disconnect", () =>
-                {
-                    _socket.Client.BeginDisconnect(false, _onClosed, null);
-                    return true;
-                });
-
-                //disconnecting continues after socket is closed
-                return;
-            }
-            else
-            {
-                _isClosed = true;
+                --ActiveClients;
             }
 
-            if (_isClosed)
-            {
-                //socket is closed - we will lease resources
-                _socket.Client.Dispose();
-                Buffer.Recycle();
-
-                _isDisconnected = true;
-                OnDisconnected?.Invoke();
-
-                lock (_L_activeClients)
-                {
-                    --ActiveClients;
-                }
-
-                Log.Trace("Client.disconnected/dispose {0}", this);
-                //disconnecting is complete
-            }
+            Log.Trace("Client.disposed {0}", this);
         }
 
         /// <summary>
@@ -430,48 +426,16 @@ namespace ServeRick.Networking
         /// </summary>
         private void onChainCompleted()
         {
-            if (_disconnectingStarted || Response == null)
+            lock (_L_state)
             {
-                //client completed before response has been started
-                //or client is forced to be disconnected
-                disconnect();
+                if (_currentConnectionState != ClientConnectionState.Connected)
+                    //disconnection process is running
+                    return;
             }
-            else
-            {
-                //disconnect after response is completed
-                Response.AfterSend += disconnect;
-                Response.Close();
-            }
-        }
 
-
-
-        /// <summary>
-        /// Check error from socket operation
-        /// </summary>
-        /// <param name="error">Error object</param>
-        private bool checkError(string checkingMethod, SocketError error)
-        {
-            switch (error)
-            {
-                case SocketError.Success:
-                    //socket operation has been successfull
-                    return false;
-                case SocketError.NotSocket:
-                case SocketError.ConnectionReset:
-                case SocketError.TimedOut:
-                case SocketError.ConnectionAborted:
-                case SocketError.Shutdown:
-                case SocketError.HostUnreachable:
-                case SocketError.ConnectionRefused:
-                case SocketError.NetworkUnreachable:
-                    //client has unexpectedly disconnected
-                    Log.Warning(checkingMethod + " {0} failed with {1}", this, error);
-                    _onClosed();
-                    return true;
-                default:
-                    throw new NotImplementedException("Socket error: " + error);
-            }
+            //disconnect after response is completed
+            Response.AfterSend += () => reportState(ClientConnectionState.BeforeDisconnect);
+            Response.Close();
         }
 
         public override string ToString()

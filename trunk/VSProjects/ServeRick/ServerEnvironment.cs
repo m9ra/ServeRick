@@ -31,7 +31,8 @@ namespace ServeRick
                 throw new NotImplementedException();
 
             var netConfig = new NetworkConfiguration(port, IPAddress.Any);
-            var memConfig = new MemoryConfiguration(8192, (long)2 << 30);
+            //var memConfig = new MemoryConfiguration(8192, (long)2 << 30);
+            var memConfig = new MemoryConfiguration(4096 * 20, 2 << 28); //nahnoji tested
 
             var server = new HttpServer(_applications[0], netConfig, memConfig);
             foreach (var task in tasks)

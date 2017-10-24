@@ -68,7 +68,7 @@ namespace ServeRick.Networking
             if (dataLength == 0 || client.Parser.IsError)
             {
                 Log.Notice("Downloader._onHeadCompleted {0},  recieved {1}B, incomplete header: {2}B", client, dataLength, client.Parser.RecievedBytes);
-                client.Close();
+                client.CloseOnError();
                 return;
             }
 

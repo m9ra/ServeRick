@@ -53,8 +53,6 @@ namespace ServeRick.Networking
             _controller = controller;
             _client = client;
             _client.OnDisconnected += onClientDisconnected;
-
-            _client.RemoveHandlers();
         }
 
         /// <summary>
@@ -197,7 +195,7 @@ Sec-WebSocket-Accept: {0}" + "\r\n\r\n", acceptKey);
 
         private void closeClient()
         {
-            _client.Close();
+            _client.Disconnect();
         }
 
         private void onClientDisconnected()
