@@ -191,8 +191,17 @@ namespace ServeRick.Modules
                         if (value.Contains(where.Operand.ToString()))
                             yield return row;
                         break;
+                    case WhereOperation.GreaterOrEqual:
+                        if(column is long)
+                        {
+                            var longValue = (long)column;
+                            if (longValue >= (long)where.Operand)
+                                yield return row;
+                            break;
+                        }
+                        throw new NotImplementedException("Operand");
                     default:
-                        throw new NotImplementedException();
+                        throw new NotImplementedException("Operation");
                 }
             }
         }
