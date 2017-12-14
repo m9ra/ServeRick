@@ -200,6 +200,16 @@ namespace ServeRick.Modules
                             break;
                         }
                         throw new NotImplementedException("Operand");
+
+                    case WhereOperation.Greater:
+                        if (column is int)
+                        {
+                            var longValue = (int)column;
+                            if (longValue > (int)where.Operand)
+                                yield return row;
+                            break;
+                        }
+                        throw new NotImplementedException("Operand");
                     default:
                         throw new NotImplementedException("Operation");
                 }
