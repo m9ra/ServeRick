@@ -19,7 +19,7 @@ namespace ServeRick
         /// <summary>
         /// Root for resource loading
         /// </summary>
-        internal readonly string RootPath;
+        public readonly string RootPath;
 
         object _L_itemRefresh = new object();
 
@@ -422,6 +422,8 @@ namespace ServeRick
                 try
                 {
                     action();
+                    ResponseController.ClearCaches();
+
                 }
                 catch (Exception)
                 {

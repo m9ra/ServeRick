@@ -52,7 +52,10 @@ namespace ServeRick.Processing
         internal void Complete()
         {
             if (IsComplete)
-                throw new NotSupportedException("Cannot complete work item twice");
+            {
+                Log.Error("Cannot complete work item twice");
+                return; 
+            }
 
             IsComplete = true;
 

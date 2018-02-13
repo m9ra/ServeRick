@@ -157,6 +157,7 @@
     <Compile Include="Modules\Input\MultiPartInput.cs" />
     <Compile Include="Modules\Input\PartStream.cs" />
     <Compile Include="Modules\Input\UrlEncodedInput.cs" />
+    <Compile Include="Modules\Javascript\JavascriptMinifier.cs" />
     <Compile Include="Modules\LightDataDriver.cs" />
     <Compile Include="Modules\MySQL\ColumnsReader.cs" />
     <Compile Include="Modules\MySQL\MySqlDriver.cs" />
@@ -167,6 +168,7 @@
     <Compile Include="Networking\Client.cs" />
     <Compile Include="Networking\WebSocket.cs" />
     <Compile Include="Networking\WebSocketField.cs" />
+    <Compile Include="Processing\INetworkRecordable.cs" />
     <Compile Include="Processing\ProcessingUnit.cs" />
     <Compile Include="Processing\WorkChain.cs" />
     <Compile Include="Responsing\RawWriteWorkItem.cs" />

@@ -58,7 +58,6 @@ namespace ServeRick.Responsing
         protected override void onAbort()
         {
             close();
-            Complete();
         }
 
         private void close()

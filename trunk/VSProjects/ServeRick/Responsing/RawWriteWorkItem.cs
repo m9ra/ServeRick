@@ -1,4 +1,5 @@
 ﻿using ServeRick.Networking;
+using ServeRick.Processing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,16 +8,24 @@ using System.Threading.Tasks;
 
 namespace ServeRick.Responsing
 {
-    class RawWriteWorkItem : ResponseWorkItem
+    class RawWriteWorkItem : ResponseWorkItem, INetworkRecordable
     {
         private readonly Client _client;
 
         private readonly string _data;
 
+        private readonly byte[] _dataBytes;
+
         internal RawWriteWorkItem(Client client, string data)
         {
             _client = client;
             _data = data;
+        }
+
+        internal RawWriteWorkItem(Client client, byte[] data)
+        {
+            _client = client;
+            _dataBytes = data;
         }
 
         internal override void Run()
@@ -31,7 +40,7 @@ namespace ServeRick.Responsing
 
         private void onFlushed()
         {
-            var bytes = Encoding.UTF8.GetBytes(_data);
+            var bytes = GetData();
             _client.Send(bytes, bytes.Length, sendHandler);
         }
 
@@ -40,10 +49,14 @@ namespace ServeRick.Responsing
             Complete();
         }
 
-        protected override void onAbort()
+        public byte[] GetData()
         {
-            Complete();
+            return _dataBytes ?? Encoding.UTF8.GetBytes(_data);
         }
 
+        protected override void onAbort()
+        {
+            //there is nothing to do
+        }
     }
 }

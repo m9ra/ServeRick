@@ -71,6 +71,11 @@ namespace ServeRick.Networking
         /// </summary>
         object _L_state = new object();
 
+        /// <summary>
+        /// If set stores network recording data
+        /// </summary>
+        List<byte> _networkRecording = null;
+
         #endregion
 
         #region Internal API exposed by client
@@ -189,6 +194,30 @@ namespace ServeRick.Networking
                 _socket.Client.BeginReceive(Buffer.Storage, 0, maxBytesReceive, SocketFlags.None, out SocketError error, _onReceived, handler);
                 return error;
             });
+        }
+
+        /// <summary>
+        /// Enables recording of cache writes.
+        /// Causes all writes to have no network effect.
+        /// </summary>
+        internal void EnableNetworkRecording()
+        {
+            _networkRecording = new List<byte>();
+        }
+
+        /// <summary>
+        /// Collects recorded cache data.
+        /// </summary>
+        internal byte[] CollectCache()
+        {
+            try
+            {
+                return _networkRecording.ToArray();
+            }
+            finally
+            {
+                _networkRecording = null;
+            }
         }
 
         /// <summary>
@@ -318,6 +347,22 @@ namespace ServeRick.Networking
         /// <param name="workItems">Work items to be enqueued.</param>
         internal void EnqueueWork(params WorkItem[] workItems)
         {
+            if (_networkRecording != null)
+            {
+                foreach (var work in workItems)
+                {
+                    var recordabe = work as INetworkRecordable;
+                    if (recordabe == null)
+                        throw new NotImplementedException();
+
+                    _networkRecording.AddRange(recordabe.GetData());
+                }
+
+                //don't allow any real effects
+                return;
+            }
+
+
             foreach (var work in workItems)
             {
                 _workChain.InsertItem(work);

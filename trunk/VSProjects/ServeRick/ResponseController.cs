@@ -33,6 +33,10 @@ namespace ServeRick
 
         private static int[] _internalCounts = new int[InternalTimepointCount];
 
+        private static readonly Dictionary<string, byte[]> _writeCache = new Dictionary<string, byte[]>();
+
+        private static readonly object _L_writeCache = new object();
+
         private ResponseHandler _layout = null;
 
         protected Client Client { get { return Response.Client; } }
@@ -55,6 +59,14 @@ namespace ServeRick
             where ActiveRecord : DataRecord
         {
             return new InsertQuery<ActiveRecord>(entries);
+        }
+
+        internal static void ClearCaches()
+        {
+            lock (_L_writeCache)
+            {
+                _writeCache.Clear();
+            }
         }
 
         internal void SetResponse(ResponseManagerBase manager, Response response)
@@ -169,10 +181,30 @@ namespace ServeRick
             Client.EnqueueWork(new RawWriteWorkItem(Response.Client, htmlContent));
         }
 
+        protected void WriteCache(string cacheName, Action generator)
+        {
+            lock (_L_writeCache)
+            {
+                if (!_writeCache.TryGetValue(cacheName, out var value))
+                {
+                    Client.EnableNetworkRecording();
+                    generator();
+                    value = Client.CollectCache();
+                    _writeCache[cacheName] = value;
+                }
+                Client.EnqueueWork(new RawWriteWorkItem(Client, value));
+            }
+        }
 
         protected void WriteRaw(string content)
         {
-            Client.EnqueueWork(new RawWriteWorkItem(Response.Client, content));
+            Client.EnqueueWork(new RawWriteWorkItem(Client, content));
+        }
+
+        protected void WriteRawFile(string path)
+        {
+            var content = File.ReadAllBytes(Path.Combine(RootPath, path));
+            Client.EnqueueWork(new RawWriteWorkItem(Client, content));
         }
 
         protected void Write(DataStream data)
@@ -367,6 +399,7 @@ namespace ServeRick
             var item = query.CreateWork(executor);
             Client.EnqueueWork(item);
         }
+
 
         #endregion
     }
