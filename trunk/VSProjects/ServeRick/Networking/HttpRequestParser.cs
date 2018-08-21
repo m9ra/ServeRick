@@ -151,14 +151,14 @@ namespace ServeRick.Networking
                 if (toks.Length != 3)
                 {
                     IsError = true;
-                    if (_value[0] == '\u0016')
+                    if (_value.Length > 0 && _value[0] == '\u0016')
                     {
                         Log.Notice("SSL encryption detected");
                     }
                     else
                     {
                         Log.Error("Invalid request with query {0}", _value);
-                    }                    
+                    }
                     return;
                 }
 
