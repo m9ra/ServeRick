@@ -61,7 +61,7 @@ namespace ServeRick
             return new InsertQuery<ActiveRecord>(entries);
         }
 
-        internal static void ClearCaches()
+        public static void ClearCaches()
         {
             lock (_L_writeCache)
             {
