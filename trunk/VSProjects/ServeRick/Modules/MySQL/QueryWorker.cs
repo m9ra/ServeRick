@@ -262,11 +262,11 @@ namespace ServeRick.Modules.MySQL
             var results = new List<ActiveRecord>();
             using (var reader = queryCmd.ExecuteReader())
             {
+                var columns = new ColumnsReader(reader);
+                
                 while (reader.Read())
                 {
-                    var columns = new ColumnsReader(reader);
                     var result = table.CreateRecord(columns);
-
                     results.Add(result);
                 }
                 reader.Close();

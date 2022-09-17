@@ -24,6 +24,8 @@ namespace ServeRick.Database
     {
         private readonly Dictionary<string, Column> _columns = new Dictionary<string, Column>(StringComparer.OrdinalIgnoreCase);
 
+        private readonly Dictionary<string, FieldInfo> _columnFields = new Dictionary<string, FieldInfo>(StringComparer.OrdinalIgnoreCase);
+
         /// <summary>
         /// Driver handling data in current table.
         /// </summary>
@@ -62,6 +64,7 @@ namespace ServeRick.Database
 
                 var column = new Column(field.Name, field.FieldType);
                 _columns.Add(column.Name, column);
+                _columnFields.Add(column.Name, getField(column.Name));
             }
 
             driver.Initialize(this);
@@ -80,13 +83,13 @@ namespace ServeRick.Database
 
         internal object GetColumnValue(string column, ActiveRecord record)
         {
-            var field = getField(column);
+            var field = _columnFields[column];
             return field.GetValue(record);
         }
 
         internal void SetColumnValue(ActiveRecord record, string column, object value)
         {
-            var field = getField(column);
+            var field = _columnFields[column];
             field.SetValue(record, value);
         }
 
@@ -150,6 +153,7 @@ namespace ServeRick.Database
 
             return record;
         }
+
 
         private FieldInfo getField(string column)
         {

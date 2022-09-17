@@ -13,7 +13,7 @@ namespace ServeRick.Compiling
         public abstract void VisitInstruction(Instruction x);
 
         public virtual void VisitConstant(ConstantInstruction x)
-        {
+        { 
             VisitInstruction(x);
         }
 

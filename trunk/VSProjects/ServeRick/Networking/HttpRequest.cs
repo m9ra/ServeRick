@@ -19,22 +19,22 @@ namespace ServeRick.Networking
     /// </summary>
     public class HttpRequest
     {
-        public static readonly string CookieHeader = "Cookie";
+        public static readonly string CookieHeader = "cookie";
 
-        public static readonly string IPHeader = "IP:";
+        public static readonly string IPHeader = "ip:";
 
-        public static readonly string ForwardedHeader = "X-Forwarded-For";
+        public static readonly string ForwardedHeader = "x-forwarded-for";
 
-        public static readonly string IfNoneMatchHeader = "If-None-Match";
+        public static readonly string IfNoneMatchHeader = "if-none-match";
 
         #region Private members
 
         /// <summary>
         /// Storage for recieved headers
         /// </summary>
-        private readonly Dictionary<string, string> _headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        public readonly Dictionary<string, string> _headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        private readonly Dictionary<string, string> _cookies = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        public readonly Dictionary<string, string> _cookies = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Storage for recieved POST variables
@@ -221,7 +221,7 @@ namespace ServeRick.Networking
         internal void SetHeader(string headerName, string headerValue)
         {
             //            Debug.Assert(!IsHeadComplete);
-
+            headerName = headerName.ToLower();
             if (headerName == CookieHeader)
             {
                 HttpRequestParser.FillCookies(headerValue, _cookies);
